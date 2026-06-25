@@ -1,0 +1,51 @@
+<div class="flex justify-center items-start w-full">
+    <div class="bg-white w-full max-w-xl p-10 rounded-xl shadow-sm border border-gray-200 relative">
+        
+        <a href="/admin/users/<%= user._id %>" class="absolute top-10 right-10 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+            Back To Customer
+        </a>
+
+        <h1 class="text-3xl font-bold text-black mb-4">Edit Balance</h1>
+        <p class="text-lg font-medium text-gray-800 mb-6">User Name : <%= user.firstName %> <%= user.lastName %></p>
+
+        <div class="mb-8">
+            <p class="text-sm font-bold text-gray-500 mb-1">Current Balance</p>
+            <p class="text-2xl font-bold text-black">₹<%= user.walletBalance %></p>
+        </div>
+
+        <form action="/admin/users/<%= user._id %>/balance" method="POST" onsubmit="return confirm('Are you sure you want to change this balance?');">
+            
+            <div class="flex flex-col mb-5">
+                <label class="text-sm font-bold text-black mb-2">Adjustment Type</label>
+                <select name="adjustmentType" class="border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-500 bg-white shadow-sm" required>
+                    <option value="Add Funds">Add Funds</option>
+                    <option value="Deduct Funds">Deduct Funds</option>
+                    <option value="Set Absolute Balance">Set Absolute Balance</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col mb-5">
+                <label class="text-sm font-bold text-black mb-2">Amount</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 font-medium">₹</span>
+                    <input type="number" name="amount" min="1" class="border border-gray-300 rounded-md pl-8 pr-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-500 w-full shadow-sm" required>
+                </div>
+            </div>
+
+            <div class="flex flex-col mb-8">
+                <label class="text-sm font-bold text-black mb-2">Reason for Change(mandatory)</label>
+                <textarea name="reason" rows="3" placeholder="Refund for order #ORD11233 clerical mistake" class="border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:border-gray-500 w-full shadow-sm resize-none" required></textarea>
+            </div>
+
+            <div class="flex space-x-4">
+                <button type="submit" class="bg-[#c4b5b5] hover:bg-[#b0a0a0] text-gray-800 text-sm font-bold px-6 py-2.5 rounded-md shadow-sm transition">
+                    Update Changes
+                </button>
+                <a href="/admin/users/<%= user._id %>" class="bg-black hover:bg-gray-800 text-white text-sm font-bold px-6 py-2.5 rounded-md shadow-sm transition inline-block text-center cursor-pointer">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+<div class="flex justify-center items-start w-full">
+    <div class="bg-white w-full max-w-4xl p-10 rounded-xl shadow-sm border border-gray-200 relative">
+        
+        <a href="/admin/users" class="absolute top-10 right-10 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+            Back To Customer
+        </a>
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-black mb-3">User details</h1>
+            <span class="px-3 py-1 text-xs font-bold rounded-md 
+                <%= user.status === 'Active' ? 'bg-[#bcf0da] text-green-800' : 'bg-red-100 text-red-800' %>">
+                Status : <%= user.status %>
+            </span>
+        </div>
+
+        <div class="flex justify-between items-start">
+            <div class="space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900"><%= user.firstName %> <%= user.lastName %></h2>
+                    
+                    <p class="text-sm text-gray-500 mt-1">Joined in : 
+                        <%= new Date(user.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                    </p>
+                </div>
+
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-gray-500 w-20 inline-block font-medium">User ID</span><span class="text-gray-900 font-medium">: <%= user._id.toString().slice(-8).toUpperCase() %></span></p>
+                    <p><span class="text-gray-500 w-20 inline-block font-medium">Phone</span><span class="text-gray-900 font-medium">: <%= user.phone %></span></p>
+                    <p><span class="text-gray-500 w-20 inline-block font-medium">Email</span><span class="text-gray-900 font-medium">: <%= user.email %></span></p>
+                    <p class="flex items-start">
+                        <span class="text-gray-500 w-20 inline-block font-medium shrink-0">Address</span>
+                        <span class="text-gray-900 font-medium">: <%= user.address %></span>
+                    </p>
+                </div>
+
+                <div class="pt-6 mt-6">
+                    <p class="text-sm font-bold text-gray-600 flex items-center">
+                        Wallet Balance : <span class="text-black ml-2 text-base">₹<%= user.walletBalance %></span>
+                       <a href="/admin/users/<%= user._id %>/balance">
+                            <button class="ml-8 px-4 py-1.5 bg-gray-200 text-gray-600 text-xs font-bold rounded-full hover:bg-gray-300 transition cursor-pointer">
+                                Edit Balance
+                            </button>
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="w-40 h-40 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm mt-8 mr-10">
+                <img src="https://ui-avatars.com/api/?name=<%= user.firstName %>+<%= user.lastName %>&background=d6d3d1&color=44403c&size=200" alt="Profile Picture" class="w-full h-full object-cover">
+            </div>
+        </div>
+
+    </div>
+</div>

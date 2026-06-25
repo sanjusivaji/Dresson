@@ -1,0 +1,122 @@
+<div class="flex justify-between items-center mb-8 max-w-xl">
+    <div>
+        <h1 class="text-3xl font-bold text-black tracking-tight">Edit Category</h1>
+        <p class="text-xs text-gray-400 mt-1">Modify structural configuration properties, target scope alignments, and listing details.</p>
+    </div>
+    <a href="/admin/categories" class="px-4 py-2 border border-gray-300 bg-white text-gray-700 text-xs font-bold rounded-md hover:bg-gray-50 transition shadow-sm">
+        Back To Category
+    </a>
+</div>
+
+<% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+    <div class="bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-4 py-3 rounded-xl max-w-xl mb-6 flex items-center space-x-2">
+        <i class="fas fa-exclamation-circle text-sm"></i>
+        <span><%= errorMessage %></span>
+    </div>
+<% } %>
+
+<form action="/admin/category/edit/<%= category._id %>" method="POST" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-xl">
+    <div class="space-y-6">
+        
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Base Category Scope (Gender)</label>
+            <select name="gender" id="genderSelect" required class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium text-gray-800">
+                <option value="Men" <%= category.gender === 'Men' ? 'selected' : '' %>>Men</option>
+                <option value="Women" <%= category.gender === 'Women' ? 'selected' : '' %>>Women</option>
+                <option value="Kids" <%= category.gender === 'Kids' ? 'selected' : '' %>>Kids</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category Assignment</label>
+            <select name="parentCategory" id="parentCategorySelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium text-gray-800">
+                <option value="none" <%= !category.parentCategory ? 'selected' : '' %>>None (Set as a Main Category - e.g., Topwear, Bottomwear)</option>
+                <% if (typeof mainCategories !== 'undefined' && mainCategories) { %>
+                    <% mainCategories.forEach(cat => { %>
+                        <option value="<%= cat._id %>" 
+                                data-gender="<%= cat.gender %>"
+                                <%= (category.parentCategory && category.parentCategory.toString() === cat._id.toString()) ? 'selected' : '' %>
+                                class="hidden">
+                            <%= cat.categoryName %>
+                        </option>
+                    <% }) %>
+                <% } %>
+            </select>
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Category Name</label>
+            <input type="text" name="categoryName" id="categoryNameInput" value="<%= category.categoryName %>" required 
+                   class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 shadow-sm transition">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Slug</label>
+            <input type="text" name="slug" id="slugInput" value="<%= category.slug %>" required readonly
+                   class="border border-gray-200 bg-gray-100 rounded-lg px-4 py-2.5 text-sm font-mono text-gray-500 focus:outline-none cursor-not-allowed select-none shadow-inner">
+            <span class="text-[10px] text-gray-400 mt-1">System-managed structural tracking link optimized for routing patterns.</span>
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Category Description</label>
+            <textarea name="description" required rows="3" 
+                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 shadow-sm transition resize-none"><%= category.description %></textarea>
+        </div>
+
+        <div class="flex items-center space-x-3 pt-2">
+            <span class="px-2.5 py-1 text-[10px] font-bold uppercase rounded-md <%= category.isListed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' %>">
+                <%= category.isListed ? 'Active / Listed' : 'Hidden / Unlisted' %>
+            </span>
+            <span class="text-[11px] text-gray-400">To adjust this visibility configuration state, use the quick toggle trigger buttons inside the master grid table.</span>
+        </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-100 flex items-center space-x-3">
+        <button type="submit" class="px-6 py-2.5 bg-[#8b3c3c] hover:bg-[#723131] text-white text-xs font-bold rounded-md shadow-md transition">
+            Update Category
+        </button>
+        <a href="/admin/categories" class="px-6 py-2.5 bg-black hover:bg-gray-900 text-white text-xs font-bold rounded-md text-center shadow-md transition">
+            Cancel
+        </a>
+    </div>
+</form>
+
+<script>
+    const genderSelect = document.getElementById('genderSelect');
+    const parentCategorySelect = document.getElementById('parentCategorySelect');
+    const parentOptions = parentCategorySelect.querySelectorAll('option');
+    const categoryNameInput = document.getElementById('categoryNameInput');
+    const slugInput = document.getElementById('slugInput');
+
+    // 1. Dynamic Parent-Category Dropdown Filter Functionality Matrix
+    function filterParentOptions(selectedGender) {
+        parentOptions.forEach(option => {
+            if (option.value === "none") return;
+            
+            if (option.getAttribute('data-gender') === selectedGender) {
+                option.classList.remove('hidden');
+            } else {
+                option.classList.add('hidden');
+            }
+        });
+    }
+
+    // Run immediately on page mount execution context lifecycle to render appropriate subcomponents
+    filterParentOptions(genderSelect.value);
+
+    // Track user dynamic modification adjustments to structural gender types dropdown nodes
+    genderSelect.addEventListener('change', function() {
+        parentCategorySelect.value = "none";
+        filterParentOptions(this.value);
+    });
+
+    // 2. Realtime URL Slug Compiling Synchronizer Engine
+    categoryNameInput.addEventListener('input', function() {
+        const compiledSlug = this.value
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .trim();
+        slugInput.value = compiledSlug;
+    });
+</script>

@@ -1,0 +1,70 @@
+<div class="flex justify-center items-start w-full">
+    <div class="bg-white w-full max-w-4xl p-10 rounded-xl shadow-sm border border-gray-200 relative">
+        
+        <a href="/admin/users" class="absolute top-10 right-10 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+            Back To Customer
+        </a>
+
+        <h1 class="text-3xl font-bold text-black mb-8">User Transactions</h1>
+
+        <div class="grid grid-cols-3 gap-6 mb-10 w-[85%]">
+            <div class="bg-white py-6 rounded-lg border-2 border-[#22c55e] text-center shadow-sm">
+                <h3 class="text-[#22c55e] text-xs font-bold mb-1">Total Credit</h3>
+                <p class="text-[#22c55e] text-3xl font-bold">₹<%= totals.totalCredit %></p>
+            </div>
+            <div class="bg-white py-6 rounded-lg border-2 border-[#ef4444] text-center shadow-sm">
+                <h3 class="text-[#ef4444] text-xs font-bold mb-1">Total Debit</h3>
+                <p class="text-[#ef4444] text-3xl font-bold">₹<%= totals.totalDebit %></p>
+            </div>
+            <div class="bg-white py-6 rounded-lg border-2 border-[#4b5563] text-center shadow-sm">
+                <h3 class="text-[#4b5563] text-xs font-bold mb-1">Total Refund</h3>
+                <p class="text-[#4b5563] text-3xl font-bold">₹<%= totals.totalRefund %></p>
+            </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg overflow-hidden mb-6">
+            <table class="w-full text-center border-collapse">
+                <thead class="text-gray-500 text-xs border-b border-gray-200 bg-gray-50">
+                    <tr>
+                        <th class="py-4 px-4 font-semibold">Transaction<br>ID</th>
+                        <th class="py-4 px-4 font-semibold">Date</th>
+                        <th class="py-4 px-4 font-semibold">Amount</th>
+                        <th class="py-4 px-4 font-semibold">Type</th>
+                        <th class="py-4 px-4 font-semibold">Gateway</th>
+                        <th class="py-4 px-4 font-semibold">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    <% if (transactions && transactions.length > 0) { %>
+                        <% transactions.forEach(t => { %>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                                <td class="py-4 px-4 text-gray-500 font-medium"><%= t.transactionId %></td>
+                                
+                                <td class="py-4 px-4 text-gray-600">
+                                    <%= String(new Date(t.date).getDate()).padStart(2, '0') %>-<%= String(new Date(t.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(t.date).getFullYear() %>
+                                </td>
+                                
+                                <td class="py-4 px-4 font-medium text-gray-800"><%= t.sign %>₹<%= t.amount %></td>
+                                
+                                <td class="py-4 px-4 text-gray-600"><%= t.type %></td>
+                                <td class="py-4 px-4 text-gray-600"><%= t.gateway %></td>
+                                <td class="py-4 px-4 text-gray-600"><%= t.status %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-gray-400">No transactions found for this user.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <%- include('../partial/admin/pagination', { 
+            baseUrl: typeof baseUrl !== 'undefined' ? baseUrl : '', 
+            currentPage: currentPage, 
+            totalPages: totalPages 
+        }) %>
+
+    </div>
+</div>

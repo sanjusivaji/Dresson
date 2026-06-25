@@ -1,0 +1,378 @@
+<div class="mb-6">
+    <a href="/admin/products" class="text-xs font-semibold text-gray-400 hover:text-gray-600 transition flex items-center space-x-2">
+        <i class="fas fa-arrow-left"></i>
+        <span>Back to Products List</span>
+    </a>
+</div>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-black tracking-tight">Edit Product</h1>
+    <p class="text-xs text-gray-400 mt-1">Modify item specification fields, update image assets layers, and allocate custom variant structures.</p>
+</div>
+
+<input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
+<input type="hidden" id="historicalSelectedSubId" value="<%= product.subCategory %>">
+
+<form action="/admin/products/edit/<%= product._id %>" method="POST" enctype="multipart/form-data" id="productForm" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-4xl mb-12">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+        
+        <div class="space-y-6">
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
+                <input type="text" id="baseName" name="productName" value="<%= product.productName %>" required placeholder="e.g., Premium Comfort Polo Tee" 
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition">
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
+                <input type="text" id="brandName" name="brand" value="<%= product.brand %>" required placeholder="e.g., Levi's, Zara, Dresson Original" 
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition">
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
+                <select id="parentCategory" name="parentCategory" required onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                    <option value="" disabled>Select Gender Target Room</option>
+                    <option value="Men" <%= product.parentCategory === 'Men' ? 'selected' : '' %>>Men</option>
+                    <option value="Women" <%= product.parentCategory === 'Women' ? 'selected' : '' %>>Women</option>
+                    <option value="Kids" <%= product.parentCategory === 'Kids' ? 'selected' : '' %>>Kids</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Sub-Category Assignment Tree</label>
+                <select id="subCategory" name="subCategory" required class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                    <option value="" disabled>Select Subcategory</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="md:col-span-2 flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
+            <textarea name="description" required rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
+                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none"><%= product.description %></textarea>
+        </div>
+    </div>
+
+    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
+        <div class="mb-4">
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery</h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">Uploading fresh images will replace the entire active asset set layers. (Max 4 images)</p>
+        </div>
+
+        <div class="border-2 border-dashed border-gray-300 bg-white rounded-xl p-6 text-center transition hover:border-gray-400 group relative mb-4">
+            <input type="file" name="productImages" multiple accept="image/*" id="galleryInput" class="hidden" onchange="previewImages(this)">
+            
+            <label for="galleryInput" class="cursor-pointer flex flex-col items-center justify-center space-y-2 py-4">
+                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200">
+                    <i class="fas fa-images text-xl"></i>
+                </div>
+                <span class="text-xs font-bold text-gray-700">Click to upload replacement display pictures</span>
+                <span class="text-[10px] text-gray-400">Leave blank if you want to keep historical pictures untouched</span>
+            </label>
+        </div>
+
+        <div id="imagePreviewsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+            <% if (product.productImages && product.productImages.length > 0) { %>
+                <% product.productImages.forEach((img, idx) => { %>
+                    <div class="relative group aspect-square rounded-xl border border-gray-200 overflow-hidden bg-white historical-image-slot">
+                        <img src="<%= img %>" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">Active Slot <%= idx + 1 %></span>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants Workspaces</h3>
+                <p class="text-[11px] text-gray-400 mt-0.5">Adjust options metrics rows parameters to regenerate sizing and allocation prices matrices</p>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button type="button" onclick="addNewOptionRow()" class="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition shadow-xs flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fas fa-list text-gray-400"></i>
+                    <span>Add Standard Option</span>
+                </button>
+                <button type="button" onclick="openCustomVariantModal()" class="px-3 py-1.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fas fa-magic"></i>
+                    <span>Create Custom Variant</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="optionsContainer" class="space-y-4">
+            <div class="grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row">
+                <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
+                    <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type">
+                        <option value="Size">Size</option>
+                        <option value="Color">Color</option>
+                        <option value="Fabric">Fabric</option>
+                    </select>
+                </div>
+                <div class="col-span-8">
+                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+                </div>
+                <div class="col-span-1 text-center">
+                    <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm" id="combinationsCard">
+        <div class="bg-gray-50/80 px-6 py-4 border-b border-gray-200">
+            <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation Matrix</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" id="matrixTable">
+                <thead class="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50/30 border-b border-gray-200">
+                    <tr>
+                        <th class="py-3 px-6">Combination Properties</th>
+                        <th class="py-3 px-6 w-44">SKU Inventory Code</th>
+                        <th class="py-3 px-6 w-36 text-right">Price Value (₹)</th>
+                        <th class="py-3 px-6 w-32 text-center">Available Stock</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-gray-700 divide-y divide-gray-100" id="matrixTableBody">
+                    <% if (product.variants && product.variants.length > 0) { %>
+                        <% product.variants.forEach((v, index) => { %>
+                            <tr class="hover:bg-gray-50/50 transition historical-matrix-row">
+                                <td class="py-4 px-6 font-bold text-gray-900">
+                                    <span><%= v.name %></span>
+                                    <input type="hidden" name="variants[<%= index %>][name]" value="<%= v.name %>">
+                                </td>
+                                <td class="py-4 px-6">
+                                    <input type="text" name="variants[<%= index %>][sku]" value="<%= v.sku %>" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500">
+                                </td>
+                                <td class="py-4 px-6 text-right">
+                                    <div class="relative inline-block w-full">
+                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                                        <input type="number" name="variants[<%= index %>][price]" value="<%= v.price %>" required min="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500">
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <input type="number" name="variants[<%= index %>][stock]" value="<%= v.stock %>" required min="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500">
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-3">
+        <a href="/admin/products" class="px-5 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel changes</a>
+        <button type="submit" class="px-6 py-2.5 bg-[#8b3c3c] hover:bg-[#723131] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer">Update Product Live Catalog Unit</button>
+    </div>
+
+</form>
+
+<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
+        <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
+                <i class="fas fa-wand-magic-sparkles text-[#e78d8d]"></i>
+                <span>Custom Variant Rule</span>
+            </h3>
+            <button type="button" onclick="closeCustomVariantModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-5 space-y-4">
+            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed">
+                <strong>Guide:</strong> Create options that aren't size or color, like <strong>"Water Resistance"</strong> or <strong>"Sleeve Type"</strong>.
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1.5">Variant Parameter Identifier Label</label>
+                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500">
+            </div>
+        </div>
+        <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end space-x-2">
+            <button type="button" onclick="closeCustomVariantModal()" class="px-3 py-1.5 border border-gray-300 bg-white text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs">Inject Option Row</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let databaseCategories = [];
+    try {
+        const rawTextData = document.getElementById('rawServerCategories').value;
+        databaseCategories = JSON.parse(rawTextData || "[]");
+    } catch (error) {
+        console.error("Critical failure parsing category datasets:", error);
+    }
+
+    // 🔥 Dynamic Dropdown Filter Mechanism
+    function handleParentCategoryChange(historicalSubId = null) {
+        const activeGender = document.getElementById('parentCategory').value;
+        const subSelect = document.getElementById('subCategory');
+        
+        subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
+        const filteredMatches = databaseCategories.filter(cat => cat.gender === activeGender && cat.parentCategory !== null);
+
+        if (filteredMatches.length > 0) {
+            subSelect.disabled = false;
+            subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
+            subSelect.classList.add('bg-white', 'cursor-pointer');
+
+            filteredMatches.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat._id;
+                
+                const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
+                opt.innerText = parentName + " → " + cat.categoryName;
+                
+                // Pre-select if it matches historical document value data indices
+                if (historicalSubId && cat._id.toString() === historicalSubId.toString()) {
+                    opt.selected = true;
+                }
+                
+                subSelect.appendChild(opt);
+            });
+        } else {
+            subSelect.disabled = true;
+            subSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
+            subSelect.classList.remove('bg-white', 'cursor-pointer');
+            subSelect.innerHTML = '<option value="" disabled selected>No sub-categories configured</option>';
+        }
+    }
+
+    // 🚀 Auto-Trigger execution block on page lifecycle load to sync subcategory records
+    const initialSubId = document.getElementById('historicalSelectedSubId').value;
+    if (document.getElementById('parentCategory').value) {
+        handleParentCategoryChange(initialSubId);
+    }
+
+    // Live Upload Pictures Rendering Previews Sync
+    function previewImages(input) {
+        const previewContainer = document.getElementById('imagePreviewsContainer');
+        previewContainer.innerHTML = ''; 
+
+        if (input.files && input.files.length > 0) {
+            const filesCount = Math.min(input.files.length, 4);
+            for (let i = 0; i < filesCount; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = "relative group aspect-square rounded-xl border border-gray-200 overflow-hidden bg-white";
+                    imgWrapper.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">New Slot ' + (i + 1) + '</span></div>';
+                    previewContainer.appendChild(imgWrapper);
+                }
+                reader.readAsDataURL(input.files[i]);
+            }
+        }
+    }
+
+    // Option Row Allocations Engine
+    function addNewOptionRow() {
+        const container = document.getElementById('optionsContainer');
+        const row = document.createElement('div');
+        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
+        row.innerHTML = `
+            <div class="col-span-3">
+                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type">
+                    <option value="Size">Size</option>
+                    <option value="Color">Color</option>
+                    <option value="Fabric">Fabric</option>
+                </select>
+            </div>
+            <div class="col-span-8">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+            </div>
+            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>
+        `;
+        container.appendChild(row);
+    }
+
+    function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
+    function closeCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', false); }
+
+    function submitCustomVariantRow() {
+        const inputName = document.getElementById('customVariantInputName').value.trim();
+        if(!inputName) return alert("Please declare a custom parameter label.");
+        
+        const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
+        const container = document.getElementById('optionsContainer');
+        const row = document.createElement('div');
+        
+        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
+        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button></div>';
+        
+        container.appendChild(row);
+        closeCustomVariantModal();
+        document.getElementById('customVariantInputName').value = '';
+    }
+
+    function removeOptionRow(btn) {
+        btn.closest('.option-row').remove();
+        generateCombinationsMatrix();
+    }
+
+    function updateRowPlaceholders(select) {
+        const input = select.closest('.option-row').querySelector('.option-values');
+        if(select.value === 'Size') input.placeholder = "e.g., S, M, L, XL (separate entries with commas)";
+        if(select.value === 'Color') input.placeholder = "e.g., Red, Blue, Black (separate entries with commas)";
+        if(select.value === 'Fabric') input.placeholder = "e.g., Cotton, Denim, Linen (separate entries with commas)";
+        generateCombinationsMatrix();
+    }
+
+    function generateCombinationsMatrix() {
+        const rows = document.getElementsByClassName('option-row');
+        const baseName = document.getElementById('baseName').value.trim() || "PROD";
+        const brandName = document.getElementById('brandName').value.trim() || "DRSN";
+        let arraysToCombine = [];
+        
+        for (let row of rows) {
+            const rawValue = row.querySelector('.option-values').value;
+            const cleanValues = rawValue.split(',').map(v => v.trim()).filter(v => v !== '');
+            if(cleanValues.length > 0) arraysToCombine.push(cleanValues);
+        }
+
+        const matrixCard = document.getElementById('combinationsCard');
+        const tableBody = document.getElementById('matrixTableBody');
+
+        // If adjustments to inputs rows are initiated, wipe historical matrix to compile fresh Cartesian products
+        if(arraysToCombine.length > 0) {
+            tableBody.innerHTML = '';
+            if(rows.length !== arraysToCombine.length) return matrixCard.classList.add('hidden');
+            
+            let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+            if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]);
+
+            matrixCard.classList.remove('hidden');
+
+            combinations.forEach((combo, index) => {
+                const comboString = combo.join(' / ');
+                const generatedSkuSafe = brandName.substring(0,3).toUpperCase() + '-' + baseName.substring(0,3).toUpperCase() + '-' + combo.join('-').replace(/\s+/g, '').toUpperCase();
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50/50 transition";
+                tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
+                tableBody.appendChild(tr);
+            });
+        }
+    }
+
+    function toggleModalVisibility(modalId, contentId, shouldShow) {
+        const modal = document.getElementById(modalId);
+        const content = document.getElementById(contentId);
+        if(shouldShow) {
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+        } else {
+            modal.classList.add('opacity-0'); content.classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 200);
+        }
+    }
+
+    document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
+    document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
+</script>

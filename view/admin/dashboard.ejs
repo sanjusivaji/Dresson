@@ -1,0 +1,177 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-black tracking-tight">Dashboard</h1>
+        <p class="text-xs text-gray-400 mt-1">Real-time storefront overview data metrics analytics</p>
+    </div>
+    <div>
+        <select class="bg-white border border-gray-200 text-gray-700 text-xs font-semibold px-4 py-2 rounded-lg shadow-sm focus:outline-none focus:border-gray-400 cursor-pointer">
+            <option>Last 30 Days</option>
+            <option>This Year</option>
+            <option selected>Last 5 Years</option>
+        </select>
+    </div>
+</div>
+
+<div class="grid grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Total Sales</h3>
+        <p class="text-3xl font-bold text-gray-900">₹<%= stats.totalSales.toLocaleString('en-IN') %></p>
+    </div>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Total Orders</h3>
+        <p class="text-3xl font-bold text-gray-900"><%= stats.totalOrders %></p>
+    </div>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">Active Orders</h3>
+        <p class="text-3xl font-bold text-gray-900"><%= stats.activeOrders %></p>
+    </div>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-400 text-xs font-semibold mb-1 uppercase tracking-wider">New Users</h3>
+        <p class="text-3xl font-bold text-gray-900"><%= stats.newUsers %></p>
+    </div>
+</div>
+
+<div class="bg-white p-5 rounded-xl border border-gray-200 mb-8 shadow-sm">
+    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Actions</h2>
+    <div class="flex space-x-4">
+        <a href="/admin/products" class="px-5 py-2 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-semibold rounded-lg shadow-sm transition">Add New Product</a>
+        <a href="/admin/offers" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">Create Offer</a>
+        <a href="/admin/coupons" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">Create Coupon</a>
+    </div>
+</div>
+
+<div class="bg-white p-6 rounded-xl border border-gray-200 mb-8 shadow-sm">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-sm font-bold text-gray-800 tracking-tight">Sales Performance</h2>
+        <span class="text-sm font-bold text-[#6b66d6]">₹98,000.00 Total</span>
+    </div>
+    <div class="h-64 relative w-full">
+        <canvas id="salesPerformanceChart"></canvas>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 gap-8 mb-8">
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h2 class="text-sm font-bold text-gray-800 mb-5 tracking-tight">Top Selling Brands</h2>
+        <div class="space-y-4">
+            <% brands.forEach(brand => { %>
+                <div>
+                    <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                        <span><%= brand.name %></span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                        <div class="bg-[#6b66d6] h-full rounded-full transition-all" ></div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <h2 class="text-sm font-bold text-gray-800 mb-5 tracking-tight">Top Selling Categories</h2>
+        <div class="space-y-4">
+            <% categories.forEach(cat => { %>
+                <div>
+                    <div class="flex justify-between text-xs font-medium text-gray-600 mb-1.5">
+                        <span><%= cat.name %></span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                        <div class="bg-[#6b66d6] h-full rounded-full transition-all" ></div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mb-12">
+    <div class="p-5 border-b border-gray-100">
+        <h2 class="text-sm font-bold text-gray-800 tracking-tight">Product Performance Status</h2>
+    </div>
+    <table class="w-full text-left border-collapse">
+        <thead class="text-gray-400 text-xs font-semibold bg-gray-50/50 uppercase tracking-wider border-b border-gray-200">
+            <tr>
+                <th class="py-3 px-6 w-20">Image</th>
+                <th class="py-3 px-6">Product Name</th>
+                <th class="py-3 px-6">Category</th>
+                <th class="py-3 px-6 text-right">Price</th>
+                <th class="py-3 px-6 text-center">Quantity Sold</th>
+                <th class="py-3 px-6 text-right">Total Revenue</th>
+                <th class="py-3 px-6 text-center">Stock Left</th>
+                <th class="py-3 px-6">Last Sold Date</th>
+            </tr>
+        </thead>
+        <tbody class="text-sm text-gray-700 divide-y divide-gray-100">
+            <% products.forEach(prod => { %>
+                <tr class="hover:bg-gray-50/70 transition">
+                    <td class="py-3 px-6">
+                        <img src="<%= prod.image %>" alt="item" class="w-10 h-10 object-cover rounded-md border border-gray-200">
+                    </td>
+                    <td class="py-3 px-6 font-medium text-gray-900"><%= prod.name %></td>
+                    <td class="py-3 px-6 text-gray-500"><%= prod.category %></td>
+                    <td class="py-3 px-6 text-right font-medium">₹<%= prod.price.toLocaleString('en-IN') %></td>
+                    <td class="py-3 px-6 text-center font-semibold text-gray-900"><%= prod.sold %></td>
+                    <td class="py-3 px-6 text-right font-bold text-gray-900">₹<%= prod.revenue.toLocaleString('en-IN') %></td>
+                    <td class="py-3 px-6 text-center">
+                        <span class="px-2.5 py-1 text-xs rounded-full font-medium <%= prod.stock < 30 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-700' %>">
+                            <%= prod.stock %> units
+                        </span>
+                    </td>
+                    <td class="py-3 px-6 text-gray-400 text-xs">
+                        <%= String(new Date(prod.date).getDate()).padStart(2, '0') %>-<%= String(new Date(prod.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(prod.date).getFullYear() %>
+                        <i class="fas fa-arrow-trend-up text-green-500 ml-1"></i>
+                    </td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<div class="h-4"></div>
+
+<script>
+    const ctx = document.getElementById('salesPerformanceChart').getContext('2d');
+    
+    // Dynamic Chart instance matching your Figma vector line trends
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['2022', '2023', '2024', '2025', '2026'],
+            datasets: [{
+                label: 'Revenue Trend',
+                data: [15000, 45000, 28000, 75000, 98000],
+                borderColor: '#6b66d6',
+                backgroundColor: 'rgba(107, 102, 214, 0.04)',
+                borderWidth: 3,
+                tension: 0.38,
+                fill: true,
+                pointBackgroundColor: '#6b66d6',
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    grid: { color: '#f3f4f6' },
+                    ticks: {
+                        color: '#9ca3af',
+                        font: { size: 11 },
+                        callback: function(value) { return '₹' + value.toLocaleString(); }
+                    },
+                    border: { dash: [5, 5] }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af', font: { size: 11 } }
+                }
+            } 
+        }
+    });
+</script>

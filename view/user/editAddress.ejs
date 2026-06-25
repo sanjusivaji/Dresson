@@ -1,0 +1,93 @@
+<div class="w-full max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8">
+
+    <%- include('userSidebar') %>
+  
+    <main class="w-full flex-1">
+        
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-black">Edit Address</h1>
+            <a href="/profile/address" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-bold py-2 px-4 rounded-md transition shadow-sm">
+                Back to Address
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl max-w-2xl">
+            
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+                    Failed to save address modifications. Please try again.
+                </div>
+            <% } %>
+
+            <form action="/profile/address/edit/<%= address._id %>" method="POST" class="space-y-5">
+                
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-700 mb-1">Full Name</label>
+                    <input type="text" name="fullName" value="<%= address.fullName %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-700 mb-1">Phone Number</label>
+                    <input type="text" name="phone" value="<%= address.phone %>" required pattern="[0-9]{10,15}" class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-xs font-bold text-gray-700 mb-1">Street Address</label>
+                    <input type="text" name="streetAddress" value="<%= address.streetAddress %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col">
+                        <label class="text-xs font-bold text-gray-700 mb-1">City</label>
+                        <input type="text" name="city" value="<%= address.city %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="text-xs font-bold text-gray-700 mb-1">State</label>
+                        <input type="text" name="state" value="<%= address.state %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col">
+                        <label class="text-xs font-bold text-gray-700 mb-1">Pin Code</label>
+                        <input type="text" name="pinCode" value="<%= address.pinCode %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="text-xs font-bold text-gray-700 mb-1">Country</label>
+                        <input type="text" name="country" value="<%= address.country %>" required class="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 transition shadow-sm">
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4 pt-4">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="type" value="HOME" class="peer sr-only" <%= address.type === 'HOME' ? 'checked' : '' %> required>
+                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs rounded-sm peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800 transition">HOME</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="type" value="WORK" class="peer sr-only" <%= address.type === 'WORK' ? 'checked' : '' %>>
+                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs rounded-sm peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800 transition">WORK</div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="type" value="OTHER" class="peer sr-only" <%= address.type === 'OTHER' ? 'checked' : '' %>>
+                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs rounded-sm peer-checked:bg-gray-800 peer-checked:text-white peer-checked:border-gray-800 transition">OTHERS</div>
+                    </label>
+                </div>
+
+                <div class="flex justify-center items-center gap-2 pt-2 pb-4">
+                    <input type="checkbox" name="isDefault" id="isDefault" class="w-4 h-4 text-gray-800 focus:ring-gray-800 border-gray-300 rounded cursor-pointer" <%= address.isDefault ? 'checked' : '' %>>
+                    <label for="isDefault" class="text-sm font-bold text-gray-700 cursor-pointer">Make this Default</label>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button type="submit" class="bg-red-900 hover:bg-red-950 text-white font-bold py-2.5 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider">
+                        Save Address
+                    </button>
+                    <a href="/profile/address" class="bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+        </div>
+    </main>
+</div>

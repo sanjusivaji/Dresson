@@ -1,0 +1,286 @@
+<div class="flex justify-between items-start mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-black tracking-tight">Product Categories</h1>
+        <p class="text-xs text-gray-400 mt-1">Manage core collection classifications, tracking links, slugs, and active marketing offers.</p>
+    </div>
+    <a href="/admin/category/add" class="px-4 py-2 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span>Add New Category</span>
+    </a>
+</div>
+
+<% if (typeof error_msg !== 'undefined' && error_msg) { %>
+    <div class="bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-4 py-3 rounded-xl mb-6 flex items-center space-x-2 shadow-sm">
+        <i class="fas fa-exclamation-triangle text-sm"></i>
+        <span><%= error_msg %></span>
+    </div>
+<% } %>
+
+<div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+    <form action="/admin/categories" method="GET" id="searchForm" class="flex items-center space-x-3 w-1/2">
+        <div class="relative w-full">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search by name or gender target scope..." 
+                   class="w-full pl-10 pr-16 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-gray-50/50 shadow-inner">
+            
+            <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                <button type="button" onclick="clearSearchFilter()" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400 hover:text-red-600 font-bold transition">
+                    Clear
+                </button>
+            <% } %>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-700 transition shadow-sm">Search</button>
+    </form>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <table class="w-full text-left table-fixed border-collapse"> 
+        <thead class="text-gray-400 text-[10px] uppercase font-bold border-b border-gray-200 bg-gray-50/40 tracking-wider">
+            <tr>
+                <th class="py-4 px-6 w-1/4">Category details</th>
+                <th class="py-4 px-6 w-1/3">Hierarchy structural path</th>
+                <th class="py-4 px-6 w-1/5">URL Routing Slug</th>
+                <th class="py-4 px-6 text-center w-24">Status</th>
+                <th class="py-4 px-6 text-right w-44">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="text-sm divide-y divide-gray-100">
+            <% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+                <% categories.forEach(cat => { %>
+                    <tr class="hover:bg-gray-50/30 transition">
+                        
+                        <td class="py-4 px-6 font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-folder text-[#e78d8d] text-sm flex-shrink-0"></i>
+                                <span class="truncate"><%= cat.categoryName %></span>
+                            </div>
+                        </td>
+
+                        <td class="py-4 px-6 text-xs">
+                            <% if (cat.parentCategory) { %>
+                                <div class="flex flex-wrap items-center gap-1 text-gray-500 font-medium leading-relaxed">
+                                    <span class="bg-indigo-50 text-[#6b66d6] px-2 py-0.5 rounded text-[10px] font-bold uppercase"><%= cat.gender %></span>
+                                    <i class="fas fa-angle-right text-[10px] text-gray-400 mx-0.5"></i>
+                                    <span class="text-gray-700 font-semibold"><%= typeof cat.parentCategory === 'object' && cat.parentCategory !== null ? cat.parentCategory.categoryName : 'Main' %></span>
+                                    <i class="fas fa-angle-right text-[10px] text-gray-400 mx-0.5"></i>
+                                    <span class="text-gray-400 break-words"><%= cat.categoryName %></span>
+                                </div>
+                            <% } else { %>
+                                <div class="flex flex-wrap items-center gap-1 text-gray-500 font-medium">
+                                    <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase"><%= cat.gender %></span>
+                                    <i class="fas fa-layer-group text-[10px] text-gray-400 pl-1"></i>
+                                    <span class="text-emerald-700 font-bold text-[11px]">Primary Main Category</span>
+                                </div>
+                            <% } %>
+                        </td>
+
+                        <td class="py-4 px-6 text-xs font-mono text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
+                            /<%= cat.slug %>
+                        </td>
+
+                        <td class="py-4 px-6 text-center whitespace-nowrap">
+                            <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full <%= cat.isListed ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' %>">
+                                <%= cat.isListed ? 'Listed' : 'Unlisted' %>
+                            </span>
+                        </td>
+
+                        <td class="py-4 px-6 text-right whitespace-nowrap">
+                            <div class="flex items-center space-x-2 justify-end">
+                                
+                                <a href="/admin/category/edit/<%= cat._id %>" class="p-2 bg-gray-100 text-gray-600 hover:text-gray-950 hover:bg-gray-200 rounded-md transition text-xs inline-block shadow-xs" title="Edit Category">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <form action="/admin/category/toggle-list/<%= cat._id %>" method="POST" class="inline-block m-0">
+                                    <button type="submit" class="px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer <%= cat.isListed ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' %>">
+                                        <%= cat.isListed ? 'Unlist' : 'List' %>
+                                    </button>
+                                </form>
+
+                                <form action="/admin/category/delete/<%= cat._id %>" method="POST" class="inline-block m-0" 
+                                      onsubmit="return confirm('Are you sure you want to permanently delete this category? All hierarchy connections will break.');">
+                                    <button type="submit" class="p-2 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 border border-red-100 rounded-md transition text-xs inline-block shadow-xs cursor-pointer" title="Delete Category">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="5" class="py-16 text-center text-gray-400 font-medium bg-gray-50/10">No categories found matching your filter criteria.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<%- include('../partial/admin/pagination', { baseUrl: '/admin/categories', currentPage: currentPage, totalPages: totalPages }) %>
+<div class="h-12"></div> 
+
+<script>
+    function clearSearchFilter() {
+        window.location.href = "/admin/categories?page=1";
+    }
+</script>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories Management - Dresson Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800 font-sans flex flex-col h-screen overflow-hidden">
+
+    <header class="bg-[#e78d8d] text-white flex justify-between items-center px-6 py-3 shadow-sm z-20">
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-bars text-lg cursor-pointer"></i>
+            <span class="font-semibold text-lg tracking-wide">Dresson Admin</span>
+        </div>
+        <div class="flex items-center space-x-3 bg-white/20 px-4 py-1 rounded-full">
+            <i class="fas fa-user-circle text-xl"></i>
+            <span class="font-medium text-sm">Admin</span>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+    
+        <%- include('../partial/admin/sidebar', { activePage: 'category' }) %>
+
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-8">
+            
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-black tracking-tight">Product Categories</h1>
+                    <p class="text-xs text-gray-400 mt-1">Manage core collection classifications, tracking links, slugs, and active marketing offers.</p>
+                </div>
+                <a href="/admin/category/add" class="px-4 py-2 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add New Category</span>
+                </a>
+            </div>
+
+            <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                <div class="bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-4 py-3 rounded-xl mb-6 flex items-center space-x-2 shadow-sm">
+                    <i class="fas fa-exclamation-triangle text-sm"></i>
+                    <span><%= error_msg %></span>
+                </div>
+            <% } %>
+
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                <form action="/admin/categories" method="GET" id="searchForm" class="flex items-center space-x-3 w-1/2">
+                    <div class="relative w-full">
+                        <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search by name or gender target scope..." 
+                               class="w-full pl-10 pr-16 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-gray-50/50 shadow-inner">
+                        
+                        <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                            <button type="button" onclick="clearSearchFilter()" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400 hover:text-red-600 font-bold transition">
+                                Clear
+                            </button>
+                        <% } %>
+                    </div>
+                    <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-700 transition shadow-sm">Search</button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                <table class="w-full text-left table-fixed border-collapse"> <thead class="text-gray-400 text-[10px] uppercase font-bold border-b border-gray-200 bg-gray-50/40 tracking-wider">
+                        <tr>
+                            <th class="py-4 px-6 w-1/4">Category details</th>
+                            <th class="py-4 px-6 w-1/3">Hierarchy structural path</th>
+                            <th class="py-4 px-6 w-1/5">URL Routing Slug</th>
+                            <th class="py-4 px-6 text-center w-24">Status</th>
+                            <th class="py-4 px-6 text-right w-44">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100">
+                        <% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+                            <% categories.forEach(cat => { %>
+                                <tr class="hover:bg-gray-50/30 transition">
+                                    
+                                    <td class="py-4 px-6 font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-folder text-[#e78d8d] text-sm flex-shrink-0"></i>
+                                            <span class="truncate"><%= cat.categoryName %></span>
+                                        </div>
+                                    </td>
+
+                                    <td class="py-4 px-6 text-xs">
+                                        <% if (cat.parentCategory) { %>
+                                            <div class="flex flex-wrap items-center gap-1 text-gray-500 font-medium leading-relaxed">
+                                                <span class="bg-indigo-50 text-[#6b66d6] px-2 py-0.5 rounded RegalBadge text-[10px] font-bold uppercase"><%= cat.gender %></span>
+                                                <i class="fas fa-angle-right text-[10px] text-gray-400 mx-0.5"></i>
+                                                <span class="text-gray-700 font-semibold"><%= typeof cat.parentCategory === 'object' && cat.parentCategory !== null ? cat.parentCategory.categoryName : 'Main' %></span>
+                                                <i class="fas fa-angle-right text-[10px] text-gray-400 mx-0.5"></i>
+                                                <span class="text-gray-400 break-words"><%= cat.categoryName %></span>
+                                            </div>
+                                        <% } else { %>
+                                            <div class="flex flex-wrap items-center gap-1 text-gray-500 font-medium">
+                                                <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase"><%= cat.gender %></span>
+                                                <i class="fas fa-layer-group text-[10px] text-gray-400 pl-1"></i>
+                                                <span class="text-emerald-700 font-bold text-[11px]">Primary Main Category</span>
+                                            </div>
+                                        <% } %>
+                                    </td>
+
+                                    <td class="py-4 px-6 text-xs font-mono text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">
+                                        /<%= cat.slug %>
+                                    </td>
+
+                                    <td class="py-4 px-6 text-center whitespace-nowrap">
+                                        <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full <%= cat.isListed ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' %>">
+                                            <%= cat.isListed ? 'Listed' : 'Unlisted' %>
+                                        </span>
+                                    </td>
+
+                                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                                        <div class="flex items-center space-x-2 justify-end">
+                                            
+                                            <a href="/admin/category/edit/<%= cat._id %>" class="p-2 bg-gray-100 text-gray-600 hover:text-gray-950 hover:bg-gray-200 rounded-md transition text-xs inline-block shadow-xs" title="Edit Category">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                            <form action="/admin/category/toggle-list/<%= cat._id %>" method="POST" class="inline-block m-0">
+                                                <button type="submit" class="px-3 py-1.5 rounded-md text-xs font-bold shadow-xs transition cursor-pointer <%= cat.isListed ? 'bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200' %>">
+                                                    <%= cat.isListed ? 'Unlist' : 'List' %>
+                                                </button>
+                                            </form>
+
+                                            <form action="/admin/category/delete/<%= cat._id %>" method="POST" class="inline-block m-0" 
+                                                  onsubmit="return confirm('Are you sure you want to permanently delete this category? All hierarchy connections will break.');">
+                                                <button type="submit" class="p-2 bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 border border-red-100 rounded-md transition text-xs inline-block shadow-xs cursor-pointer" title="Delete Category">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="py-16 text-center text-gray-400 font-medium bg-gray-50/10">No categories found matching your filter criteria.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+            
+            <%- include('../partial/admin/pagination', { baseUrl: '/admin/categories', currentPage: currentPage, totalPages: totalPages }) %>
+            <div class="h-12"></div> 
+        </main> 
+    </div>
+
+    <script>
+        function clearSearchFilter() {
+            window.location.href = "/admin/categories?page=1";
+        }
+    </script>
+</body>
+</html> -->

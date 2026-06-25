@@ -1,0 +1,171 @@
+<div class="flex justify-between items-start mb-8">
+    <div>
+        <h1 class="text-3xl font-bold text-black tracking-tight">Products Catalog</h1>
+        <p class="text-xs text-gray-400 mt-1">Monitor product variants values, retail base prices, and absolute storage stocks levels</p>
+    </div>
+    <a href="/admin/products/add" class="px-4 py-2 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition flex items-center space-x-2">
+        <i class="fas fa-plus"></i>
+        <span>Add New Product</span>
+    </a>
+</div>
+
+<div class="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+    
+    <form action="/admin/products" method="GET" id="searchForm" class="flex items-center space-x-3 w-1/2">
+        <input type="hidden" name="category" id="hiddenCategoryInput" value="<%= typeof selectedCategory !== 'undefined' ? selectedCategory : '' %>">
+        
+        <div class="relative w-full">
+            <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search products by name or brand..." 
+                   class="w-full pl-10 pr-16 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-gray-50/50 shadow-inner">
+            
+            <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                <button type="button" onclick="clearSearchFilter()" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400 hover:text-red-600 font-bold transition">
+                    Clear
+                </button>
+            <% } %>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-700 transition shadow-sm">Search</button>
+    </form>
+
+    <div class="flex items-center space-x-2">
+        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Subcategory Filter:</label>
+        <select onchange="applyCategoryFilter(this.value)" class="bg-white border border-gray-200 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg shadow-sm focus:outline-none focus:border-gray-400 cursor-pointer transition">
+            <option value="">All Active Categories</option>
+            <% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+                <% categories.forEach(cat => { %>
+                    <option value="<%= cat._id %>" <%= (typeof selectedCategory !== 'undefined' && selectedCategory.toString() === cat._id.toString()) ? 'selected' : '' %>>
+                        <%= cat.gender %> → <%= cat.categoryName %>
+                    </option>
+                <% }) %>
+            <% } %>
+        </select>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+    <table class="w-full text-left border-collapse">
+        <thead class="text-gray-400 text-[10px] uppercase font-bold border-b border-gray-200 bg-gray-50/40 tracking-wider">
+            <tr>
+                <th class="py-4 px-6 w-20">Media</th>
+                <th class="py-4 px-6">Product Details</th>
+                <th class="py-4 px-6">Subcategory Classification</th>
+                <th class="py-4 px-6 text-right">Retail Base Price</th>
+                <th class="py-4 px-6 text-center">Available Volume</th>
+                <th class="py-4 px-6 text-center">Status</th>
+                <th class="py-4 px-6 w-24"></th>
+            </tr>
+        </thead>
+        <tbody class="text-sm divide-y divide-gray-100">
+            <% if (typeof products !== 'undefined' && products && products.length > 0) { %>
+                <% products.forEach(product => { %>
+                    <tr class="hover:bg-gray-50/30 transition">
+                        
+                        <td class="py-4 px-6">
+                            <div class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shadow-xs flex items-center justify-center">
+                                <% if (product.productImages && product.productImages.length > 0) { %>
+                                    <img src="<%= product.productImages[0] %>" alt="Product thumbnail" class="w-full h-full object-cover">
+                                <% } else { %>
+                                    <i class="fas fa-tshirt text-gray-300 text-lg"></i>
+                                <% } %>
+                            </div>
+                        </td>
+
+                        <td class="py-4 px-6">
+                            <span class="font-bold text-gray-900 block text-sm"><%= product.productName %></span>
+                            <span class="text-[11px] text-gray-400 block font-medium mt-0.5"><i class="fas fa-tag text-[9px] text-gray-300 mr-1"></i><%= product.brand || 'Dresson Original' %></span>
+                        </td>
+
+                        <td class="py-4 px-6 text-gray-600 font-medium">
+                            <% if (product.subCategory && typeof product.subCategory === 'object') { %>
+                                <div class="flex flex-col">
+                                    <span class="text-gray-800 font-bold text-xs"><%= product.subCategory.categoryName %></span>
+                                    <span class="text-[10px] text-gray-400 tracking-wide font-normal mt-0.5 uppercase"><%= product.parentCategory || product.subCategory.gender %></span>
+                                </div>
+                            <% } else { %>
+                                <span class="text-gray-400 italic text-xs">Uncategorized Legacy Data</span>
+                            <% } %>
+                        </td>
+
+                        <td class="py-4 px-6 text-right font-bold text-gray-900">
+                            <% 
+                                let displayPrice = 0;
+                                if (product.variants && product.variants.length > 0) {
+                                    displayPrice = product.variants[0].price; 
+                                } else if (product.price) {
+                                    displayPrice = product.price; 
+                                }
+                            %>
+                            ₹<%= typeof displayPrice === 'number' ? displayPrice.toLocaleString('en-IN') : displayPrice %>
+                        </td>
+
+                        <td class="py-4 px-6 text-center">
+                            <% 
+                                let currentStock = product.totalStock !== undefined ? product.totalStock : (product.stock || 0); 
+                                let MatildaStockCount = 0;
+                                if (product.variants && product.variants.length > 0) {
+                                    currentStock = product.variants.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0);
+                                }
+                            %>
+                            <% if (currentStock === 0) { %>
+                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-red-50 text-red-600 border border-red-100">Out of stock</span>
+                            <% } else if (currentStock <= 10) { %>
+                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">Low Stock (<%= currentStock %>)</span>
+                            <% } else { %>
+                                <span class="text-xs text-gray-600 font-bold"><%= currentStock %> <span class="text-gray-400 font-normal">units</span></span>
+                            <% } %>
+                        </td>
+
+                        <td class="py-4 px-6 text-center">
+                            <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full <%= product.isListed ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' %>">
+                                <%= product.isListed ? 'Listed' : 'Unlisted' %>
+                            </span>
+                        </td>
+
+                        <td class="py-4 px-6 text-right whitespace-nowrap">
+                            <div class="flex items-center space-x-2 justify-end">
+                                <a href="/admin/products/edit/<%= product._id %>" class="p-1.5 bg-gray-100 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-200 transition text-xs" title="Edit Inventory Unit">
+                                    <i class="fas fa-edit px-0.5"></i>
+                                </a>
+                                <form action="/admin/products/toggle-list/<%= product._id %>" method="POST" class="inline m-0">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-md text-xs font-semibold shadow-xs transition cursor-pointer <%= product.isListed ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100' %>">
+                                        <%= product.isListed ? 'Unlist' : 'List' %>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="7" class="py-16 text-center text-gray-400 font-medium bg-gray-50/10">No product inventory units matched your filters configuration.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<%- include('../partial/admin/pagination', { baseUrl: '/admin/products', currentPage: currentPage, totalPages: totalPages }) %>
+
+<div class="h-12"></div> 
+
+<script>
+    function applyCategoryFilter(categoryId) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (categoryId) {
+            urlParams.set('category', categoryId);
+        } else {
+            urlParams.delete('category');
+        }
+        urlParams.set('page', 1); // Reset back to pagination index row 1
+        window.location.search = urlParams.toString();
+    }
+
+    function clearSearchFilter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('search');
+        urlParams.set('page', 1);
+        window.location.search = urlParams.toString();
+    }
+</script>
+

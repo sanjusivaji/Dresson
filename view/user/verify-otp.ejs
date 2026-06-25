@@ -1,0 +1,73 @@
+<div class="bg-[#1a1a1a] w-full flex-1 flex items-center justify-center p-4">
+
+    <div class="bg-[#f2f2f2] w-full max-w-lg p-12 flex flex-col items-center rounded-xl shadow-lg relative">        
+        <h2 class="text-gray-500 text-sm font-bold tracking-widest mb-6 uppercase">Enter OTP Here</h2>
+        
+        <form action="/verify-otp" method="POST" id="otpForm" class="w-full flex flex-col items-center">          
+            <div class="flex justify-center gap-2 mb-8 w-full sm:gap-3">
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+                <input type="text" maxlength="1" class="otp-input w-10 sm:w-12 h-14 text-center text-2xl font-bold bg-[#e0e0e0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition" required>
+            </div>
+            <input type="hidden" name="otp" id="fullOtp">       <button type="submit" class="bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3.5 px-16 rounded-xl transition shadow-sm w-3/4 mb-6 cursor-pointer">
+                Confirm
+            </button>
+        </form> 
+
+        <div class="text-center font-bold text-sm">
+            <span id="timerWrapper" class="text-[#b34f4f]">     Resend OTP in <span id="timer">03:00</span>       </span>
+            <a href="/resend-otp" id="resendLink" class="text-[#208b59] hover:underline hidden cursor-pointer">   Resend OTP Now
+            </a>
+            <p class="text-[10px] text-gray-400 mt-1 font-normal tracking-wide">It is a counter</p>
+        </div>
+    </div> 
+
+</div>
+
+<script>     
+    const displayTime = document.getElementById('timer');         // id="timer" for display the changing/ reducing time
+    const timerWrapper = document.getElementById('timerWrapper'); // id="timerWrapper" for 'hide' the 'timer' when reach time at '0' second  
+    const resendLink = document.getElementById('resendLink');     // id="resendLink" for make visible the 'Resend OTP Now' link when timer reached '0'
+
+    // For 'count down' of timer in 'OTP' page
+    let timeLeft = 180;                                    // For '180' seconds or '3' minutes time left  
+    const countdown = setInterval(() => {
+        const minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;          
+        seconds = seconds < 10 ? '0' + seconds : seconds;  // Add '0' before the 'number', if seconds are 'below' 10(ie '09,08 etc')
+         displayTime.textContent = `0${minutes}:${seconds}`;
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            timerWrapper.classList.add('hidden');         // 'hidden' is the 'built-in' class of 'tailwind css'
+            resendLink.classList.remove('hidden');
+        }
+        timeLeft -= 1;
+    }, 1000);
+
+   // For 'move' forward and backward the cursor
+    const inputs = document.querySelectorAll('.otp-input');           // 'otp-input' 'class' for retrieve each '<input>' data and we should use '.' when use 'querySelector()' or 'querySelectorAll()'        
+    inputs.forEach((item, index) => {                                 // It is for 'move' 'forward' when 'typing',ie 'input' 'event' trigger when type 'data' in '<input>' 
+        item.addEventListener('input', (event) => {
+            event.target.value = event.target.value.replace(/[^0-9]/g, '');  // 'Ensure' only 'numbers' are typed ie replace() is the string method and if we type a character instead '0 to 9' numbers it replace with 'empty' string.
+            if (event.target.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });            
+        item.addEventListener('keydown', (event) => {                // It is for 'move backward' when pressing 'Backspace' key ie 'keydown' 'event' triggers when 'press' any key and in below 'event.key === 'Backspace' checks the 'key' is 'Backspace' and '!event.target.value' checks 'current' input column has 'no' value and 'index' should be greater than '0'(ie 'index > 0')then it focus on 'previous' index(ie 'inputs[index - 1].focus()')
+            if (event.key === 'Backspace' && !event.target.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+
+     // For 'acquire' all 'input' number into one
+     let formData = document.getElementById('otpForm')
+     formData.addEventListener('submit', function(event) { 
+        let otpString = '';
+        inputs.forEach(item => otpString += item.value);
+        document.getElementById('fullOtp').value = otpString;      // Ie 'browser' took data  inside '<form>' element,only with 'name' attribute(ie 'name="otp"),when submit the 'form', and this '<input>' is 'invisible'(ie 'type="hidden' in '<form>')and we assign into 'fullOtp'(ie 'id' of 'hidden' '<input>')as 'otpString'(ie 'accumulated' '6' values into string), when 'click' the 'submit' event.
+    });
+</script>

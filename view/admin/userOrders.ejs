@@ -1,0 +1,85 @@
+<div class="flex justify-center items-start w-full">
+    <div class="bg-white w-full max-w-4xl p-10 rounded-xl shadow-sm border border-gray-200 relative">
+        
+        <a href="/admin/users" class="absolute top-10 right-10 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+            Back To Customer
+        </a>
+
+        <h1 class="text-3xl font-bold text-black mb-8">User Orders</h1>
+
+        <div class="flex justify-between items-center mb-6">
+            
+            <div class="flex space-x-4">
+                <% const statuses = ['All', 'Processing', 'Shipped', 'Delivered', 'Cancelled']; %>
+                <% statuses.forEach(status => { %>
+                    <a href="?status=<%= status %><%= (typeof searchQuery !== 'undefined' && searchQuery) ? '&search=' + searchQuery : '' %>" 
+                       class="text-sm font-bold px-4 py-1.5 rounded-full transition-all duration-150 
+                       <%= (typeof currentStatus !== 'undefined' && currentStatus === status) ? 'bg-gray-200 border border-gray-300 text-black shadow-inner' : 'text-gray-600 hover:bg-gray-100' %>">
+                        <%= status %>
+                    </a>
+                <% }) %>
+            </div>
+
+            <form action="" method="GET" class="relative">
+                <input type="hidden" name="status" value="<%= typeof currentStatus !== 'undefined' ? currentStatus : 'All' %>">
+                <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search By Order ID or Item..." 
+                       class="border border-gray-300 rounded-md px-4 py-2 text-sm w-72 focus:outline-none focus:border-gray-400 shadow-sm bg-gray-50/20">
+            </form>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm mb-6">
+            <table class="w-full text-center border-collapse">
+                <thead class="text-gray-500 text-xs border-b border-gray-200 bg-gray-50/50">
+                    <tr>
+                        <th class="py-4 px-4 font-semibold">Order ID</th>
+                        <th class="py-4 px-4 font-semibold">Date</th>
+                        <th class="py-4 px-4 font-semibold">Amount</th>
+                        <th class="py-4 px-4 font-semibold">Delivery Status</th>
+                        <th class="py-4 px-4 font-semibold">Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    <% if (typeof orders !== 'undefined' && orders && orders.length > 0) { %>
+                        <% orders.forEach(order => { %>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition">
+                                <td class="py-4 px-4 text-gray-500 font-mono text-xs font-semibold"><%= order.orderId %></td>
+                                
+                                <td class="py-4 px-4 text-gray-600">
+                                    <%= String(new Date(order.createdAt).getDate()).padStart(2, '0') %>-<%= String(new Date(order.createdAt).getMonth() + 1).padStart(2, '0') %>-<%= new Date(order.createdAt).getFullYear() %>
+                                </td>
+                                
+                                <td class="py-4 px-4 font-bold text-gray-900">₹<%= order.totalAmount.toLocaleString('en-IN') %></td>
+                                
+                                <% 
+                                    let statusColor = "text-gray-600 bg-gray-50 border-gray-200";
+                                    if(order.deliveryStatus === 'Shipped') statusColor = "text-blue-600 bg-blue-50/50 border-blue-100";
+                                    if(order.deliveryStatus === 'Delivered') statusColor = "text-green-700 bg-green-50 border-green-100";
+                                    if(order.deliveryStatus === 'Processing') statusColor = "text-orange-600 bg-orange-50/50 border-orange-100";
+                                    if(order.deliveryStatus === 'Cancelled') statusColor = "text-red-600 bg-red-50 border-red-100";
+                                %>
+                                <td class="py-4 px-4">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold border <%= statusColor %>">
+                                        <%= order.deliveryStatus %>
+                                    </span>
+                                </td>
+                                
+                                <td class="py-4 px-4 text-gray-600 font-medium"><%= order.paymentMethod %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="5" class="py-12 text-center text-gray-400 font-medium bg-gray-50/10">No order logs matched your active filter selections.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <%- include('../partial/admin/pagination', { 
+            baseUrl: typeof baseUrl !== 'undefined' ? baseUrl : '', 
+            currentPage: currentPage, 
+            totalPages: totalPages 
+        }) %>
+
+    </div>
+</div>

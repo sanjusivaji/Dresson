@@ -1,0 +1,62 @@
+<% 
+  // Hide header + sidebar for login page
+  locals.hideNavigation = true; 
+  locals.pageTitle = "Admin Login - Dresson";
+%>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-900">
+    <div class="bg-white p-10 rounded-2xl w-full max-w-md shadow-2xl">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800">Welcome, Admin</h2>
+            <p class="text-gray-500 mt-2">Sign in to access dashboard</p>
+        </div>
+        
+        <form action="/admin/login" method="POST" class="space-y-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Email</label>
+                <input 
+                    type="email" 
+                    name="email" 
+                    required 
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Password</label>
+                <div class="relative">
+                    <input 
+                        type="password" 
+                        name="password" 
+                        id="password" 
+                        required 
+                        class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition">
+                    <i id="togglePassword" 
+                       class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600 text-lg">
+                    </i>
+                </div>
+            </div>
+            
+            <button 
+                type="submit" 
+                class="w-full bg-[#2e7d32] hover:bg-[#225c25] text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-sm">
+                Login
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const toggle = document.getElementById('togglePassword');
+    const pwd = document.getElementById('password');
+    
+    toggle.addEventListener('click', () => {
+        const isPassword = pwd.type === 'password';
+        pwd.type = isPassword ? 'text' : 'password';
+        toggle.classList.toggle('fa-eye');
+        toggle.classList.toggle('fa-eye-slash');
+    });
+</script>
+
+
+
+

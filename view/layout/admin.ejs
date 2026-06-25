@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= locals.pageTitle || 'Dresson Admin Dashboard' %></title>
+    
+    <link rel="stylesheet" href="/css/output.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800 font-sans flex flex-col h-screen overflow-hidden">
+
+    <% if (!locals.hideNavigation) { %>
+        <header class="bg-[#e78d8d] text-white flex justify-between items-center px-6 py-3 shadow-sm z-20">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-bars text-lg cursor-pointer"></i>
+                <span class="font-semibold text-lg tracking-wide">Dresson Admin</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/20 px-4 py-1 rounded-full">
+                <i class="fas fa-user-circle text-xl"></i>
+                <span class="font-medium text-sm">Admin</span>
+            </div>
+        </header>
+    <% } %>
+
+    <div class="flex flex-1 overflow-hidden">
+    
+        <% if (!locals.hideNavigation) { %>
+            <%- include('../partial/admin/sidebar', { activePage: locals.activePage || '' }) %>
+        <% } %>
+
+        <main class="flex-1 overflow-y-auto bg-white <%= locals.hideNavigation ? '' : 'p-8' %>">
+            
+            <%- body %>
+
+        </main> 
+    </div>
+
+</body>
+</html>
+

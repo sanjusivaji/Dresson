@@ -1,0 +1,194 @@
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-black tracking-tight">Users</h1>
+    <p class="text-xs text-gray-400 mt-1">View, Filter and Manage customer accounts</p>
+</div>
+
+<div class="grid grid-cols-3 gap-8 mb-10 w-3/4">
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Total Users</h3>
+        <p class="text-4xl font-bold text-gray-900"><%= (typeof stats !== 'undefined' && stats.totalUsers) ? stats.totalUsers : 0 %></p>
+    </div>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-500 text-sm font-medium mb-1">Active Users</h3>
+        <p class="text-4xl font-bold text-gray-900"><%= (typeof stats !== 'undefined' && stats.activeUsers) ? stats.activeUsers : 0 %></p>
+    </div>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 text-center shadow-sm">
+        <h3 class="text-gray-400 text-sm font-medium mb-1">New Users <span class="text-[10px] block font-normal">(last 30 days)</span></h3>
+        <p class="text-4xl font-bold text-gray-900">495</p>
+    </div>
+</div>
+
+<div class="flex justify-between items-end mb-6">
+    <div class="space-y-5">
+        
+        <form action="/admin/users" method="GET" id="searchForm" class="flex items-center space-x-3">
+            <input type="hidden" name="status" value="<%= typeof selectedStatus !== 'undefined' ? selectedStatus : 'All' %>">
+            
+            <div class="relative flex items-center">
+                <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search by name or email..." class="border border-gray-300 rounded-lg px-4 py-2 text-sm w-80 focus:outline-none focus:border-gray-400 shadow-sm pr-16">
+                
+                <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                    <button type="button" onclick="clearSearchFilter()" class="absolute right-3 text-xs text-red-400 hover:text-red-600 transition font-medium">
+                        Clear
+                    </button>
+                <% } %>
+            </div>
+            
+            <button type="submit" class="px-4 py-2 bg-gray-800 text-white text-xs font-semibold rounded-lg hover:bg-gray-700 transition shadow-sm">Search</button>
+        </form>
+        
+        <div class="flex space-x-3">
+            <button onclick="applyStatusFilter('All')" class="px-5 py-1 text-xs font-semibold rounded-full transition-all duration-200 <%= (typeof selectedStatus !== 'undefined' && selectedStatus === 'All') ? 'bg-[#d77878] text-white shadow-sm' : 'border border-gray-300 text-black hover:bg-gray-50' %>">
+                All
+            </button>
+            <button onclick="applyStatusFilter('Active')" class="px-5 py-1 text-xs font-semibold rounded-full transition-all duration-200 <%= (typeof selectedStatus !== 'undefined' && selectedStatus === 'Active') ? 'bg-[#d77878] text-white shadow-sm' : 'border border-gray-300 text-black hover:bg-gray-50' %>">
+                Active
+            </button>
+            <button onclick="applyStatusFilter('InActive')" class="px-5 py-1 text-xs font-semibold rounded-full transition-all duration-200 <%= (typeof selectedStatus !== 'undefined' && selectedStatus === 'InActive') ? 'bg-[#d77878] text-white shadow-sm' : 'border border-gray-300 text-black hover:bg-gray-50' %>">
+                InActive
+            </button>
+            <button onclick="applyStatusFilter('Blocked')" class="px-5 py-1 text-xs font-semibold rounded-full transition-all duration-200 <%= (typeof selectedStatus !== 'undefined' && selectedStatus === 'Blocked') ? 'bg-[#d77878] text-white shadow-sm' : 'border border-gray-300 text-black hover:bg-gray-50' %>">
+                Blocked
+            </button>
+        </div>
+    </div>
+    
+    <div class="flex space-x-6">
+        <div class="flex flex-col">
+            <div class="flex justify-between items-center mb-1.5">
+                <label class="text-xs font-bold text-black">Filter By Joining Date</label>
+                <% if (typeof joiningDate !== 'undefined' && joiningDate) { %>
+                    <button onclick="clearDateFilter('joiningDate')" class="text-[10px] text-red-500 hover:underline">Clear</button>
+                <% } %>
+            </div>
+            <div class="relative">
+                <input type="date" id="joiningDateFilter" onchange="applyDateFilter('joiningDate', this.value)" 
+                       value="<%= typeof joiningDate !== 'undefined' ? joiningDate : '' %>"
+                       class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 shadow-sm w-48">
+            </div>
+        </div>
+
+        <div class="flex flex-col">
+            <div class="flex justify-between items-center mb-1.5">
+                <label class="text-xs font-bold text-black">Filter By LoggedIn Date</label>
+                <% if (typeof loginDate !== 'undefined' && loginDate) { %>
+                    <button onclick="clearDateFilter('loginDate')" class="text-[10px] text-red-500 hover:underline">Clear</button>
+                <% } %>
+            </div>
+            <input type="date" id="loginDateFilter" onchange="applyDateFilter('loginDate', this.value)" 
+                   value="<%= typeof loginDate !== 'undefined' ? loginDate : '' %>"
+                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-gray-400 shadow-sm w-48">
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm mt-4">
+    <table class="w-full text-left border-collapse">
+        <thead class="text-gray-500 text-xs border-b border-gray-200 bg-gray-50/30">
+            <tr>
+                <th class="py-4 px-6 font-semibold w-16">Users</th>
+                <th class="py-4 px-6 font-semibold">Name</th>
+                <th class="py-4 px-6 font-semibold">Email</th>
+                <th class="py-4 px-6 font-semibold">Joined Date</th>
+                <th class="py-4 px-6 font-semibold text-center">Orders</th>
+                <th class="py-4 px-6 font-semibold">Status</th>
+                <th class="py-4 px-6 font-semibold"></th>
+            </tr>
+        </thead>
+        <tbody class="text-sm">
+            <% if (typeof users !== 'undefined' && users && users.length > 0) { %>
+                <% users.forEach(user => { %>
+                    <tr class="border-b border-gray-100 hover:bg-gray-50/50 transition">
+                        <td class="py-3 px-6">
+                            <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-300">
+                                <img src="https://ui-avatars.com/api/?name=<%= user.firstName %>+<%= user.lastName %>&background=e2e8f0&color=475569" alt="User" class="w-full h-full object-cover">
+                            </div>
+                        </td>
+                        <td class="py-3 px-6 font-medium text-gray-800"><%= user.firstName %> <%= user.lastName %></td>
+                        <td class="py-3 px-6 text-gray-500"><%= user.email %></td>
+                        
+                        <td class="py-3 px-6 text-gray-500">
+                            <%= String(new Date(user.createdAt).getDate()).padStart(2, '0') %>-<%= String(new Date(user.createdAt).getMonth() + 1).padStart(2, '0') %>-<%= new Date(user.createdAt).getFullYear() %>
+                        </td>
+                        
+                        <td class="py-3 px-6 text-center text-gray-600"><%= user.orderCount || 0 %></td>
+                        
+                        <td class="py-3 px-6">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full <%= user.status === 'Blocked' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700' %>">
+                                <%= user.status || 'Active' %>
+                            </span>
+                        </td>
+                        
+                        <td class="py-3 px-6 text-right space-x-1 whitespace-nowrap">
+                            <form action="/admin/users/<%= user._id %>/toggle-block" method="POST" class="inline">
+                                <button type="submit" class="px-4 py-1.5 rounded-md text-white text-xs font-semibold shadow-sm transition
+                                    <%= user.status === 'Blocked' ? 'bg-[#7a1818] hover:bg-red-900' : 'bg-[#e54545] hover:bg-red-600' %>">
+                                    <%= user.status === 'Blocked' ? 'Unblock' : 'Block' %>
+                                </button>
+                            </form>
+                            
+                            <a href="/admin/users/<%= user._id %>" class="px-3 py-1.5 bg-gray-100 rounded-md text-gray-500 text-xs font-semibold hover:bg-gray-200 transition inline-block">Profile</a>
+                            <a href="/admin/users/<%= user._id %>/orders" class="inline-block">
+                                <button class="px-3 py-1.5 bg-gray-100 rounded-md text-gray-500 text-xs font-semibold hover:bg-gray-200 transition">Orders</button>
+                            </a>
+                            <a href="/admin/users/<%= user._id %>/transactions" class="inline-block">
+                                <button class="px-3 py-1.5 bg-gray-100 rounded-md text-gray-500 text-xs font-semibold hover:bg-gray-200 transition">Transactions</button>
+                            </a>
+                        </td>
+                    </tr>
+                <% }) %>
+            <% } else { %>
+                <tr>
+                    <td colspan="7" class="py-12 text-center text-gray-400 font-medium bg-gray-50/10">No users found matching current tracking filters.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<%- include('../partial/admin/pagination', { baseUrl: '/admin/users', currentPage: currentPage, totalPages: totalPages }) %>
+
+<div class="h-12"></div> 
+
+<script>
+    // Triggered when a status segmentation tab is clicked
+    function applyStatusFilter(status) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('status', status);
+        
+        // Wipes conflicting active string queries to completely prevent stuck "gau" or character results locks
+        urlParams.delete('search');
+        
+        urlParams.set('page', 1); 
+        window.location.search = urlParams.toString();
+    }
+
+    // Triggered when an input calendar select value is chosen
+    function applyDateFilter(filterType, dateValue) {
+        if (!dateValue) return;
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set(filterType, dateValue);
+        
+        // Also cleans out active text searches when a date query filter takes prioritization
+        urlParams.delete('search');
+        
+        urlParams.set('page', 1);
+        window.location.search = urlParams.toString();
+    }
+
+    // Triggered when a clear button widget next to calendar items is clicked
+    function clearDateFilter(filterType) {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete(filterType);
+        urlParams.set('page', 1);
+        window.location.search = urlParams.toString();
+    }
+
+    // Triggered explicitly when the clear link inside the name search text bar is clicked
+    function clearSearchFilter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.delete('search');
+        urlParams.set('page', 1);
+        window.location.search = urlParams.toString();
+    }
+</script>

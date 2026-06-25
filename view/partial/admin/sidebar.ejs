@@ -1,0 +1,68 @@
+<div class="bg-primary-violet hidden"></div>
+
+<aside class="w-64 bg-white border-r border-gray-100 flex flex-col py-6 overflow-y-auto z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+    <nav class="space-y-1.5 px-4 flex-1">
+        
+        <a href="/admin/dashboard" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'dashboard' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Dashboard
+        </a>
+
+        <a href="/admin/products" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'products' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Products
+        </a>
+
+        <a href="/admin/categories" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'categories' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Categories
+        </a>
+
+        <a href="/admin/users" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'users' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Users
+        </a>
+
+        <a href="/admin/orders" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'orders' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Orders
+        </a>
+
+        <a href="/admin/returns" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'returns' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Order Returns
+        </a>
+
+        <a href="/admin/coupons" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'coupons' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Coupons
+        </a>
+
+        <a href="/admin/offers" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'offers' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Offers
+        </a>
+
+        <a href="/admin/analytics" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'analytics' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Analytics
+        </a>
+
+        <a href="/admin/banners" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'banners' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Banner
+        </a>
+
+        <a href="/admin/settings" class="block px-5 py-2.5 text-sm font-semibold transition-all duration-200 rounded-full
+            <%= activePage === 'settings' ? 'bg-indigo-400 text-white shadow-sm' : 'text-gray-700 hover:text-black hover:bg-gray-50' %>">
+            Settings
+        </a>
+
+    </nav>
+
+    <div class="px-4 mt-8 mb-4">
+        <a href="/admin/logout" class="block px-5 py-2 text-sm font-semibold text-[#FF6B6B] hover:text-white hover:bg-[#FF6B6B] rounded-full transition-all duration-200">
+            Logout
+        </a>
+    </div>
+</aside>
