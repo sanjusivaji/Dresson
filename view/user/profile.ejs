@@ -1,9 +1,7 @@
 <%- include('../partial/user/header') %>
 
 <div class="flex flex-col md:flex-row gap-6 w-full">
-
     <%- include('userSidebar') %>
-
     <div class="flex-grow flex flex-col lg:flex-row gap-8 bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm">
         <div class="space-y-8 flex-grow max-w-2xl">
             <h2 class="text-2xl font-bold tracking-tight text-gray-900">Profile</h2>
@@ -100,14 +98,12 @@
             </div>
             <div>
                 <h4 class="text-sm font-bold text-gray-800"><%= user.firstName %> <%= user.lastName %></h4>
-                
-                <input type="file" id="profileImageInput" accept="image/*" class="hidden">
+                <input type="file" name="avatar" id="profileImageInput" accept="image/*" class="hidden">          
                 <button type="button" id="editProfilePicBtn" class="text-[11px] font-semibold text-gray-400 hover:text-gray-600 transition underline mt-1">
                     Edit Profile Picture
                 </button>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -191,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const eyeIcon = document.getElementById('eyeIcon');
     let countdownInterval;
 
-    // 1. Password Eye Toggle Action Listener
+    //  For 'eye toggle' in 'password'
     if (passwordToggleBtn && passwordInput && eyeIcon) {
         passwordToggleBtn.addEventListener('click', () => {
             if (passwordInput.type === 'password') {
@@ -204,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🛠️ Task 3: Profile Picture Upload Interceptor logic
+    //  Profile Picture Upload Interceptor logic
     const editProfilePicBtn = document.getElementById('editProfilePicBtn');
     const profileImageInput = document.getElementById('profileImageInput');
     const avatarImg = document.getElementById('avatarImg');
@@ -215,10 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         profileImageInput.addEventListener('change', async (e) => {
             const imageFile = e.target.files[0];
             if (!imageFile) return;
-
             const packetData = new FormData();
             packetData.append('profileImage', imageFile);
-
             try {
                 const uploadRequest = await fetch('/profile/update-avatar', {
                     method: 'POST',
@@ -308,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Step 2 Authentication Token Verification Loop
+    // Authentication Token Verification Loop
     document.getElementById('verifyOtpBtn').addEventListener('click', async () => {
         let combinedOtp = "";
         otpBoxes.forEach(box => combinedOtp += box.value);
@@ -354,7 +348,6 @@ eyeToggleButtons.forEach(button => {
 });
 
 
-// Put this inside your DOMContentLoaded listener loop in profile.ejs
 const passwordForm = document.getElementById('passwordForm');
 const passwordFormError = document.getElementById('passwordFormError');
 
@@ -367,7 +360,7 @@ if (passwordForm) {
         passwordFormError.classList.add('hidden');
         passwordFormError.innerText = "";
 
-        // 1. Structural Strength Pattern Validation Checking (Matches your signup regex exactly!)
+        // Structural Strength Pattern Validation Checking (Matches your signup regex exactly!)
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_'])[A-Za-z\d@$!%*?&_']{8,}$/;
         if (!passwordRegex.test(newPasswordValue)) {
             e.preventDefault(); // Stop form submission execution paths
@@ -376,7 +369,7 @@ if (passwordForm) {
             return;
         }
 
-        // 2. Matching Confirmation Checking
+        // Matching Confirmation Checking
         if (newPasswordValue !== confirmPasswordValue) {
             e.preventDefault();
             passwordFormError.innerText = "Passwords do not match!";

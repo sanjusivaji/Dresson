@@ -1,5 +1,5 @@
 export const PROFILE_CONFIG = {
-    EMAIL_OTP_EXPIRY_MS: 5 * 60 * 1000 // 5 Minutes
+    EMAIL_OTP_EXPIRY_MS: 3 * 60 * 1000 // 3 Minutes
 };
 
 export const PROFILE_REGEX = {

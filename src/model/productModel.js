@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// 1. Structural Sub-Schema definitions for internal item variations
 const variantSchema = new mongoose.Schema({
     name: { 
         type: String, 
@@ -65,9 +64,6 @@ const productSchema = new mongoose.Schema({
         default: true 
     }
 }, { timestamps: true });
-
-// Secondary index tracking optimization for searching subdocument configurations
-//productSchema.index({ "variants.sku": 1 });
 
 export default mongoose.model('Product', productSchema);
 

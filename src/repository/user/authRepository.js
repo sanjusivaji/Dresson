@@ -14,5 +14,5 @@ export const createNewUser = async (userData) => {
 };
 
 export const updateUserById = async (id, updateFields) => {
-    return await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
+    return await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true }); // '{ new: true }' ensure the the field 'up to date' when changing the field and value.
 };

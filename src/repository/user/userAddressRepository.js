@@ -21,7 +21,7 @@ export const findAddressById = async (addressId) => {
 
 // For 'edit' address
 export const updateAddressById = async (addressId, updateData) => {
-    return await Address.findByIdAndUpdate(addressId, { $set: updateData }, { returnDocument: 'after' });  // Changed { new: true } to { returnDocument: 'after' }
+    return await Address.findByIdAndUpdate(addressId, { $set: updateData }, { returnDocument: 'after' });  // Here '{returnDocument:'after'}' used for retrieve 'latest' data from data base and we can also use it with 'findOneAndReplace()', 'findOneAndUpdate()' etc and we can use '{ new: true }' instead(same result)
 };
 
 // For 'delete' particular address
@@ -44,6 +44,7 @@ export const clearUserDefaultAddress = async (userId) => {
 export const setAddressAsDefault = async (addressId) => {
     return await Address.findByIdAndUpdate(addressId, { $set: { isDefault: true } }, { returnDocument: 'after' });  // Here '{returnDocument:'after'}' used for retrieve 'latest' data from data base and we can also use it with 'findOneAndReplace()', 'findOneAndUpdate()' etc and we can use '{ new: true }' instead(same result)
 };
+
 
 
 

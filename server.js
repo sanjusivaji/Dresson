@@ -1,10 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import connectDB from './src/config/dbConnect.js'; // 1. Import your new utility
+import connectDB from './src/config/dbConnect.js'; 
 import adminRoutes from './src/routes/adminRoute.js'; 
 import session from 'express-session';
 import userRoute from './src/routes/userRoute.js';
-import passport from './src/config/passport.js'; // Import your new config file
+import passport from './src/config/passport.js'; 
+import logger from './src/utilities/logger.js';
+import { globalErrorHandler } from './src/middleware/errorMiddleware.js';
 // import path from 'path';
 // import { fileURLToPath } from 'url'; 
 import expressLayouts from 'express-ejs-layouts';
@@ -13,28 +15,24 @@ import expressLayouts from 'express-ejs-layouts';
 dotenv.config();
 const app = express();
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
 app.set('view engine', 'ejs');
 app.set('views', './view'); 
 app.set('layout', 'layout/admin');
 
  app.use(express.static('public'));
-// app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(expressLayouts);
 
-// Enable sessions to temporarily store the OTP and User Data
+// For embedding 'session' to store the 'OTP' and User Data
 app.use(session({
-    secret: 'dresson_secure_secret_key', // In production, move this to your .env file!
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: false } // Set to true later if you use HTTPS
+    cookie: { secure: false }           // If we use 'HTTPS' we can change it into '{secure:true}'
 }));
 
-// THE NUCLEAR DEBUG ROUTE
+// For debugging purpose
 app.get('/test', (req, res) => {
     res.send("YES! SERVER.JS IS ALIVE AND UPDATING!");
 });
@@ -46,12 +44,16 @@ app.use('/', userRoute);
 app.use('/admin', adminRoutes);
 
 
-const PORT = process.env.PORT || 3000;
+// Global error middleware 
+app.use(globalErrorHandler);
 
-// 2. Fire the connection function, THEN start the server
-connectDB().then(() => {
+// For create 'server' and connect to 'mongodb'
+const PORT = process.env.PORT || 3000;
+connectDB().then(() => {                                                       // 'connectDb' is 'asynchronous' operation and return 'Promise' object, so we use 'then()'
     app.listen(PORT, () => {
-        console.log(` Dresson Server is running on http://localhost:${PORT}`);
+        logger.info(` Dresson Server is running on http://localhost:${PORT}`);
     });
 });
+
+
 

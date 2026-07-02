@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from '../config/passport.js';
-import authController from '../controller/userController/authController.js';
+import * as authController from '../controller/userController/authController.js';
 import * as userProfileController from '../controller/userController/userProfileController.js'; 
 import upload from '../config/multer.js';
 import * as userAddressController from '../controller/userController/userAddressController.js';
@@ -23,7 +23,7 @@ router.route('/login')
       .get(authController.loadLogin)
       .post(authController.processLogin);
 
-// Route for 'forgot password' page and send 'OTP'
+// Route for display 'forgot password' page and send 'OTP'
 router.route('/forgot-password')
       .get(authController.loadForgotPassword)
       .post(authController.processForgotPassword);
@@ -46,14 +46,14 @@ router.get('/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login', failureMessage: true }),
     (req, res) => {
         req.session.user = req.user._id;   // Save user ID in session
-        res.redirect('/');             
+        res.redirect('/');            
     }
 );
 
 // Route for user 'homepage'
 router.get('/', authController.loadHome);
 
-// Route for display "Set New Password" page in 'profile' also 'change' the password
+// Route for display 'Set New Password' page and 'processing' of 'reset password' when 'forgot password' time and also in 'profile' page to 'change' the password
 router.route('/reset-password')
       .get(authController.loadResetPassword)
       .post(authController.processResetPassword);
@@ -66,17 +66,34 @@ router.get('/profile', userProfileController.loadProfile);
 router.post('/profile/change-email-request', userProfileController.changeEmailRequest);
 router.post('/profile/change-email-verify', userProfileController.changeEmailVerify);
 
-// For 'change password' in profile
+// Route for 'change password' in profile
 router.post('/profile/update-password', userProfileController.changePassword);
 
 // Route for 'change profile image' in profile
-router.post('/profile/update-avatar', uploadCloud.single('avatar'), userProfileController.updateAvatar);
-// router.post('/profile/update-avatar', upload.single('profileImage'), userProfileController.updateAvatar);
+// In your userRoute.js
+// router.post('/profile/update-avatar', (req, res, next) => {
+//     const upload = uploadCloud.single('profileImage');
+    
+//     upload(req, res, function (err) {
+//         if (err) {
+//             console.error("Multer/Cloudinary Error:", err);
+//             // Force a JSON response even if the upload package crashes!
+//             return res.status(400).json({ success: false, message: err.message || "Upload failed." });
+//         }
+//         // If no error, move on to your controller
+//         next();
+//     });
+// }, userProfileController.updateAvatar);
+router.post('/profile/update-avatar', uploadCloud.single('profileImage'), userProfileController.updateAvatar);
+//router.post('/profile/update-avatar', uploadCloud.single('avatar'), userProfileController.updateAvatar);
 
-
+// Route for 'display' the 'address' page of 'user'
 router.get('/profile/address', userAddressController.loadAddressPage);
 
-//  The Add Address routes (THIS IS WHAT YOU ARE MISSING!)
+// Route for 'set default' the 'address' for 'Set Default' button
+router.post('/profile/address/:id/set-default', userAddressController.setDefaultAddress);
+
+// Route for 'diplay' the 'add address' page and its processing
 router.route('/profile/address/add')
       .get(userAddressController.loadAddAddressPage)
       .post(userAddressController.processAddAddress);
@@ -85,11 +102,6 @@ router.route('/profile/address/add')
 router.route('/profile/address/edit/:id')
       .get(userAddressController.loadEditAddressPage)
       .post(userAddressController.processEditAddress);
-
-// Default and Delete actions
-//router.post('/profile/address/default/:id', userAddressController.setDefaultAddress);
-router.post('/profile/address/:id/set-default', userAddressController.setDefaultAddress);
-
 
 
 router.post('/profile/address/delete/:id', userAddressController.deleteAddress);

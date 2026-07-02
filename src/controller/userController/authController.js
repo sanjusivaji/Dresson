@@ -1,29 +1,30 @@
 import logger from '../../utilities/logger.js';
 import * as authService from '../../services/user/authService.js';
 
-const loadSignUp = (req, res) => {
+// For 'display' sign up page
+export const loadSignUp = (req, res) => {
     res.render('user/signup', { 
         layout: 'layout/user', 
         pageTitle: "Sign Up - Dresson" 
     });
 };
 
-const processSignUp = async (req, res) => {
+// For 'processing' the sign up
+export const processSignUp = async (req, res) => {
     try {
-        const registrationData = await authService.initiateUserRegistration(req.body);
-        
-        req.session.tempUser = registrationData.tempUser;
+        const registrationData = await authService.initiateUserRegistration(req.body);  // Here the function give 'validation' in 'sign up' page and 'generate' and 'send' the 'OTP' to email(by using 'utilities/emailSender.js' file)and 'return' an 'object' contains 'tempUser'(ie it contains '{ name, email, password, referralCode}' etc), Otp(ie for 'compare' with 'user' typed 'otp') and 'otp' 'expiry time'.       
+        req.session.tempUser = registrationData.tempUser;                               // Here we 'store' the 'session' properties for 'future' uses because even 'redirection' time, 'server' becomes 'stateless'.
         req.session.otp = registrationData.otp;
-        req.session.otpExpiry = registrationData.otpExpiry;
-        
+        req.session.otpExpiry = registrationData.otpExpiry;   
         res.redirect('/verify-otp');
     } catch (error) {
-        console.error("Signup processing error:", error);
+        logger.error("Signup processing error:", error);
         res.send(error.message || "Internal Server Error");
     }
 };
 
-const loadOtpPage = (req, res) => {
+// For 'display' 'OTP' page
+export const loadOtpPage = (req, res) => {
     if (!req.session.tempUser) return res.redirect('/signup'); 
     res.render('user/verify-otp', { 
         layout: 'layout/user', 
@@ -31,14 +32,13 @@ const loadOtpPage = (req, res) => {
     });
 };
 
-const verifyOtp = async (req, res) => {
+// For 'verifying' 'OTP' after type in 'OTP' page
+export const verifyOtp = async (req, res) => {
     try {      
-        await authService.verifyAndRegisterUser(req.session, req.body.otp);
-        
-        delete req.session.tempUser; 
+        await authService.verifyAndRegisterUser(req.session, req.body.otp);  // Here arguments are 'req.session'(ie it created in 'server.js' and we retrieve in just before 'processSignUp()' function) and 'req.body.otp'(ie 'req.body' is created when the user types their 'OTP' into '<form>')   
+        delete req.session.tempUser;                                        // Here 'delete' property used for 'deleting' only 'some' properties(ie like 'tempUser', 'otp' etc) of 'session'(ie because we did 'not' no longer need this and 'session' object created from 'server.js' and it will 'remove' 'only' when we use 'destroy()' method)
         delete req.session.otp;
-        delete req.session.otpExpiry;
-        
+        delete req.session.otpExpiry;        
         res.redirect('/login');
     } catch (error) {
         logger.error("OTP Verification Error:", error);
@@ -46,8 +46,9 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-const loadLogin = (req, res) => {
-    if (req.session.user) return res.redirect('/'); 
+// For 'display' 'login' page
+export const loadLogin = (req, res) => {
+    if (req.session.user) return res.redirect('/');  // If 'user' is already 'logedIn' then it directly go to 'home'.
     res.render('user/login', { 
         error: null,
         layout: 'layout/user', 
@@ -55,15 +56,15 @@ const loadLogin = (req, res) => {
     });
 };
 
-const processLogin = async (req, res) => {
+// For 'processing' the 'user login'
+export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await authService.authenticateLocalUser(email, password);
-        
+        const user = await authService.authenticateLocalUser(email, password);  // It checks is this 'user' or not and 'return' 'user' details     
         req.session.user = user._id;
         res.redirect('/');
     } catch (error) {
-        console.error("Login Error:", error);
+        logger.error("Login Error:", error);
         res.render('user/login', { 
             error: error.message || "Internal Server Error",
             layout: 'layout/user', 
@@ -72,44 +73,48 @@ const processLogin = async (req, res) => {
     }
 };
 
-const loadForgotPassword = async (req, res) => {
+// For 'display' 'forgot password' page
+export const loadForgotPassword = async (req, res) => {
     try {
         res.render('user/forgotPassword', { 
             layout: 'layout/user', 
             pageTitle: "Forgot Password - Dresson" 
         }); 
     } catch (error) {
-        console.error("Error loading forgot password page:", error);
+        logger.error("Error loading forgot password page:", error);
         res.status(500).send("Server Error");
     }
 };
 
-const processForgotPassword = async (req, res) => {
+// For 'process' forgot password ie generate 'otp' and 'send' it to 'email' with 'reset' mode
+export const processForgotPassword = async (req, res) => {
     try {
-        const otp = await authService.initiatePasswordReset(req.body.email);
+        const otp = await authService.initiatePasswordReset(req.body.email);  // It generate 'otp' and 'send' it to 'email' with 'reset' mode and also 'return' this 'otp' for future comparison.
         req.session.forgotOtp = otp;
         req.session.forgotEmail = req.body.email;
-        res.redirect('/forgot-otp');
+        res.redirect('/forgot-otp');                                         // Redirecting into display 'OTP Page'(ie we call the function 'loadForgotOtpPage()' written below from 'routes/userRoutes.js/'forgot-otp' ) and 'verify otp'(ie created below as 'verifyForgotOtp()' call from 'routes/userRoutes.js') 
     } catch (error) {
-        console.error("Forgot Password Error:", error);
+        logger.error("Forgot Password Error:", error);
         res.send(error.message || "Server Error");
     }
 };
 
-const loadForgotOtpPage = async (req, res) => {
+// For display 'OTP' page and we call this function from above mentioned 'route'(ie '/forgot-otp')
+export const loadForgotOtpPage = async (req, res) => {
     try {
-        if (!req.session.forgotEmail) return res.redirect('/forgot-password');
-        res.render('user/verify-otp-forgotPas', {
+        if (!req.session.forgotEmail) return res.redirect('/forgot-password'); // If 'email' is not stored in 'session' we redirect into display 'forgot password' page and then send 'OTP'
+        res.render('user/verify-otp-forgotPas', {                              // It is for 'display' 'OTP' page with 'count down timer'
             layout: 'layout/user', 
             pageTitle: "Verify OTP - Dresson" 
         });
     } catch (error) {
-        console.error("Error loading OTP page:", error);
+       logger.error("Error loading OTP page:", error);
         res.status(500).send("Server Error");
     }
 };
 
-const verifyForgotOtp = async (req, res) => {
+// For check is the 'email' and 'otp' exist or not when 'loading' the 'OTP' and we call this function from above mentioned 'route'(ie '/forgot-otp')
+export const verifyForgotOtp = async (req, res) => {
     try {
         if (!req.session.forgotEmail || !req.session.forgotOtp) {
             return res.send("Session expired. Please request a new password reset link.");
@@ -117,37 +122,37 @@ const verifyForgotOtp = async (req, res) => {
         if (req.body.otp !== req.session.forgotOtp) {
             return res.send("Invalid OTP. Please try again.");
         }
-        req.session.forgotOtpVerified = true;
-        res.redirect('/reset-password');
+        req.session.forgotOtpVerified = true;        // Above we just check 'session' has 'email'(ie 'forgotEmail') and 'otp'(ie 'forgotOtp')and if it is we assign 'forgotOtpVerified = true' into 'session'.
+        res.redirect('/reset-password');             // This route handle 'display' 'set new password' page and further proccing.
     } catch (error) {
-        console.error("Forgot OTP Verification Error:", error);
+        logger.error("Forgot OTP Verification Error:", error);
         res.status(500).send("Server Error");
     }
 };
 
-const loadResetPassword = async (req, res) => {
+// For 'display' page for entering 'new password', after 'verified' the 'OTP'
+export const loadResetPassword = async (req, res) => {
     try {
        if (!req.session.forgotEmail || !req.session.forgotOtpVerified) {    
             return res.redirect('/forgot-password'); 
         }
-        res.render('user/newPassword', { 
+        res.render('user/newPassword', {                 // To 'display' 'new password' typing page.
             layout: 'layout/user', 
             pageTitle: "Reset Password - Dresson" 
         });
     } catch (error) {
-        console.error("Error loading reset password page:", error);
+        logger.error("Error loading reset password page:", error);
         res.status(500).send("Server Error");
     }
 };
 
-const processResetPassword = async (req, res) => {
+// For 'processing' after entering the 'new password'
+export const processResetPassword = async (req, res) => {
     try {
-        await authService.executeForgottenPasswordReset(req.session, req.body.password, req.body.confirmPassword);
-        
-        delete req.session.forgotEmail;
+        await authService.executeForgottenPasswordReset(req.session, req.body.password, req.body.confirmPassword); // We call this function with '3' arguments(ie 'session','password', 'confirmPassword')and it update the 'email' with 'new password'.     
+        delete req.session.forgotEmail;         // After updation 'delete' 'email', 'otp' and 'verification'(ie it is a 'boolean' value).  
         delete req.session.forgotOtp;
-        delete req.session.forgotOtpVerified;
-        
+        delete req.session.forgotOtpVerified;        
         res.redirect('/login');
     } catch (error) {
         console.error("Reset Password Error:", error);
@@ -155,7 +160,8 @@ const processResetPassword = async (req, res) => {
     }
 };
 
-const processLogout = (req, res) => {
+// For 'logout' process
+export const processLogout = (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             console.error("Session Destruction Error:", err);
@@ -165,9 +171,10 @@ const processLogout = (req, res) => {
     });
 };
 
-const loadHome = async (req, res) => {
+// For display the 'home' page
+export const loadHome = async (req, res) => {
     try {
-        const paginationData = await authService.getHomepageProducts(req);
+        const paginationData = await authService.getHomepageProducts(req);  // 'getHomepageProducts()' retrieve data of 'products' based on each page
         res.render('user/home', {
             products: paginationData.results,        
             currentPage: paginationData.currentPage,   
@@ -176,66 +183,9 @@ const loadHome = async (req, res) => {
             pageTitle: "Home - Dresson"      
         });
     } catch (error) {
-        console.error("Home Page Error:", error);
+        logger.error("Home Page Error:", error);
         res.status(500).send("Server Error");
     }
 };
 
-const loadUsersDashboard = async (req, res) => {
-    try {
-        const paginationData = await authService.getPaginatedUsers(req);
-        res.render('admin/usersList', {
-            users: paginationData.results,        
-            currentPage: paginationData.currentPage, 
-            totalPages: paginationData.totalPages
-        });
-    } catch (error) {
-        console.error("Pagination controller execution fault:", error);
-        res.status(500).send("Failed to load paginated data array.");
-    }
-};
 
-// Export ONLY the functions that exist in this file
-export default { 
-    loadSignUp,
-    processSignUp, 
-    loadOtpPage, 
-    verifyOtp,
-    loadLogin,
-    processLogin,
-    loadForgotPassword, 
-    processForgotPassword,
-    loadForgotOtpPage, 
-    verifyForgotOtp,
-    loadResetPassword,  
-    processResetPassword,
-    processLogout,
-    loadHome, 
-    loadUsersDashboard
-};
-
-
-
-// Exporting all functions
-// export default { loadSignUp,
-//                 processSignUp, 
-//                 loadOtpPage, 
-//                 loadLogin,
-//                 processLogin,
-//                 loadForgotPassword, 
-//                 verifyForgotOtp,
-//                 processForgotPassword, 
-//                 loadForgotOtpPage, 
-//                 loadResetPassword,  
-//                 processResetPassword,
-//                 verifyOtp, 
-//                 processLogout,
-//                 loadHome, 
-//                 loadUsersDashboard,
-//                 loadProfile,
-//                 changeEmailRequest,
-//                 changeEmailVerify,
-//                 updatePassword,
-//                 updateAvatar,
-//                 changePassword 
-//             };
