@@ -1,4 +1,6 @@
 import * as adminCategoryService from '../../services/admin/adminCategoryService.js';
+import logger from '../../utilities/logger.js';
+
 
 export const getAddCategory = async (req, res) => {
     try {
@@ -9,7 +11,7 @@ export const getAddCategory = async (req, res) => {
             activePage: 'categories' 
         });
     } catch (error) {
-        console.error("Error displaying add category workspace form:", error);
+        logger.error("Error displaying add category workspace form:", error);
         res.status(500).send("Internal Server Error");
     }
 };
@@ -19,7 +21,7 @@ export const postAddCategory = async (req, res) => {
         await adminCategoryService.executeCategoryCreation(req.body);
         res.redirect('/admin/categories');
     } catch (error) {
-        console.error("Failure during category transaction execution:", error);
+        logger.error("Failure during category transaction execution:", error);
         
         // Recover view data to display the error gracefully
         try {
@@ -44,7 +46,7 @@ export const getCategoriesList = async (req, res) => {
             activePage: 'categories'
         });
     } catch (error) {
-        console.error("Error building dashboard categories view map:", error);
+        logger.error("Error building dashboard categories view map:", error);
         res.status(500).send("Internal Server Error processing category listings charts.");
     }
 };
@@ -64,7 +66,7 @@ export const toggleCategoryList = async (req, res) => {
         await adminCategoryService.toggleCategoryListing(req.params.id);
         res.redirect('/admin/categories');
     } catch (error) {
-        console.error("Failed to alter public listings publication flag status properties:", error);
+        logger.error("Failed to alter public listings publication flag status properties:", error);
         res.status(500).send("Internal database operation mapping error.");
     }
 };
@@ -78,7 +80,7 @@ export const getEditCategory = async (req, res) => {
             activePage: 'categories' 
         });
     } catch (error) {
-        console.error("Failure pulling targeted edit category form template data sets:", error);
+        logger.error("Failure pulling targeted edit category form template data sets:", error);
         res.status(500).send("Internal Server Error processing catalog modification indexes.");
     }
 };
@@ -88,7 +90,7 @@ export const postEditCategory = async (req, res) => {
         await adminCategoryService.executeCategoryUpdate(req.params.id, req.body);
         res.redirect('/admin/categories');
     } catch (error) {
-        console.error("Critical failure executing category compilation edits sequence operations:", error);
+        logger.error("Critical failure executing category compilation edits sequence operations:", error);
         
         try {
             const fallbackData = await adminCategoryService.fetchEditCategoryData(req.params.id);

@@ -24,42 +24,48 @@
                 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input type="text" name="fullName" required class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="fullName" id="fullName" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="fullNameError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="text" name="phone" required pattern="[0-9]{10,15}" title="Please enter a valid phone number" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="phone" id="phone" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="phoneError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                    <input type="text" name="streetAddress" required class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="streetAddress" id="streetAddress" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="streetAddressError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input type="text" name="city" required class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="city" id="city" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="cityError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input type="text" name="state" required class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="state" id="state" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="stateError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Pin Codes</label>
-                    <input type="text" name="pinCode" required class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <label class="text-sm font-medium text-gray-700 mb-1">Pin Code</label>
+                    <input type="text" name="pinCode" id="pinCode" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <div id="pinCodeError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input type="text" name="country" required value="India" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                    <input type="text" name="country" id="country" value="India" readonly class="w-full px-4 py-3 bg-gray-100 text-gray-600 border border-gray-300 rounded-md focus:outline-none transition cursor-not-allowed">
                 </div>
 
                 <div class="flex justify-start gap-4 pt-2">
                     <label class="cursor-pointer">
-                        <input type="radio" name="type" value="HOME" class="peer sr-only" checked required>
+                        <input type="radio" name="type" value="HOME" class="peer sr-only" checked>
                         <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">HOME</div>
                     </label>
                     <label class="cursor-pointer">
@@ -78,20 +84,85 @@
                 </div>
 
                 <div class="flex justify-center gap-4 pt-4">
-                    <div class="flex justify-center gap-4 pt-4">
-                    
                     <button type="submit" class="bg-red-900 text-white hover:text-white hover:bg-red-950 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider">
                         Save Address
                     </button>
-                    
                     <a href="/profile/address" class="bg-black text-white hover:text-white hover:bg-gray-800 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider flex items-center">
                         Cancel
                     </a>
-                    
                 </div>
-            
-
             </form>
         </div>
     </main>
 </div>
+
+<script>
+function showError(elementId, message) {
+    const errorDiv = document.getElementById(elementId);
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
+}
+
+function hideError(elementId) {
+    const errorDiv = document.getElementById(elementId);
+    if (errorDiv) {
+        errorDiv.classList.add('hidden');
+    }
+}
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    const errorElements = ['fullNameError', 'phoneError', 'streetAddressError', 'cityError', 'stateError', 'pinCodeError'];
+    errorElements.forEach(id => hideError(id));
+
+    let isValid = true;
+    const fullName = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const streetAddress = document.getElementById('streetAddress').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const pinCode = document.getElementById('pinCode').value.trim();
+
+    const nameRegex = /^[a-zA-Z\s]{3,50}$/; 
+    const phoneRegex = /^[0-9]{10}$/;       
+    const pinRegex = /^[0-9]{6}$/;          
+    const cityStateRegex = /^[a-zA-Z\s]+$/; 
+
+    if (!fullName || !nameRegex.test(fullName)) {
+        showError('fullNameError', 'Must be 3-50 characters and contain only letters.');
+        isValid = false;
+    }
+    if (!phone || !phoneRegex.test(phone)) {
+        showError('phoneError', 'Please enter a valid 10-digit phone number without space between numbers.');
+        isValid = false;
+    }
+    if (!streetAddress || streetAddress.length < 5) {
+        showError('streetAddressError', 'Street Address must be at least 5 characters long.');
+        isValid = false;
+    }
+    if (!city || !cityStateRegex.test(city)) {
+        showError('cityError', 'City must contain only letters.');
+        isValid = false;
+    }
+    if (!state || !cityStateRegex.test(state)) {
+        showError('stateError', 'State must contain only letters.');
+        isValid = false;
+    }
+    if (!pinCode || !pinRegex.test(pinCode)) {
+        showError('pinCodeError', 'Please enter a valid 6-digit Pincode.');
+        isValid = false;
+    }
+
+    if (!isValid) {
+        e.preventDefault(); 
+    }
+});
+
+const inputs = ['fullName', 'phone', 'streetAddress', 'city', 'state', 'pinCode'];
+inputs.forEach(item => {
+    document.getElementById(item).addEventListener('input', function() {
+        hideError(item + 'Error');
+    });
+});
+</script>

@@ -1,0 +1,31 @@
+<div class="bg-white border border-gray-200 rounded-sm p-3 flex flex-col justify-between shadow-sm relative group">
+    <span class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">
+        <%= product.discount %>% Off
+    </span>
+    <button class="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition z-10">
+        <i class="fa-regular fa-heart"></i>
+    </button>
+    
+    <div class="h-48 w-full bg-gray-100 mb-2 flex items-center justify-center rounded-sm">
+        <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="h-full object-cover">
+    </div>
+
+    <div>
+        <span class="text-[10px] uppercase font-bold text-gray-400"><%= product.brand %></span>
+        <h4 class="text-xs font-semibold text-gray-800 mb-1"><%= product.name %></h4>
+        
+        <div class="text-amber-400 text-[10px] mb-1">
+            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+        </div>
+
+        <div class="flex items-baseline gap-2 mb-2">
+            <span class="text-sm font-bold text-gray-900">₹<%= product.price %></span>
+            <span class="text-xs text-gray-400 line-through">₹<%= product.originalPrice %></span>
+        </div>
+    </div>
+
+    <div class="space-y-1.5">
+        <button class="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 text-xs font-bold py-2 rounded-sm transition">Add to Cart</button>
+        <button class="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-2 rounded-sm transition">Buy Now</button>
+    </div>
+</div>

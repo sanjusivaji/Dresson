@@ -1,144 +1,112 @@
-<!-- Auth Full-Screen Dark Canvas Wrapper -->
-<div class="bg-[#1a1a1a] min-h-screen w-full flex items-center justify-center p-4">
-    
-    <div class="bg-[#f2f2f2] w-full max-w-md p-10 flex flex-col items-center rounded-xl shadow-lg relative">
+<div class="bg-[#f2f2f2] w-full max-w-md p-10 flex flex-col items-center rounded-xl shadow-lg relative">
+    <h2 class="text-gray-500 text-lg font-medium tracking-wide mb-8">
+        Enter into <span class="font-bold text-gray-700">DRESSON</span>
+    </h2>
+
+    <form id="loginForm" action="/login" method="POST" novalidate class="w-full flex flex-col space-y-5">
         
-        <h2 class="text-gray-500 text-lg font-medium tracking-wide mb-8">Enter into <span class="font-bold text-gray-700">DRESSON</span></h2>
-        
-        <% if (typeof error !== 'undefined' && error) { %>
-            <div class="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center">
-                <%= error %>
-            </div>
-        <% } %>
-
-        <form action="/login" method="POST" class="w-full flex flex-col space-y-4">
-            
-            <div class="flex flex-col w-full">
-                <label class="text-xs font-bold text-black mb-1">Email address</label>
-                <input type="email" name="email" placeholder="Enter email address" required class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">
-            </div>
-
-            <div class="flex flex-col w-full">
-                <label class="text-xs font-bold text-black mb-1">Password</label>
-                <div class="relative w-full">
-                    <input type="password" name="password" id="password" placeholder="Enter password" required class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm w-full pr-10 focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">
-                    
-                    <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800 transition" onclick="togglePassword('password', this)"></i>
-                </div>
-            </div>
-
-            <div class="flex justify-start pt-1">
-                <a href="/forgot-password" class="text-sm text-blue-600 font-medium hover:underline tracking-tight">Forgot Password?</a>
-            </div>
-
-            <button type="submit" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3 rounded-xl transition shadow-sm mt-4 cursor-pointer">
-                Login
-            </button>
-        </form>
-
-        <a href="/auth/google" class="block w-full">
-            <button type="button" class="w-full bg-[#e0e0e0] hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition shadow-sm mt-4 text-sm flex justify-center items-center gap-2 cursor-pointer">
-                <i class="fab fa-google text-red-500"></i> Continue with Google
-            </button>
-        </a>
-
-        <div class="mt-8 text-xs font-bold">
-            <span class="text-[#4c66d6]">Not Registered? </span>
-            <a href="/signup" class="text-purple-700 hover:underline">Sign Up</a>
+        <div class="flex flex-col w-full">
+            <label class="text-xs font-bold text-black mb-1">Email address</label>
+            <input type="email" name="email" id="loginEmail" placeholder="Enter email address" class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">                
+            <div id="emailFieldError" class="hidden mt-1 text-red-600 text-xs font-medium"></div>
         </div>
 
+        <div class="flex flex-col w-full">
+            <label class="text-xs font-bold text-black mb-1">Password</label>
+            <div class="relative w-full password-toggle-wrapper">
+                <input type="password" name="password" id="password" placeholder="Enter password" class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm w-full pr-10 focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">                    
+                <button type="button" class="forToggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer focus:outline-none">
+                    <i class="fa-regular fa-eye text-gray-500 hover:text-gray-800 transition"></i>
+                </button>
+            </div>
+            <div id="passwordFieldError" class="hidden mt-1 text-red-600 text-xs font-medium"></div>
+        </div>
+
+        <div class="flex justify-start pt-1">
+            <a href="/forgot-password" class="text-sm text-blue-600 font-medium hover:underline">Forgot Password?</a>
+        </div>
+
+        <% if (locals.error) { %>
+            <div id="loginError" class="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm text-center font-bold">
+                <%= error %>
+            </div>
+        <% } else { %>
+            <div id="loginError" class="hidden w-full bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm text-center font-bold"></div>
+        <% } %>
+
+        <button type="submit" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3 rounded-xl transition shadow-sm mt-2 cursor-pointer">
+            Login
+        </button>
+    </form>
+    <a href="/auth/google" class="block w-full mt-4">
+        <button type="button" class="w-full bg-[#e0e0e0] hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition shadow-sm text-sm flex justify-center items-center gap-2">
+            <i class="fab fa-google text-red-500"></i> Continue with Google
+        </button>
+    </a>
+    <div class="mt-8 text-xs font-bold">
+        <span class="text-[#4c66d6]">Not Registered? </span>
+        <a href="/signup" class="text-purple-700 hover:underline">Sign Up</a>
     </div>
 </div>
-
+<script src="/js/shared/togglePassword.js"></script>
 <script>
-    function togglePassword(inputId, icon) {
-        const input = document.getElementById(inputId);
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye');
-        }
+document.getElementById('loginForm').addEventListener('submit', function(e) {  //  For 'remove' all previous errors.
+    const prevError = document.querySelectorAll('.error-text, #loginError, #emailFieldError, #passwordFieldError') // '.error-text', '#loginError' etc are '<div>' classes for 'display' that errors and here we 'remove' all 'previous' error 
+    prevError.forEach(item => {
+        item.classList.add('hidden');
+        item.innerText = '';
+    });
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('password').value;             // Removed .trim() to allow intentional spaces
+    let isValid = true;                                                     //  'isValid = false' 'prevents' automatic '<form>' submitting by using 'e.preventDefault()' in below.
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;                        //  Here if we put '^' 'outside' group(ie '[ ]') means should 'start with' and if we put '^' inside '[ ]' means 'opposite' meaning ie should 'not' contain the following things and '\s' represents 'white space' and '@' represents 'literal' '@' and '\.' represents 'literal' 'dot' and putting '+'(ie it called 'multiplier') between them means should contain something 'at least' 'one' or more times except the things that inside the 'bracket' .
+    if (!email) {
+        showFieldError('emailFieldError', 'Email address is required');     // 'showFieldError()' created below
+        isValid = false;
+    } else if (!emailRegex.test(email)) {
+        showFieldError('emailFieldError', 'Please enter a valid email address');
+        isValid = false;
     }
+    const minLength = 8;                                                     // For strong Password validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (!password) {
+        showFieldError('passwordFieldError', 'Password is required');
+        isValid = false;
+    } else if (password.length < minLength) {
+        showFieldError('passwordFieldError', `Password must be at least ${minLength} characters`);
+        isValid = false;
+    } else if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        let missing = [];
+        if (!hasUpperCase) missing.push('an uppercase letter');
+        if (!hasLowerCase) missing.push('a lowercase letter');
+        if (!hasNumbers) missing.push('a number');
+        if (!hasSpecialChar) missing.push('a special character');        
+        showFieldError('passwordFieldError', 'Password must contain: ' + missing.join(', '));
+        isValid = false;
+    }
+    if (!isValid) {
+        e.preventDefault();                                  // For stop automatic form submission
+    }
+});
+
+function showFieldError(elementId, message) {              // Here created the function for 'display' the error message in each element according their message.
+    const errorDiv = document.getElementById(elementId);
+    if (errorDiv) {
+        errorDiv.textContent = message;                    // Here 'display' the error 'message' in each 'element'
+        errorDiv.classList.remove('hidden');
+    }
+}
+document.getElementById('loginEmail').addEventListener('input', function() {
+    if (this.value.trim()) {                             // Here 'this' represents the 'element'(ie '<input>')and 'input' event triggers when 'user' type something and if it has value(ie 'this.value.trim()' ie 'user' typed something into it) 'error' element will be 'hidden' 
+        document.getElementById('emailFieldError').classList.add('hidden');
+    }
+});
+document.getElementById('password').addEventListener('input', function() {
+    if (this.value) {
+        document.getElementById('passwordFieldError').classList.add('hidden');
+    }
+});
 </script>
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dresson</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-[#1a1a1a] flex items-center justify-center min-h-screen font-sans">
-
-    <div class="bg-[#f2f2f2] w-full max-w-md p-10 flex flex-col items-center rounded-xl shadow-lg relative">
-        
-        <h2 class="text-gray-500 text-lg font-medium tracking-wide mb-8">Enter into <span class="font-bold text-gray-700">DRESSON</span></h2>
-        
-        <% if (error) { %>
-            <div class="w-full bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center">
-                <%= error %>
-            </div>
-        <% } %>
-
-        <form action="/login" method="POST" class="w-full flex flex-col space-y-4">
-            
-            <div class="flex flex-col w-full">
-                <label class="text-xs font-bold text-black mb-1">Email address</label>
-                <input type="email" name="email" placeholder="Enter email address" required class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">
-            </div>
-
-            <div class="flex flex-col w-full">
-                <label class="text-xs font-bold text-black mb-1">Password</label>
-                <div class="relative w-full">
-                    <input type="password" name="password" id="password" placeholder="Enter password" required class="bg-[#e0e0e0] rounded-md px-4 py-3 text-sm w-full pr-10 focus:outline-none focus:ring-2 focus:ring-[#208b59] text-gray-800 transition placeholder-gray-400">
-                    
-                    <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800 transition" onclick="togglePassword('password', this)"></i>
-                </div>
-            </div>
-
-            <div class="flex justify-start pt-1">
-                <a href="/forgot-password" class="text-sm text-blue-600 font-medium hover:underline tracking-tight">Forgot Password?</a>
-            </div>
-
-            <button type="submit" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3 rounded-xl transition shadow-sm mt-4">
-                Login
-            </button>
-        </form>
-
-        <a href="/auth/google" class="block w-full">
-                <button type="button" class="w-full bg-[#e0e0e0] hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition shadow-sm mt-4 text-sm flex justify-center items-center gap-2">
-                    <i class="fab fa-google text-red-500"></i> Continue with Google
-                </button>
-            </a>
-
-        <div class="mt-8 text-xs font-bold">
-            <span class="text-[#4c66d6]">Not Registered? </span>
-            <a href="/signup" class="text-purple-700 hover:underline">Sign Up</a>
-        </div>
-
-    </div>
-
-    <script>
-        function togglePassword(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-    </script>
-
-</body>
-</html> -->

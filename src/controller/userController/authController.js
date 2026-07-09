@@ -2,12 +2,12 @@ import logger from '../../utilities/logger.js';
 import * as authService from '../../services/user/authService.js';
 
 // For 'display' sign up page
-export const loadSignUp = (req, res) => {
-    res.render('user/signup', { 
-        layout: 'layout/user', 
-        pageTitle: "Sign Up - Dresson" 
-    });
-};
+export const loadSignUp = async (req,res) => {
+    res.render('user/signup', {
+        layout: 'layout/auth',
+        pageTitle: "Sign up - Dresson"
+    })
+}
 
 // For 'processing' the sign up
 export const processSignUp = async (req, res) => {
@@ -16,10 +16,17 @@ export const processSignUp = async (req, res) => {
         req.session.tempUser = registrationData.tempUser;                               // Here we 'store' the 'session' properties for 'future' uses because even 'redirection' time, 'server' becomes 'stateless'.
         req.session.otp = registrationData.otp;
         req.session.otpExpiry = registrationData.otpExpiry;   
-        res.redirect('/verify-otp');
+        // res.redirect('/verify-otp');
+        return res.status(200).json({
+            success: true,
+            message: "OTP sent successfully to your email."
+        });
     } catch (error) {
         logger.error("Signup processing error:", error);
-        res.send(error.message || "Internal Server Error");
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Internal Server Error"
+        });
     }
 };
 
@@ -34,24 +41,33 @@ export const loadOtpPage = (req, res) => {
 
 // For 'verifying' 'OTP' after type in 'OTP' page
 export const verifyOtp = async (req, res) => {
-    try {      
-        await authService.verifyAndRegisterUser(req.session, req.body.otp);  // Here arguments are 'req.session'(ie it created in 'server.js' and we retrieve in just before 'processSignUp()' function) and 'req.body.otp'(ie 'req.body' is created when the user types their 'OTP' into '<form>')   
+    try {
+        await authService.verifyAndRegisterUser(req.session, req.body.otp); // Here arguments are 'req.session'(ie it created in 'server.js' and we retrieve in just before 'processSignUp()' function) and 'req.body.otp'(ie 'req.body' is created when the user types their 'OTP' into '<form>')   
         delete req.session.tempUser;                                        // Here 'delete' property used for 'deleting' only 'some' properties(ie like 'tempUser', 'otp' etc) of 'session'(ie because we did 'not' no longer need this and 'session' object created from 'server.js' and it will 'remove' 'only' when we use 'destroy()' method)
         delete req.session.otp;
-        delete req.session.otpExpiry;        
-        res.redirect('/login');
+        delete req.session.otpExpiry;
+        return res.status(200).json({                                       // Here we 'return' 'success: true' into 'view/user/signup.ejs' as response and there we 'redirect' into '/login' if it is successfully signed up.
+            success: true,
+            message: "Account verified successfully!"
+        });
+
     } catch (error) {
-        logger.error("OTP Verification Error:", error);
-        res.send(error.message || "Server Error");
+        logger.error("OTP Verification error:", error.message);
+        return res.status(400).json({
+            success: false,
+            message: error.message || "Invalid OTP."
+        });
     }
 };
+
 
 // For 'display' 'login' page
 export const loadLogin = (req, res) => {
     if (req.session.user) return res.redirect('/');  // If 'user' is already 'logedIn' then it directly go to 'home'.
-    res.render('user/login', { 
-        error: null,
-        layout: 'layout/user', 
+    res.render('user/login', {
+        // error: null,
+        error: "Invalid email or password.",
+        layout: 'layout/auth', 
         pageTitle: "Login - Dresson"
     });
 };
@@ -61,13 +77,19 @@ export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await authService.authenticateLocalUser(email, password);  // It checks is this 'user' or not and 'return' 'user' details     
+        if (user.isBlocked === true || user.status === 'Blocked') {
+            return res.render('user/login', { 
+                error: 'Your account has been blocked by the Administrator. Please contact support.' ,
+                layout: 'layout/auth'
+            });
+        }
         req.session.user = user._id;
         res.redirect('/');
     } catch (error) {
         logger.error("Login Error:", error);
         res.render('user/login', { 
             error: error.message || "Internal Server Error",
-            layout: 'layout/user', 
+            layout: 'layout/auth',
             pageTitle: "Login - Dresson" 
         });
     }
@@ -171,12 +193,18 @@ export const processLogout = (req, res) => {
     });
 };
 
-// For display the 'home' page
+// For only just display sample products
+const mockProducts = [
+    { name: "Test Shirt", price: 999, originalPrice: 1200, brand: "Test Brand", discount: 10, imageUrl: "https://via.placeholder.com/150" }
+];
+
+// For display 'home' page
 export const loadHome = async (req, res) => {
     try {
         const paginationData = await authService.getHomepageProducts(req);  // 'getHomepageProducts()' retrieve data of 'products' based on each page
         res.render('user/home', {
-            products: paginationData.results,        
+            products: paginationData.results, 
+            products: mockProducts,       
             currentPage: paginationData.currentPage,   
             totalPages: paginationData.totalPages,
             layout: 'layout/user', 

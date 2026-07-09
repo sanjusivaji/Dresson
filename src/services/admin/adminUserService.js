@@ -53,11 +53,17 @@ export const buildUsersListDashboard = async (query) => {
     };
 };
 
+
+
 export const processToggleBlock = async (id) => {
     const user = await userRepository.findUserById(id);
     if (!user) throw new Error("User account signature record missing.");
+
+    const isCurrentlyBlocked = user.status === 'Blocked';
     
-    user.status = user.status === 'Blocked' ? 'Active' : 'Blocked';
+    user.status = isCurrentlyBlocked ? 'Active' : 'Blocked';
+    user.isBlocked = !isCurrentlyBlocked; 
+    
     await user.save();
     return user;
 };
@@ -85,9 +91,9 @@ export const modifyUserProfile = async (id, bodyData, file) => {
     if (file) {
         updateData.profileImage = file.filename;
     }
-
     return await userRepository.findUserAndUpdate(id, updateData);
 };
+
 
 export const executeBalanceAdjustment = async (id, adjustmentData) => {
     const { adjustmentType, amount, reason } = adjustmentData;

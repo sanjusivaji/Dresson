@@ -4,146 +4,27 @@
 
 
 
-<%- include('../partial/user/header') %>
-
-<%- include('../partial/user/sidebar') %>
-
-<section class="flex-grow space-y-6">
+<div class="flex flex-row gap-6 max-w-7xl mx-auto w-full px-4 py-6">
     
-    <div class="bg-[#f0e6e6] rounded-sm overflow-hidden h-40 relative flex items-center px-8 border border-gray-200 shadow-sm">
-        <div class="z-10 max-w-xs">
-            <span class="bg-[#a87a7a] text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded-sm">Limited Offer</span>
-            <h2 class="text-2xl font-black text-gray-900 mt-1 tracking-tight">UP TO <span class="text-red-600">50% OFF</span></h2>
-            <p class="text-xs font-medium text-gray-600 mt-0.5">ON ALL DRESSES!</p>
-        </div>
-        <div class="absolute right-0 top-0 bottom-0 w-1/2 flex items-center justify-center text-gray-400 font-bold text-xs" style="background-color: #e5d5d5;">
-            [ Banner Image Placeholder ]
-        </div>
-    </div>
+    <aside class="w-64 flex-shrink-0">
+        <%- include('../partial/user/sidebar') %>
+    </aside>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        
-        <div class="bg-white border border-gray-200 rounded-sm overflow-hidden p-3 flex flex-col justify-between shadow-sm relative group">
-            <span class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">9% Off</span>
-            <button class="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white shadow-sm w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 transition z-10">
-                <i class="fa-regular fa-heart text-xs"></i>
-            </button>
-            
-            <div class="h-48 w-full bg-gray-100 mb-2 flex items-center justify-center text-gray-400 font-medium text-xs rounded-sm">
-                [ Product Image ]
-            </div>
-            <div>
-                <span class="text-[10px] uppercase font-bold tracking-tight text-gray-400">Raymond</span>
-                <h4 class="text-xs font-semibold text-gray-800 line-clamp-1 mb-1">Raymond Full-sleeve shirt blue</h4>
-                <div class="flex items-center gap-1 mb-1">
-                    <span class="text-amber-400 text-[10px]">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i>
-                    </span>
-                    <span class="text-[9px] text-gray-400 font-medium">(4)</span>
-                </div>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="text-sm font-bold text-gray-900">₹1399</span>
-                    <span class="text-xs text-gray-400 line-through">₹1599</span>
-                </div>
-                <div class="flex items-center justify-between text-xs mb-3">
-                    <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded-sm text-[10px]">In stock</span>
-                    <div class="flex items-center gap-1 text-[11px]">
-                        <span class="text-gray-500 font-medium">Qty:</span>
-                        <select class="bg-gray-50 border rounded px-1 py-0.5"><option>1</option><option>2</option></select>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-1.5">
-                <button class="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 text-xs font-bold py-2 rounded-sm transition">Add to Cart</button>
-                <button class="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-2 rounded-sm transition">Buy Now</button>
+    <section class="flex-grow space-y-6">
+        <div class="bg-[#f0e6e6] rounded-sm h-40 relative flex items-center px-8 border border-gray-200 shadow-sm">
+            <div class="z-10">
+                <h2 class="text-2xl font-black text-gray-900">UP TO <span class="text-red-600">50% OFF</span></h2>
             </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded-sm overflow-hidden p-3 flex flex-col justify-between shadow-sm relative group">
-            <span class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">7% Off</span>
-            <button class="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white shadow-sm w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 transition z-10">
-                <i class="fa-regular fa-heart text-xs"></i>
-            </button>
-            
-            <div class="h-48 w-full bg-gray-100 mb-2 flex items-center justify-center text-gray-400 font-medium text-xs rounded-sm relative">
-                [ Product Image ]
-                <div class="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[1px]">
-                    <span class="bg-gray-900/80 text-white text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-sm">Sold Out</span>
-                </div>
-            </div>
-            <div>
-                <span class="text-[10px] uppercase font-bold tracking-tight text-gray-400">BBA</span>
-                <h4 class="text-xs font-semibold text-gray-800 line-clamp-1 mb-1">BBA Half-sleeve middy</h4>
-                <div class="flex items-center gap-1 mb-1">
-                    <span class="text-amber-400 text-[10px]">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-regular fa-star text-gray-300"></i><i class="fa-regular fa-star text-gray-300"></i>
-                    </span>
-                    <span class="text-[9px] text-gray-400 font-medium">(3)</span>
-                </div>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="text-sm font-bold text-gray-900">₹1499</span>
-                    <span class="text-xs text-gray-400 line-through">₹1700</span>
-                </div>
-                <div class="flex items-center justify-between text-xs mb-3">
-                    <span class="text-red-600 font-bold bg-red-50 px-1.5 py-0.5 rounded-sm text-[10px]">Out of Stock</span>
-                    <div class="flex items-center gap-1 text-[11px]">
-                        <span class="text-gray-400 font-medium">Qty:</span>
-                        <select disabled class="bg-gray-100 text-gray-400 border rounded px-1 py-0.5"><option>0</option></select>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-1.5">
-                <button disabled class="w-full bg-gray-200 text-gray-400 text-xs font-bold py-2 rounded-sm cursor-not-allowed">Add to Cart</button>
-                <button disabled class="w-full bg-gray-200 text-gray-400 text-xs font-bold py-2 rounded-sm cursor-not-allowed">Buy Now</button>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <% if (products && products.length > 0) { %>
+                <% products.forEach(product => { %>
+                    <%- include('../partial/user/productCard', { product: product }) %>
+                <% }) %>
+            <% } else { %>
+                <div class="col-span-full text-center py-12 text-gray-400">No products found.</div>
+            <% } %>
         </div>
-
-        <div class="bg-white border border-gray-200 rounded-sm overflow-hidden p-3 flex flex-col justify-between shadow-sm relative group">
-            <span class="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10">5% Off</span>
-            <button class="absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-white shadow-sm w-7 h-7 rounded-full flex items-center justify-center border border-gray-100 transition z-10">
-                <i class="fa-regular fa-heart text-xs"></i>
-            </button>
-            
-            <div class="h-48 w-full bg-gray-100 mb-2 flex items-center justify-center text-gray-400 font-medium text-xs rounded-sm">
-                [ Product Image ]
-            </div>
-            <div>
-                <span class="text-[10px] uppercase font-bold tracking-tight text-gray-400">Pepe Jeans</span>
-                <h4 class="text-xs font-semibold text-gray-800 line-clamp-1 mb-1">Pepe Jeans half-sleeve middy</h4>
-                <div class="flex items-center gap-1 mb-1">
-                    <span class="text-amber-400 text-[10px]">
-                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star text-amber-400"></i>
-                    </span>
-                    <span class="text-[9px] text-gray-400 font-medium">(12)</span>
-                </div>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="text-sm font-bold text-gray-900">₹1299</span>
-                    <span class="text-xs text-gray-400 line-through">₹1400</span>
-                </div>
-                <div class="flex items-center justify-between text-xs mb-3">
-                    <span class="text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded-sm text-[10px]">In stock</span>
-                    <div class="flex items-center gap-1 text-[11px]">
-                        <span class="text-gray-500 font-medium">Qty:</span>
-                        <select class="bg-gray-50 border rounded px-1 py-0.5"><option>1</option><option>2</option></select>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-1.5">
-                <button class="w-full bg-amber-400 hover:bg-amber-500 text-gray-900 text-xs font-bold py-2 rounded-sm transition">Add to Cart</button>
-                <button class="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold py-2 rounded-sm transition">Buy Now</button>
-            </div>
-        </div>
-
-    </div>
-    <% if (products && products.length > 0) { %>
-    <% products.forEach(product => { %>
-            <% }) %>
-    <% } else { %>
-        <div class="col-span-full text-center py-12 text-gray-400">No products found on this page.</div>
-    <% } %>
-<!-- 
-    <%- include('../partial/admin/pagination', { baseUrl: '/', currentPage: currentPage, totalPages: totalPages }) %> -->
-
-</section>
-
-<%- include('../partial/user/footer') %>
+    </section>
+</div>

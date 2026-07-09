@@ -5,8 +5,7 @@ import * as userProfileService from '../../services/user/userProfileService.js';
 export const loadProfile = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
-        const user = await userProfileService.prepareProfileData(req.session.user); // Retrieve all data of 'user'
-        console.log("This is contoller", user)       
+        const user = await userProfileService.prepareProfileData(req.session.user); // Retrieve all data of 'user'       
         res.render('user/profile', { 
             user, 
             error: null, 

@@ -1,9 +1,10 @@
-// Navigate up two levels to src, then into services/constants
+
 import * as adminAuthService from '../../services/admin/adminAuthService.js';
 import { COOKIE_KEYS } from '../../constants/adminAuthConstants.js';
+import logger from '../../utilities/logger.js';
 
 // For 'display' 'login' page
-const loadLogin = (req, res) => {
+export const loadLogin = (req, res) => {
     if (req.session.admin) {
         return res.redirect('/admin/dashboard');
     }
@@ -14,7 +15,7 @@ const loadLogin = (req, res) => {
 };
 
 // For 'login process'
-const processLogin = async (req, res) => {
+export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         
@@ -24,15 +25,14 @@ const processLogin = async (req, res) => {
         req.session.admin = adminUser._id;
         res.redirect('/admin/dashboard');
     } catch (error) {
-        console.error("Admin authentication system exception:", error.message);
+        logger.error("Admin authentication system exception:", error.message);
         // Fallback to sending the error string exactly as your previous logic did
         res.send(error.message || "Access Denied: Invalid administrative credentials.");
     }
 };
 
-const loadDashboard = async (req, res) => {
+export const loadDashboard = async (req, res) => {
     try {
-        // Fetch dashboard metrics from the service
         const dashboardData = await adminAuthService.getDashboardData();
         
         res.render('admin/dashboard', {
@@ -47,14 +47,12 @@ const loadDashboard = async (req, res) => {
 };
 
 // For 'logout'
-const logout = (req, res) => {
+export const logout = (req, res) => {
     try {
         // Clear auth cookies using your constants
         res.clearCookie(COOKIE_KEYS.TOKEN); 
-        res.clearCookie(COOKIE_KEYS.ADMIN_TOKEN);
-
-        // Clear express-session memories
-        if (req.session) {
+        res.clearCookie(COOKIE_KEYS.ADMIN_TOKEN);        
+        if (req.session) {                   // Clear express-session memories
             req.session.destroy((err) => {
                 if (err) {
                     console.error("Session destruction failure during logout routine:", err);
@@ -73,4 +71,3 @@ const logout = (req, res) => {
     }
 };
 
-export default { loadLogin, processLogin, loadDashboard, logout };

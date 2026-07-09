@@ -1,4 +1,5 @@
 import * as adminProductService from '../../services/admin/adminProductService.js';
+import logger from '../../utilities/logger.js';
 
 export const getProductsList = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ export const getProductsList = async (req, res) => {
             activePage: 'products'
         });
     } catch (error) {
-        console.error("Failure processing inventory catalog list layout:", error);
+        logger.error("Failure processing inventory catalog list layout:", error);
         res.status(500).send("Internal Server Error processing inventory chart components.");
     }
 };

@@ -1,77 +1,213 @@
-<div class="w-full flex-1 flex items-center justify-center bg-white p-4">
-    
-    <div class="w-full max-w-md p-8">
-        <h1 class="text-3xl font-bold text-center text-black mb-10">Create Account</h1>
-
-        <form action="/signup" method="POST" class="space-y-5">
-            
+<div class="bg-[#f2f2f2] w-full max-w-md p-10 flex flex-col items-center rounded-xl shadow-lg relative mx-auto my-auto">    
+    <div id="stepSignupView" class="w-full animate-fade-in transition-all duration-300">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-10">Create Account</h1>
+        <form id="signupForm" novalidate class="space-y-5 w-full">                            
+            <div id="globalError" class="hidden w-full bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center"></div>            
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-gray-700 mb-1">Name</label>
-                <input type="text" name="name" required minlength="3" pattern="[A-Za-z\s]+" title="Name must be at least 3 characters and contain only letters." class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400">
-            </div>
-
+                <input type="text" id="name" name="name" class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800 w-full">
+                <div id="nameError" class="hidden error-text text-red-500 text-xs font-semibold mt-1"></div>
+            </div>                        
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-gray-700 mb-1">Email Address</label>
-                <input type="email" name="email" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Please enter a valid email address." class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400">
-            </div>
-
+                <input type="email" id="email" name="email" class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800 w-full">
+                <div id="emailError" class="hidden error-text text-red-500 text-xs font-semibold mt-1"></div>
+            </div>            
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-gray-700 mb-1">Password</label>
-                <div class="relative w-full">
-                   <input type="password" name="password" id="password" required pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}" title="Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, a number, and a special character." class="bg-gray-200 rounded-md px-4 py-3 w-full pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                    
-                    <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800 transition" onclick="togglePassword('password', this)"></i>
+                <div class="relative w-full password-toggle-wrapper">
+                   <input type="password" id="password" name="password" class="bg-gray-200 rounded-md px-4 py-3 w-full pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800">
+                   <button type="button" class="forToggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer focus:outline-none">
+                       <i class="fa-regular fa-eye text-gray-500 hover:text-gray-800 transition"></i>
+                   </button>
                 </div>
-            </div>
-
+                <div id="passwordError" class="hidden error-text text-red-500 text-xs font-semibold mt-1"></div>
+            </div>            
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-gray-700 mb-1">Confirm Password</label>
-                <div class="relative w-full">
-                    <input type="password" name="confirmPassword" id="confirmPassword" required class="bg-gray-200 rounded-md px-4 py-3 w-full pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400">
-                    
-                    <i class="fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800 transition" onclick="togglePassword('confirmPassword', this)"></i>
+                <div class="relative w-full password-toggle-wrapper">
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="bg-gray-200 rounded-md px-4 py-3 w-full pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800">
+                    <button type="button" class="forToggle absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer focus:outline-none">
+                        <i class="fa-regular fa-eye text-gray-500 hover:text-gray-800 transition"></i>
+                    </button>
                 </div>
+                <div id="confirmPasswordError" class="hidden error-text text-red-500 text-xs font-semibold mt-1"></div>
             </div>
-
             <div class="flex flex-col mb-4">
-                <label class="text-xs font-bold text-gray-700 mb-1">Referral Code(Optional)</label>
-                <input type="text" name="referralCode" class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                <label class="text-xs font-bold text-gray-700 mb-1">Referral Code (Optional)</label>
+                <input type="text" id="referralCode" name="referralCode" class="bg-gray-200 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-400 text-gray-800 w-full">
             </div>
-
-            <button type="submit" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3 rounded-lg mt-6 transition shadow-sm cursor-pointer">
+            <button type="submit" id="signupSubmitBtn" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white font-bold py-3 rounded-lg mt-6 transition shadow-sm cursor-pointer">
                 Sign Up
             </button>
-        </form>
-
-        <div class="mt-8 mb-4">
+        </form>        
+        <div class="mt-8 mb-4 w-full">
             <a href="/auth/google" class="block w-full">
                 <button type="button" class="w-full bg-[#e0e0e0] hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition shadow-sm mt-4 text-sm flex justify-center items-center gap-2 cursor-pointer">
                     <i class="fab fa-google text-red-500"></i> Continue with Google
                 </button>
             </a>
-        </div>
-        
+        </div>               
         <div class="mt-6 text-center text-xs font-bold text-gray-600">
             Already have an account? <a href="/login" class="text-[#208b59] hover:underline">Log in</a>
         </div>
     </div>
 
+    <!-- For display 'otp' page -->
+    <div id="stepOtpView" class="hidden w-full animate-fade-in transition-all duration-300 text-center">
+        <h1 class="text-2xl font-bold text-center text-black mb-2">Check Your Email</h1>
+        <p class="text-xs text-gray-500 font-medium mb-8">We sent a secure 6-digit code to your email. Please enter it below.</p>                    
+        <form id="otpForm" class="w-full">
+            <div class="flex justify-center gap-2 mb-6" id="otpInputsContainer">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+                <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
+            </div>                            
+            <div class="text-xs font-bold text-red-500 tracking-wider mb-6">
+                Resend OTP in: <span id="timerText">03:00</span>
+            </div>            
+            <button type="submit" id="otpSubmitBtn" class="w-full bg-[#208b59] hover:bg-[#1a734a] text-white text-sm font-bold uppercase tracking-widest py-4 rounded-lg transition shadow-md">
+                Verify & Create Account
+            </button>
+        </form>
+    </div>
 </div>
 
 <script>
-    function togglePassword(inputId, icon) {
-        const input = document.getElementById(inputId);
-        
-        if (input.type === 'password') {
-            // Show the password
-            input.type = 'text';
-            icon.classList.remove('fa-eye');
-            icon.classList.add('fa-eye-slash'); // Changes to the crossed-out eye
-        } else {
-            // Hide the password
-            input.type = 'password';
-            icon.classList.remove('fa-eye-slash');
-            icon.classList.add('fa-eye'); // Changes back to the normal eye
+let countdownInterval;
+function startOtpTimer(durationInSeconds) {                  // It is the 'function' for 'start counting timer' in 'otp' page and we call this function when 'response' data contains 'sucess'(ie 'data.success')after 'fetch()' 
+    let timer = durationInSeconds;
+    const display = document.getElementById('timerText');
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(function () {
+        let minutes = parseInt(timer / 60, 10);
+        let seconds = parseInt(timer % 60, 10);
+        minutes = minutes < 10 ? "0" + minutes : minutes;     // Add '0' before the 'number', if seconds are 'below' 10(ie '09,08 etc')
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+        display.textContent = minutes + ":" + seconds;
+        if (--timer < 0) {
+            clearInterval(countdownInterval);
+            display.textContent = "00:00";
+        }
+    }, 1000);
+}
+
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.error-text, #globalError').forEach(el => {
+        el.classList.add('hidden');
+        el.innerText = '';
+    });
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const referralCode = document.getElementById('referralCode').value.trim();
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    let isValid = true;
+    function showError(elementId, message) {
+        const errorDiv = document.getElementById(elementId);
+        if(errorDiv) {
+            errorDiv.innerText = message;
+            errorDiv.classList.remove('hidden');
+            isValid = false;
         }
     }
+
+    if (name.length < 3 || !nameRegex.test(name)) showError('nameError', 'Name must be at least 3 characters (letters only).');
+    if (!emailRegex.test(email)) showError('emailError', 'Please enter a valid email address.');
+    if (!passwordRegex.test(password)) showError('passwordError', 'Password must be 8+ chars, with upper, lower, number & special char.');
+    if (password !== confirmPassword) showError('confirmPasswordError', 'Passwords do not match.');
+    if (!isValid) return;
+    try {
+        const submitBtn = document.getElementById('signupSubmitBtn');
+        submitBtn.innerText = "Processing...";
+        submitBtn.disabled = true;
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, confirmPassword, referralCode })
+        });
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('stepSignupView').classList.add('hidden');
+            document.getElementById('stepOtpView').classList.remove('hidden');
+            startOtpTimer(180);
+        } else {
+            const globalError = document.getElementById('globalError');
+            if(globalError) {
+                globalError.innerText = data.message;
+                globalError.classList.remove('hidden');
+            }
+        }
+    } catch (err) {
+        const globalError = document.getElementById('globalError');
+        if(globalError) {
+            globalError.innerText = "A network error occurred. Please try again.";
+            globalError.classList.remove('hidden');                // 'hidden' is the 'built-in' class of 'tailwind css'
+        }
+    } finally {
+        const submitBtn = document.getElementById('signupSubmitBtn');
+        submitBtn.innerText = "Sign Up";
+        submitBtn.disabled = false;
+    }
+});
+
+const otpInputs = document.querySelectorAll('.otp-box');
+otpInputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+        }
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+            otpInputs[index - 1].focus();
+        }
+    });
+});
+
+document.getElementById('otpForm').addEventListener('submit', async function(e) {
+    e.preventDefault(); 
+    let combinedOtp = '';
+    otpInputs.forEach(input => combinedOtp += input.value);
+    if (combinedOtp.length !== 6) {
+        return alert("Please enter the full 6-digit OTP.");
+    }
+    try {
+        const submitBtn = document.getElementById('otpSubmitBtn');
+        submitBtn.innerText = "Verifying...";
+        submitBtn.disabled = true;
+
+        const response = await fetch('/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json'},
+            body: JSON.stringify({ otp: combinedOtp })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            window.location.href = '/login'; 
+        } else {
+            alert(data.message || "Invalid OTP. Please try again.");
+            otpInputs.forEach(input => input.value = '');
+            otpInputs[0].focus();
+        }
+    } catch (error) {
+        console.error("OTP Verification Error:", error);
+        alert("A network error occurred.");
+    } finally {
+        const submitBtn = document.getElementById('otpSubmitBtn');
+        submitBtn.innerText = "Verify & Create Account";
+        submitBtn.disabled = false;
+    }
+});
 </script>
+
+
