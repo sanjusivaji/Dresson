@@ -1,0 +1,90 @@
+<!-- Universal Alert & Confirm Modal Overlay -->
+<div id="customModalOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl transform transition-all text-center border border-gray-100">
+        
+        <!-- Modal container -->
+        <div id="customModalIconContainer" class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4 shadow-inner">
+            <i id="customModalIcon" class="fa-solid fa-triangle-exclamation text-red-600 text-2xl"></i>
+        </div>
+        
+        <!-- For display message -->
+        <h3 id="customModalTitle" class="text-lg font-bold text-gray-900 mb-2">Notice</h3>
+        <p id="customModalMessage" class="text-xs text-gray-600 mb-6 font-medium leading-relaxed">Message goes here.</p>
+        
+        <!-- Action Buttons -->
+        <div class="flex justify-center items-center gap-3" id="customModalButtons">
+            <button type="button" id="customModalCancelBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 px-6 rounded-full text-xs uppercase tracking-wider transition cursor-pointer hidden">
+                Cancel
+            </button>
+            <button type="button" id="customModalConfirmBtn" class="bg-red-900 hover:bg-red-950 text-white font-bold py-2.5 px-6 rounded-full text-xs uppercase tracking-wider transition cursor-pointer shadow-md">
+                OK
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+/**
+ * Replaces standard alert('message')
+ * @param {string} message - The message to display
+ * @param {string} title - Optional title (default: 'Notice')
+ * @param {string} type - 'info' | 'error' | 'success'
+ */
+function showCustomAlert(message, title = 'Notice', type = 'info') {
+    const overlay = document.getElementById('customModalOverlay');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    
+    const iconContainer = document.getElementById('customModalIconContainer');
+    const icon = document.getElementById('customModalIcon');
+    
+    if (type === 'error') {
+        iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4 shadow-inner";
+        icon.className = "fa-solid fa-circle-xmark text-red-600 text-2xl";
+    } else if (type === 'success') {
+        iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-green-100 mb-4 shadow-inner";
+        icon.className = "fa-solid fa-circle-check text-green-600 text-2xl";
+    } else {
+        iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-blue-100 mb-4 shadow-inner";
+        icon.className = "fa-solid fa-circle-info text-blue-600 text-2xl";
+    }
+
+    document.getElementById('customModalCancelBtn').classList.add('hidden');
+    const confirmBtn = document.getElementById('customModalConfirmBtn');
+    confirmBtn.textContent = 'OK';
+    confirmBtn.onclick = () => overlay.classList.add('hidden');
+
+    overlay.classList.remove('hidden');
+}
+
+/**
+ * Replaces standard confirm('message')
+ * @param {string} message - The question to ask
+ * @param {function} onConfirm - Callback function if user clicks "Yes"
+ * @param {string} title - Optional title (default: 'Are you sure?')
+ */
+function showCustomConfirm(message, onConfirm, title = 'Are you sure?') {
+    const overlay = document.getElementById('customModalOverlay');
+    document.getElementById('customModalTitle').textContent = title;
+    document.getElementById('customModalMessage').textContent = message;
+    
+    const iconContainer = document.getElementById('customModalIconContainer');
+    const icon = document.getElementById('customModalIcon');
+    iconContainer.className = "mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-yellow-100 mb-4 shadow-inner";
+    icon.className = "fa-solid fa-triangle-exclamation text-yellow-600 text-2xl";
+
+    const cancelBtn = document.getElementById('customModalCancelBtn');
+    cancelBtn.classList.remove('hidden');
+    cancelBtn.onclick = () => overlay.classList.add('hidden');
+
+    const confirmBtn = document.getElementById('customModalConfirmBtn');
+    confirmBtn.textContent = 'Yes, Continue';
+    confirmBtn.onclick = () => {
+        overlay.classList.add('hidden');
+        if (typeof onConfirm === 'function') onConfirm();
+    };
+
+    overlay.classList.remove('hidden');
+}
+</script>

@@ -15,12 +15,15 @@ export const getProductsList = async (req, res) => {
     }
 };
 
+
+
 export const getAddProduct = async (req, res) => {
     try {
         const { categories } = await adminProductService.fetchProductFormOptions();
         res.render('admin/addProduct', { 
             categories,
-            errorMessage: null,
+            error: null, // Changed from errorMessage
+            formData: null,
             activePage: 'products'
         });
     } catch (error) {
@@ -31,11 +34,32 @@ export const getAddProduct = async (req, res) => {
 
 export const postAddProduct = async (req, res) => {
     try {
-        // Future Add Logic goes here!
+        if (!req.files || req.files.length < 3) {
+            const { categories } = await adminProductService.fetchProductFormOptions();
+            return res.render('admin/addProduct', { 
+                categories,
+                error: "Catalog creation failed: A minimum of 3 product images is required.", // Changed from errorMessage
+                formData: req.body,
+                activePage: 'products'
+            });
+        }
+
+        await adminProductService.executeProductCreate(req.body, req.files);
         res.redirect('/admin/products');
     } catch (error) {
-        console.error("Error publishing new catalog entry:", error);
-        res.status(500).send("Internal Error writing product to registry.");
+        logger.error("Error publishing new catalog entry:", error);
+        
+        try {
+            const { categories } = await adminProductService.fetchProductFormOptions();
+            res.render('admin/addProduct', { 
+                categories,
+                error: error.message || "Internal error saving product to registry.", // Changed from errorMessage
+                formData: req.body, // ADDED
+                activePage: 'products'
+            });
+        } catch (fallbackError) {
+            res.status(500).send("Internal Error writing product to registry.");
+        }
     }
 };
 
@@ -44,7 +68,8 @@ export const getEditProduct = async (req, res) => {
         const editData = await adminProductService.fetchEditProductData(req.params.id);
         res.render('admin/editProduct', {
             ...editData,
-            errorMessage: null,
+            error: null, // Changed from errorMessage
+            formData: null,
             activePage: 'products'
         });
     } catch (error) {
@@ -65,7 +90,8 @@ export const postEditProduct = async (req, res) => {
             const fallbackData = await adminProductService.fetchEditProductData(req.params.id);
             res.render('admin/editProduct', {
                 ...fallbackData,
-                errorMessage: "Database collection compilation failure parsing data formats.",
+                error: error.message || "Database collection compilation failure parsing data formats.", // Changed from errorMessage
+                formData: req.body, // ADDED
                 activePage: 'products'
             });
         } catch (fallbackError) {
@@ -73,6 +99,8 @@ export const postEditProduct = async (req, res) => {
         }
     }
 };
+
+
 
 export const toggleProductList = async (req, res) => {
     try {
@@ -83,3 +111,6 @@ export const toggleProductList = async (req, res) => {
         res.status(500).send("Internal database operational mapping failure.");
     }
 };
+
+
+

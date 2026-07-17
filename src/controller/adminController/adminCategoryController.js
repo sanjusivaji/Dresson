@@ -22,8 +22,6 @@ export const postAddCategory = async (req, res) => {
         res.redirect('/admin/categories');
     } catch (error) {
         logger.error("Failure during category transaction execution:", error);
-        
-        // Recover view data to display the error gracefully
         try {
             const mainCategories = await adminCategoryService.fetchAddCategoryOptions();
             res.render('admin/addCategory', { 

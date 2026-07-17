@@ -1,5 +1,6 @@
 import logger from '../../utilities/logger.js';
 import * as userAddressService from '../../services/user/userAddressService.js';
+import  User from '../../model/userModel.js'
 
 // For 'display' address page
 export const loadAddressPage = async (req, res) => {
@@ -41,7 +42,8 @@ export const loadAddAddressPage = async (req, res) => {
             error: errorMessage,                  // It display when 'error' available through 'query parameter'.
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
-            error: null
+            error: null,
+            formData: null
         });
     } catch (error) {
         logger.error("Error loading add address page:", error);
@@ -61,7 +63,8 @@ export const processAddAddress = async (req, res) => {
             layout: 'layout/user',
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
-            error: error.message || "Failed to save address. Please check your inputs."
+            error: error.message || "Failed to save address. Please check your inputs.",
+            formData: req.body
         });
     }
 };
@@ -117,5 +120,51 @@ export const deleteAddress = async (req, res) => {
     } catch (error) {
         logger.error("Error deleting address:", error);
         res.redirect('/profile/address?error=failed');                           // Here we put the 'query parameter' '?error=failed',after '/profile/address' route
+    }
+};
+
+
+
+// Checking the 'name' and 'email' is already existed
+export const checkNameEmail = async (req, res) => {
+    try {
+        const { name, email } = req.body;
+        
+        if (!name || !email) {
+            return res.status(400).json({
+                status: false,
+                message: "Please input name and email"
+            });
+        }        
+        const clearName = name.trim().toLowerCase();
+        const clearEmail = email.trim().toLowerCase();
+        const nameParts = clearName.split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || 'Not Provided';        
+        const user = await User.findOne({ email: clearEmail });        
+        if (user) {
+            return res.status(409).json({
+                success: false, // Changed to false because it's a conflict!
+                message: "User already exist"
+            });
+        }        
+        const newUser = new User({
+            firstName: firstName, 
+            lastName: lastName,   
+            email: clearEmail
+        });        
+        await newUser.save();        
+        return res.status(201).json({
+            status: true,
+            message: "Created a new user",
+            user: newUser
+        });
+    } catch (error) {
+        console.error("API Crash in checkNameEmail:", error);        
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error: error.message
+        });
     }
 };

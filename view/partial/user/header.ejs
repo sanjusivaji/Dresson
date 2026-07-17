@@ -9,30 +9,54 @@
 </head>
 <body class="bg-gray-50 font-sans text-gray-800 min-h-screen flex flex-col justify-between">
 
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
-      <!-- Inside view/partial/user/header.ejs -->
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold tracking-wider text-[#a87a7a]">DRESSON</h1>
-            <!-- Wrap the avatar icon in a link to the profile route -->
-            <a href="/profile" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 cursor-pointer transition">
-                <i class="fa-regular fa-user"></i>
-            </a>
-        </div>
-        <nav class="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-600">
-            <a href="#" class="text-gray-900 border-b-2 border-gray-900 pb-1">All</a>
-            <a href="#" class="hover:text-gray-900 transition">Men</a>
-            <a href="#" class="hover:text-gray-900 transition">Women</a>
-            <a href="#" class="hover:text-gray-900 transition">Kids</a>
-        </nav>
-        <div class="flex items-center gap-4">
-            <div class="relative hidden sm:block">
-                <input type="text" placeholder="Search..." class="bg-gray-100 text-xs rounded-md pl-8 pr-3 py-1.5 w-48 focus:outline-none">
-                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
-            </div>
-            <button class="text-gray-600 hover:text-red-500 text-lg"><i class="fa-regular fa-heart"></i></button>
-            <button class="text-gray-600 hover:text-gray-950 text-lg"><i class="fa-solid fa-basket-shopping"></i></button>
-            <a href="/logout" class="text-xs font-semibold text-red-500 border border-red-200 px-3 py-1 rounded-md hover:bg-red-50">Logout</a>
-        </div>
-    </header>
+   <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+    <!-- Brand & Profile -->
+    <div class="flex items-center gap-4">
+        <a href="/shop" class="text-xl font-bold tracking-wider text-[#a87a7a]">DRESSON</a>
+        <a href="/profile" class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 cursor-pointer transition" title="My Profile">
+            <i class="fa-regular fa-user text-sm"></i>
+        </a>
+    </div>
+
+    <!-- Top Navigation Links (With Dynamic Active Tab Highlighting) -->
+    <% const activeGender = typeof currentGender !== 'undefined' ? currentGender : (typeof query !== 'undefined' && query.gender ? query.gender : ''); %>
+    <nav class="hidden md:flex items-center gap-8 font-semibold text-sm text-gray-600">
+        <a href="/shop" 
+           class="<%= !activeGender && typeof currentCategory === 'undefined' ? 'text-gray-900 border-b-2 border-gray-900 pb-1 font-bold' : 'hover:text-gray-900 transition' %>">
+           All
+        </a>
+        <a href="/shop?gender=Men" 
+           class="<%= activeGender === 'Men' ? 'text-gray-900 border-b-2 border-gray-900 pb-1 font-bold' : 'hover:text-gray-900 transition' %>">
+           Men
+        </a>
+        <a href="/shop?gender=Women" 
+           class="<%= activeGender === 'Women' ? 'text-gray-900 border-b-2 border-gray-900 pb-1 font-bold' : 'hover:text-gray-900 transition' %>">
+           Women
+        </a>
+        <a href="/shop?gender=Kids" 
+           class="<%= activeGender === 'Kids' ? 'text-gray-900 border-b-2 border-gray-900 pb-1 font-bold' : 'hover:text-gray-900 transition' %>">
+           Kids
+        </a>
+    </nav>
+
+    <!-- Right Action Icons & Functional Search Form -->
+    <div class="flex items-center gap-4">
+        <form action="/shop" method="GET" class="relative hidden sm:block">
+            <% if (activeGender) { %>
+                <input type="hidden" name="gender" value="<%= activeGender %>">
+            <% } %>
+            <input type="text" name="search" placeholder="Search apparel..." 
+                   value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+                   class="bg-gray-100 text-xs rounded-md pl-8 pr-3 py-1.5 w-48 focus:outline-none focus:ring-1 focus:ring-gray-400 font-medium">
+            <button type="submit" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </button>
+        </form>
+
+        <a href="/wishlist" class="text-gray-600 hover:text-red-500 text-lg transition" title="Wishlist"><i class="fa-regular fa-heart"></i></a>
+        <a href="/cart" class="text-gray-600 hover:text-gray-950 text-lg transition" title="Shopping Cart"><i class="fa-solid fa-basket-shopping"></i></a>
+        <a href="/logout" class="text-xs font-semibold text-red-500 border border-red-200 px-3 py-1 rounded-md hover:bg-red-50 transition">Logout</a>
+    </div>
+</header>
 
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col md:flex-row gap-6 flex-grow">

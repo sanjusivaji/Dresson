@@ -1,30 +1,59 @@
-
-
-
-
-
-
-<div class="flex flex-row gap-6 max-w-7xl mx-auto w-full px-4 py-6">
+<div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full px-4 py-8">
     
-    <aside class="w-64 flex-shrink-0">
-        <%- include('../partial/user/sidebar') %>
-    </aside>
+    <!-- INCLUDE SEPARATED FIGMA SIDEBAR -->
+    <%- include('../partial/user/shopSidebar') %>
 
-    <section class="flex-grow space-y-6">
-        <div class="bg-[#f0e6e6] rounded-sm h-40 relative flex items-center px-8 border border-gray-200 shadow-sm">
-            <div class="z-10">
-                <h2 class="text-2xl font-black text-gray-900">UP TO <span class="text-red-600">50% OFF</span></h2>
+    <!-- RIGHT CONTENT AREA -->
+    <section class="flex-grow space-y-6 min-w-0">
+        
+        <!-- Promotional Banner Matching Figma -->
+        <div class="bg-[#f2e9e9] rounded-xl h-44 relative flex items-center px-8 border border-gray-200/60 shadow-xs overflow-hidden">
+            <div class="z-10 max-w-md">
+                <p class="text-[11px] font-extrabold text-gray-600 uppercase tracking-widest mb-1">Limited Time Offer</p>
+                <h2 class="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-none">UP TO <span class="text-red-600">50% OFF</span></h2>
+                <p class="text-xs text-gray-600 font-semibold mt-2">On all premium apparel and seasonal collections.</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Results Counter -->
+        <div class="flex justify-between items-center px-1">
+            <span class="text-xs text-gray-500 font-medium">Showing <strong class="text-gray-900"><%= products ? products.length : 0 %></strong> of <strong class="text-gray-900"><%= typeof totalProducts !== 'undefined' ? totalProducts : 0 %></strong> items</span>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <% if (products && products.length > 0) { %>
                 <% products.forEach(product => { %>
                     <%- include('../partial/user/productCard', { product: product }) %>
                 <% }) %>
             <% } else { %>
-                <div class="col-span-full text-center py-12 text-gray-400">No products found.</div>
+                <div class="col-span-full text-center py-20 bg-white rounded-xl border border-gray-200 p-8 space-y-3 shadow-2xs">
+                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto text-gray-400 text-xl">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800">No products matched your criteria.</p>
+                    <p class="text-xs text-gray-400">Try adjusting your price range, category, or clearing filters.</p>
+                    <a href="/shop" class="inline-block mt-2 px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition">Clear All Filters</a>
+                </div>
             <% } %>
         </div>
+
+        <!-- Pagination Footer -->
+        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+            <div class="flex justify-center items-center space-x-1.5 pt-8 border-t border-gray-200">
+                <% if (currentPage > 1) { %>
+                    <a href="/shop?<%= new URLSearchParams({...query, page: currentPage - 1}).toString() %>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold bg-white hover:bg-gray-50 text-gray-700">&laquo; Prev</a>
+                <% } %>
+
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                    <a href="/shop?<%= new URLSearchParams({...query, page: i}).toString() %>" class="px-3.5 py-1.5 border rounded-lg text-xs font-bold transition <%= currentPage === i ? 'bg-black border-black text-white shadow-xs' : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700' %>"><%= i %></a>
+                <% } %>
+
+                <% if (currentPage < totalPages) { %>
+                    <a href="/shop?<%= new URLSearchParams({...query, page: currentPage + 1}).toString() %>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold bg-white hover:bg-gray-50 text-gray-700">Next &raquo;</a>
+                <% } %>
+            </div>
+        <% } %>
+
     </section>
 </div>

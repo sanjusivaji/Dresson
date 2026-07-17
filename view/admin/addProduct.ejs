@@ -10,23 +10,30 @@
     <p class="text-xs text-gray-400 mt-1">Configure your product identity, gallery media assets, variants matrix, and categories.</p>
 </div>
 
+<!-- Shared Common Alerts & Modal Partials -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
 <input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
 
 <form action="/admin/products/add" method="POST" enctype="multipart/form-data" id="productForm" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-4xl mb-12">
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-        
+    <!-- SECTION 1: Product Identity & Categories -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="space-y-6">
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
                 <input type="text" id="baseName" name="productName" required placeholder="e.g., Premium Comfort Polo Tee" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition">
+                       value="<%= locals.formData && formData.productName ? formData.productName : '' %>"
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition font-medium">
             </div>
 
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
                 <input type="text" id="brandName" name="brand" required placeholder="e.g., Levi's, Zara, Dresson Original" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition">
+                       value="<%= locals.formData && formData.brand ? formData.brand : '' %>"
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
             </div>
         </div>
 
@@ -35,9 +42,9 @@
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
                 <select id="parentCategory" name="parentCategory" required onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
                     <option value="" disabled selected>Select Gender Target Room</option>
-                    <option value="Men">Men</option>
-                    <option value="Women">Women</option>
-                    <option value="Kids">Kids</option>
+                    <option value="Men" <%= locals.formData && formData.parentCategory === 'Men' ? 'selected' : '' %>>Men</option>
+                    <option value="Women" <%= locals.formData && formData.parentCategory === 'Women' ? 'selected' : '' %>>Women</option>
+                    <option value="Kids" <%= locals.formData && formData.parentCategory === 'Kids' ? 'selected' : '' %>>Kids</option>
                 </select>
             </div>
 
@@ -52,31 +59,53 @@
         <div class="md:col-span-2 flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
             <textarea name="description" required rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
-                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none"></textarea>
+                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : '' %></textarea>
+        </div>
+        <div class="flex flex-col">
+            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
+            <div class="relative">
+                <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
+                       value="<%= locals.formData && formData.discount ? formData.discount : '0' %>"
+                       class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
+            </div>
+            <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront product card badge.</span>
         </div>
     </div>
 
+    <!-- SECTION 2: Modern Cropper.js Image Gallery (Min. 3 Required) -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="mb-4">
-            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery</h3>
-            <p class="text-[11px] text-gray-400 mt-0.5">Upload high-resolution catalog photos (Select up to 4 images max)</p>
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery (Min. 3 Images Required)</h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">Upload high-resolution dress photos. Click any preview card to crop and resize before submitting.</p>
         </div>
 
-        <div class="border-2 border-dashed border-gray-300 bg-white rounded-xl p-6 text-center transition hover:border-gray-400 group relative">
-            <input type="file" name="productImages" multiple accept="image/*" id="galleryInput" class="hidden" onchange="previewImages(this)">
+        <!-- Dropzone Area -->
+        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-white hover:border-gray-400 transition cursor-pointer group" onclick="document.getElementById('rawFileInput').click()">
+            <div class="w-12 h-12 rounded-full bg-red-50 mx-auto flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200 mb-3">
+                <i class="fas fa-cloud-upload-alt text-xl"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-700">Click to browse or drag & drop apparel photos</p>
+            <p class="text-[10px] text-gray-400 mt-1">Supports PNG, JPG, WEBP (Recommended aspect ratio 3:4)</p>
             
-            <label for="galleryInput" class="cursor-pointer flex flex-col items-center justify-center space-y-2 py-4">
-                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200">
-                    <i class="fas fa-images text-xl"></i>
-                </div>
-                <span class="text-xs font-bold text-gray-700">Click to upload product display pictures</span>
-                <span class="text-[10px] text-gray-400">Supports JPEG, PNG, or WEBP formats</span>
-            </label>
+            <!-- Hidden Raw Input for initial selection -->
+            <input type="file" id="rawFileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+            
+            <!-- Hidden Final Form Input (Submits to backend Multer) -->
+            <input type="file" name="productImages" id="finalFormFileInput" multiple class="hidden">
         </div>
 
-        <div id="imagePreviewsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4 hidden"></div>
+        <!-- Client-Side Validation Error Box -->
+        <div id="imageCountError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-bold text-red-600 flex items-center gap-2">
+            <i class="fas fa-exclamation-circle text-sm"></i>
+            <span>You must upload and confirm at least 3 images for the catalog.</span>
+        </div>
+
+        <!-- Thumbnail Previews Grid -->
+        <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 empty:hidden"></div>
     </div>
 
+    <!-- SECTION 3: Variants Workspace -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="flex justify-between items-center mb-6">
             <div>
@@ -106,7 +135,7 @@
                     </select>
                 </div>
                 <div class="col-span-8">
-                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
                 </div>
                 <div class="col-span-1 text-center">
                     <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button>
@@ -115,6 +144,7 @@
         </div>
     </div>
 
+    <!-- Dynamic Multi-Variant Matrix Card -->
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm hidden" id="combinationsCard">
         <div class="bg-gray-50/80 px-6 py-4 border-b border-gray-200">
             <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation Matrix</h3>
@@ -129,19 +159,21 @@
                         <th class="py-3 px-6 w-32 text-center">Available Stock</th>
                     </tr>
                 </thead>
-                <tbody class="text-xs text-gray-700 divide-y divide-gray-100" id="matrixTableBody"></tbody>
+                <tbody class="text-xs text-gray-700 divide-y divide-gray-100 font-medium" id="matrixTableBody"></tbody>
             </table>
         </div>
     </div>
 
+    <!-- Form Submit Actions -->
     <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-3">
         <a href="/admin/products" class="px-5 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel changes</a>
-        <button type="submit" class="px-6 py-2.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer">Publish Live Catalog Unit</button>
+        <button type="submit" class="px-6 py-2.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer uppercase tracking-wider">Publish Live Catalog Unit</button>
     </div>
 
 </form>
 
-<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+<!-- MODAL 1: Custom Variant Creator (Placed outside form to avoid auto-submitting) -->
+<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-xs">
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
         <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
             <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
@@ -151,20 +183,24 @@
             <button type="button" onclick="closeCustomVariantModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
         </div>
         <div class="p-5 space-y-4">
-            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed">
+            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed font-medium">
                 <strong>Guide:</strong> Create options that aren't size or color, like <strong>"Water Resistance"</strong> or <strong>"Sleeve Type"</strong>.
             </div>
             <div class="flex flex-col">
                 <label class="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1.5">Variant Parameter Identifier Label</label>
-                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500">
+                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500 font-medium">
             </div>
         </div>
         <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end space-x-2">
             <button type="button" onclick="closeCustomVariantModal()" class="px-3 py-1.5 border border-gray-300 bg-white text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs">Inject Option Row</button>
+            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer">Inject Option Row</button>
         </div>
     </div>
 </div>
+
+
+<!-- Include your standalone Cropper script -->
+<script src="/js/shared/imageCropper.js"></script>
 
 <script>
     // 1. Parse Database Documents Passed From Server Environment
@@ -176,15 +212,19 @@
         console.error("Critical failure parsing category datasets:", error);
     }
 
-    // 2. 🔥 THE SELECT-ONLY RECONCILIATION: Filters child classifications dynamically
+    // Initialize dropdown if data was sent back on validation fail
+    document.addEventListener("DOMContentLoaded", () => {
+        if (document.getElementById('parentCategory').value) {
+            handleParentCategoryChange();
+        }
+    });
+
+    // 2. CATEGORY SELECT RECONCILIATION: Filters child classifications dynamically
     function handleParentCategoryChange() {
         const activeGender = document.getElementById('parentCategory').value;
         const subSelect = document.getElementById('subCategory');
         
-        // Clear prior nodes cleanly
         subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
-        
-        // Filter elements matching chosen target gender tree branch
         const filteredMatches = databaseCategories.filter(cat => cat.gender === activeGender && cat.parentCategory !== null);
 
         if (filteredMatches.length > 0) {
@@ -194,12 +234,9 @@
 
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option');
-                opt.value = cat._id; // Points straight to the valid database ObjectId
-                
-                // Display string context (e.g., "Topwear -> T-Shirts")
+                opt.value = cat._id; 
                 const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
                 opt.innerText = parentName + " → " + cat.categoryName;
-                
                 subSelect.appendChild(opt);
             });
         } else {
@@ -210,31 +247,7 @@
         }
     }
 
-    // 3. Dynamic Realtime Live Image Upload Gallery Preview Engine
-    function previewImages(input) {
-        const previewContainer = document.getElementById('imagePreviewsContainer');
-        previewContainer.innerHTML = ''; 
-
-        if (input.files && input.files.length > 0) {
-            previewContainer.classList.remove('hidden');
-            const filesCount = Math.min(input.files.length, 4);
-            
-            for (let i = 0; i < filesCount; i++) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imgWrapper = document.createElement('div');
-                    imgWrapper.className = "relative group aspect-square rounded-xl border border-gray-200 overflow-hidden bg-white";
-                    imgWrapper.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">Slot ' + (i + 1) + '</span></div>';
-                    previewContainer.appendChild(imgWrapper);
-                }
-                reader.readAsDataURL(input.files[i]);
-            }
-        } else {
-            previewContainer.classList.add('hidden');
-        }
-    }
-
-    // 4. Variant Configuration Grid Option Management Layouts
+    // 3. VARIANT CONFIGURATION ENGINE
     function addNewOptionRow() {
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
@@ -248,7 +261,7 @@
                 </select>
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
             </div>
             <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>
         `;
@@ -260,14 +273,20 @@
 
     function submitCustomVariantRow() {
         const inputName = document.getElementById('customVariantInputName').value.trim();
-        if(!inputName) return alert("Please clarify a variant identifier parameter tag.");
+        if(!inputName) {
+            if (typeof showCustomAlert === 'function') {
+                return showCustomAlert("Please clarify a variant identifier parameter tag.", "Missing Input", "error");
+            } else {
+                return alert("Please clarify a variant identifier parameter tag.");
+            }
+        }
         
         const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
         
         row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
-        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button></div>';
+        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>';
         
         container.appendChild(row);
         closeCustomVariantModal();
@@ -287,7 +306,7 @@
         generateCombinationsMatrix();
     }
 
-    // 5. Cartesian Product Multi-Variant Generation Calculation Table Engine
+    // 4. CARTESIAN PRODUCT MATRIX GENERATOR
     function generateCombinationsMatrix() {
         const rows = document.getElementsByClassName('option-row');
         const baseName = document.getElementById('baseName').value.trim() || "PROD";
@@ -319,7 +338,7 @@
             
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-50/50 transition";
-            tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
+            tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
             
             tableBody.appendChild(tr);
         });
@@ -339,8 +358,97 @@
 
     document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
     document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
+
+    // 5. IMAGE GALLERY MANAGEMENT (Cleaned & Linked to External Module)
+    const processedFilesArray = []; 
+    const dataTransfer = new DataTransfer(); 
+
+    function handleFileSelect(event) {
+        const files = Array.from(event.target.files);
+        if (!files.length) return;
+
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                processedFilesArray.push(file);
+            }
+        });
+
+        updateFormFileInput();
+        renderPreviews();
+        event.target.value = ''; 
+    }
+
+    function updateFormFileInput() {
+        dataTransfer.items.clear();
+        processedFilesArray.forEach(file => dataTransfer.items.add(file));
+        document.getElementById('finalFormFileInput').files = dataTransfer.files;
+        
+        if (processedFilesArray.length >= 3) {
+            document.getElementById('imageCountError').classList.add('hidden');
+        }
+    }
+
+    function renderPreviews() {
+        const grid = document.getElementById('imagePreviewGrid');
+        grid.innerHTML = '';
+
+        processedFilesArray.forEach((file, index) => {
+            const url = URL.createObjectURL(file);
+            const card = document.createElement('div');
+            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs";
+            card.innerHTML = `
+                <img src="${url}" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                    <button type="button" onclick="openCropper(${index})" class="p-2 bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer" title="Crop/Resize">
+                        <i class="fas fa-crop-alt"></i>
+                    </button>
+                    <button type="button" onclick="removeImage(${index})" class="p-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">#${index + 1}</span>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function removeImage(index) {
+        processedFilesArray.splice(index, 1);
+        updateFormFileInput();
+        renderPreviews();
+    }
+
+    // This cleanly calls your new external window.ImageCropper module!
+    function openCropper(index) {
+        const originalFile = processedFilesArray[index];
+        
+        window.ImageCropper.openCropper({
+            file: originalFile,
+            aspectRatio: NaN, // Free-form custom cropping
+            onCrop: (blob, newUrl) => {
+                const croppedFile = new File([blob], originalFile.name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+
+                processedFilesArray[index] = croppedFile;
+                updateFormFileInput();
+                renderPreviews();
+            }
+        });
+    }
+
+    // 6. FORM SUBMISSION INTERCEPTOR (Minimum 3 Images Rule)
+    document.getElementById('productForm').addEventListener('submit', function(event) {
+        if (processedFilesArray.length < 3) {
+            event.preventDefault();
+            const errorBox = document.getElementById('imageCountError');
+            errorBox.classList.remove('hidden');
+            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("A minimum of 3 cropped gallery images is required to publish this product.", "Gallery Error", "error");
+            }
+        }
+    });
 </script>
-
-
-
-

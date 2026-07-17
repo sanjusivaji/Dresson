@@ -1,19 +1,22 @@
 import bcrypt from 'bcrypt';
 import * as authRepository from '../../repository/user/authRepository.js';
-import sendOtpEmail from '../../utilities/emailSender.js';
+import { sendOtpEmail } from '../../utilities/emailSender.js';
 import paginate from '../../utilities/paginationHelper.js';
 import Product from '../../model/productModel.js';
 import { AUTH_REGEX, AUTH_CONFIG, AUTH_ROLES } from '../../constants/userAuthConstants.js';
+import  normalizeEmail  from '../../utilities/emailHelper.js'; 
 
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();  // This function is only used here for generate 'random' nubers for 'OTP'.
 
 // For 'sign up' process
 export const initiateUserRegistration = async (bodyData) => {
     const { name, email, password, confirmPassword, referralCode } = bodyData;
-    if (!AUTH_REGEX.NAME.test(name)) {                       // 'AUTH_REGEX' created 'constants' folder for validation of 'name', 'email', 'password' etc
+    const cleanName = name ? name.trim() : '';
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    if (!AUTH_REGEX.NAME.test(cleanName)) {                               // 'AUTH_REGEX' created in 'constants' folder for validation of 'name', 'email', 'password' etc
         throw new Error("Invalid Name: Must be at least 3 characters and contain only letters.");
     }
-    if (!AUTH_REGEX.EMAIL.test(email)) {
+    if (!AUTH_REGEX.EMAIL.test(cleanEmail)) {
         throw new Error("Invalid Email format.");
     }
     if (!AUTH_REGEX.PASSWORD.test(password)) {
@@ -22,45 +25,110 @@ export const initiateUserRegistration = async (bodyData) => {
     if (password !== confirmPassword) {
         throw new Error("Passwords do not match!");
     }
-    const existingUser = await authRepository.findUserByEmail(email);
+    const normEmail = normalizeEmail(cleanEmail);                  // Here 'normalizing' email in 'src/utilities/emailHelper.js'
+    const existingUser = await authRepository.findUserByNormalizedEmail(normEmail);
     if (existingUser) {
-        throw new Error("Email is already registered. Please log in.");
+        throw new Error("An account is already registered with this email address or an alias of it.");
     }
-    const otp = generateNumericOtp();                  // Already created just above.
-    await sendOtpEmail(email, otp);                    // This is the 'function' create in 'utilities/emailSender.js' file and used for send 'email'
-    return {                                           // Returns '3' values.
-        tempUser: { name, email, password, referralCode },
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const otp = generateNumericOtp();                             // Already created just above.
+    await sendOtpEmail(cleanEmail, otp);                          // This is the 'function' create in 'utilities/emailSender.js' file and used for send 'email'
+    return {
+        tempUser: { 
+            name: cleanName, 
+            email: cleanEmail, 
+            normalizedEmail: normEmail, 
+            password: hashedPassword, 
+            referralCode 
+        },
         otp,
-        otpExpiry: Date.now() + AUTH_CONFIG.SIGNUP_OTP_EXPIRY_MS    // Value of 'expiry' time created in 'constants/userAuthConstants.js' folder
+        otpExpiry: Date.now() + AUTH_CONFIG.SIGNUP_OTP_EXPIRY_MS   // Value of 'expiry' time created in 'constants/userAuthConstants.js' folder
     };
 };
 
 // For 'register' user after 'inputting' the 'OTP'
-export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
-    if (!sessionData.tempUser || !sessionData.otp) {                        // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'. 
+export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {
+    if (!sessionData.tempUser || !sessionData.otp) {
         throw new Error("Session expired. Please sign up again.");
     }
-    if (Date.now() > sessionData.otpExpiry) {                               // Checks 'OTP' time period expires or not
+    if (Date.now() > sessionData.otpExpiry) {
         throw new Error("OTP has expired. Please request a new one.");
     }
-    if (inputtedOtp !== sessionData.otp) {                                 // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
+    if (inputtedOtp !== sessionData.otp) {
         throw new Error("Invalid OTP. Please try again.");
     }
-    const { name, email, password } = sessionData.tempUser;
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const givenName = name.split(' ')[0];                           // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
-    const familyName = name.split(' ').slice(1).join(' ') || '';    // It 'first' 'split' into array and then 'slice' from '1'(ie it avoids 'first' array)Eg, "Harry James Potter" output: "James Potter"
-    await authRepository.createNewUser({                            // 'createNewUser()' is the function in 'repository/user/userAuthRepository.js' used for 'save' the data into 'data base' by using 'save()'.
+    const { name, email, normalizedEmail, password } = sessionData.tempUser;
+    const nameParts = name.trim().split(/\s+/);
+    const givenName = nameParts[0];
+    const familyName = nameParts.slice(1).join(' ') || '';
+    await authRepository.createNewUser({
         firstName: givenName,
         lastName: familyName,
-        email: email,
-        password: hashedPassword,
+        email: email,                     // Saves: sajith+shopping@gmail.com (for sending emails)
+        normalizedEmail: normalizedEmail, // Saves: sajith@gmail.com (for unique index DB blocking)
+        password: password,               // This is already hashed!
         isVerified: true,
-        role: AUTH_ROLES.USER,                                        // From 'constants/userAuthConstants.js'
+        role: AUTH_ROLES.USER,
         isBlocked: false
     });
 };
+
+
+
+// export const initiateUserRegistration = async (bodyData) => {
+//     const { name, email, password, confirmPassword, referralCode } = bodyData;
+//     if (!AUTH_REGEX.NAME.test(name)) {                       // 'AUTH_REGEX' created 'constants' folder for validation of 'name', 'email', 'password' etc
+//         throw new Error("Invalid Name: Must be at least 3 characters and contain only letters.");
+//     }
+//     if (!AUTH_REGEX.EMAIL.test(email)) {
+//         throw new Error("Invalid Email format.");
+//     }
+//     if (!AUTH_REGEX.PASSWORD.test(password)) {
+//         throw new Error("Weak Password: Must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+//     }
+//     if (password !== confirmPassword) {
+//         throw new Error("Passwords do not match!");
+//     }
+//     const existingUser = await authRepository.findUserByEmail(email);
+//     if (existingUser) {
+//         throw new Error("Email is already registered. Please log in.");
+//     }
+//     const otp = generateNumericOtp();                  // Already created just above.
+//     await sendOtpEmail(email, otp);                    // This is the 'function' create in 'utilities/emailSender.js' file and used for send 'email'
+//     return {                                           // Returns '3' values.
+//         tempUser: { name, email, password, referralCode },
+//         otp,
+//         otpExpiry: Date.now() + AUTH_CONFIG.SIGNUP_OTP_EXPIRY_MS    // Value of 'expiry' time created in 'constants/userAuthConstants.js' folder
+//     };
+// };
+
+// // For 'register' user after 'inputting' the 'OTP'
+// export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
+//     if (!sessionData.tempUser || !sessionData.otp) {                        // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'. 
+//         throw new Error("Session expired. Please sign up again.");
+//     }
+//     if (Date.now() > sessionData.otpExpiry) {                               // Checks 'OTP' time period expires or not
+//         throw new Error("OTP has expired. Please request a new one.");
+//     }
+//     if (inputtedOtp !== sessionData.otp) {                                 // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
+//         throw new Error("Invalid OTP. Please try again.");
+//     }
+//     const { name, email, password } = sessionData.tempUser;
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+//     const givenName = name.split(' ')[0];                           // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
+//     const familyName = name.split(' ').slice(1).join(' ') || '';    // It 'first' 'split' into array and then 'slice' from '1'(ie it avoids 'first' array)Eg, "Harry James Potter" output: "James Potter"
+//     await authRepository.createNewUser({                            // 'createNewUser()' is the function in 'repository/user/userAuthRepository.js' used for 'save' the data into 'data base' by using 'save()'.
+//         firstName: givenName,
+//         lastName: familyName,
+//         email: email,
+//         password: hashedPassword,
+//         isVerified: true,
+//         role: AUTH_ROLES.USER,                                        // From 'constants/userAuthConstants.js'
+//         isBlocked: false
+//     });
+// };
 
 // For 'authenticate' is it 'user' or 'not'
 export const authenticateLocalUser = async (email, password) => {

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import * as profileRepository from '../../repository/user/userProfileRepository.js';
-import sendOtpEmail from '../../utilities/emailSender.js';
+import {sendOtpEmail} from '../../utilities/emailSender.js';
 import { PROFILE_CONFIG, PROFILE_REGEX } from '../../constants/userProfileConstants.js';
 
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();  // This function uses inside the file

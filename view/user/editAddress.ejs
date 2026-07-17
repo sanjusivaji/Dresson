@@ -2,96 +2,105 @@
 
     <%- include('userSidebar') %>
   
-    <main class="w-full flex-1">
-        
+    <main class="w-full flex-1">        
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-bold text-black">Edit Address</h1>
             <a href="/profile/address" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold py-2 px-4 rounded-md transition shadow-sm border border-gray-300">
                 Back to Address
             </a>
         </div>
-
-        <div class="bg-white rounded-xl max-w-2xl">
-            
+        <div class="bg-white rounded-xl max-w-2xl">            
             <% if (typeof error !== 'undefined' && error) { %>
                 <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 shadow-sm">
                     <p class="font-bold">Error</p>
                     <p><%= error %></p>
                 </div>
             <% } %>
+           <form action="/profile/address/edit/<%= address._id %>" method="POST" class="space-y-6">    
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input type="text" name="fullName" id="fullName" 
+                    value="<%= locals.formData && formData.fullName ? formData.fullName : address.fullName %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="fullNameError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input type="text" name="phone" id="phone" 
+                    value="<%= locals.formData && formData.phone ? formData.phone : address.phone %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="phoneError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">Street Address</label>
+                <input type="text" name="streetAddress" id="streetAddress" 
+                    value="<%= locals.formData && formData.streetAddress ? formData.streetAddress : address.addressLine %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="streetAddressError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">City</label>
+                <input type="text" name="city" id="city" 
+                    value="<%= locals.formData && formData.city ? formData.city : address.city %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="cityError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">State</label>
+                <input type="text" name="state" id="state" 
+                    value="<%= locals.formData && formData.state ? formData.state : address.state %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="stateError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
 
-            <form action="/profile/address/edit/<%= address._id %>" method="POST" class="space-y-6">
-                
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input type="text" name="fullName" id="fullName" value="<%= address.fullName %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="fullNameError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                    <input type="text" name="phone" id="phone" value="<%= address.phone %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="phoneError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                    <input type="text" name="streetAddress" id="streetAddress" value="<%= address.addressLine %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="streetAddressError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input type="text" name="city" id="city" value="<%= address.city %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="cityError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">State</label>
-                    <input type="text" name="state" id="state" value="<%= address.state %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="stateError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Pin Code</label>
-                    <input type="text" name="pinCode" id="pinCode" value="<%= address.pincode %>" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                    <div id="pinCodeError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
-                </div>
-
-                <div class="flex flex-col">
-                    <label class="text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input type="text" name="country" id="country" value="India" readonly class="w-full px-4 py-3 bg-gray-100 text-gray-600 border border-gray-300 rounded-md focus:outline-none transition cursor-not-allowed">
-                </div>
-
-                <div class="flex justify-start gap-4 pt-2">
-                    <label class="cursor-pointer">
-                        <input type="radio" name="type" value="HOME" class="peer sr-only" <%= address.type === 'HOME' ? 'checked' : '' %>>
-                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">HOME</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="type" value="WORK" class="peer sr-only" <%= address.type === 'WORK' ? 'checked' : '' %>>
-                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">WORK</div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="type" value="OTHER" class="peer sr-only" <%= address.type === 'OTHER' ? 'checked' : '' %>>
-                        <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">OTHERS</div>
-                    </label>
-                </div>
-
-                <div class="flex items-center gap-2 pt-2 pb-4">
-                    <input type="checkbox" name="isDefault" id="isDefault" class="w-4 h-4 text-red-900 focus:ring-red-900 border-gray-300 rounded cursor-pointer" <%= address.isDefault ? 'checked' : '' %>>
-                    <label for="isDefault" class="text-sm font-medium text-gray-700 cursor-pointer">Make this Default</label>
-                </div>
-
-                <div class="flex justify-center gap-4 pt-4">
-                    <button type="submit" class="bg-red-900 text-white hover:text-white hover:bg-red-950 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider">
-                        Update Address
-                    </button>
-                    <a href="/profile/address" class="bg-black text-white hover:text-white hover:bg-gray-800 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider flex items-center">
-                        Cancel
-                    </a>
-                </div>
-            </form>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">Pin Code</label>
+                <input type="text" name="pinCode" id="pinCode" 
+                    value="<%= locals.formData && formData.pinCode ? formData.pinCode : address.pincode %>" 
+                    class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
+                <div id="pinCodeError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex flex-col">
+                <label class="text-sm font-medium text-gray-700 mb-1">Country</label>
+                <% const countries = ['Australia', 'Brazil', 'Canada', 'China', 'France', 'Germany', 'India', 'Italy', 'Japan', 'Mexico', 'Netherlands', 'New Zealand', 'Russia', 'Saudi Arabia', 'Singapore', 'South Africa', 'South Korea', 'Spain', 'Switzerland', 'United Arab Emirates', 'United Kingdom', 'United States']; %>
+                <select name="country" id="country" class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition text-gray-700 cursor-pointer">
+                    <option value="">Select Country</option>
+                    <% countries.forEach(c => { %>
+                        <% const isSelected = (locals.formData && formData.country === c) || (!locals.formData && address.country === c) || (!locals.formData && !address.country && c === 'India'); %>
+                        <option value="<%= c %>" <%= isSelected ? 'selected' : '' %>><%= c %></option>
+                    <% }); %>
+                </select>
+                <div id="countryError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+            </div>
+            <div class="flex justify-start gap-4 pt-2">
+                <% const currentType = locals.formData && formData.type ? formData.type : address.type; %>
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="HOME" class="peer sr-only" <%= currentType === 'HOME' ? 'checked' : '' %>>
+                    <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">HOME</div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="WORK" class="peer sr-only" <%= currentType === 'WORK' ? 'checked' : '' %>>
+                    <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">WORK</div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="type" value="OTHER" class="peer sr-only" <%= currentType === 'OTHER' ? 'checked' : '' %>>
+                    <div class="px-6 py-2 border border-gray-300 text-gray-600 font-bold text-xs uppercase rounded-sm peer-checked:bg-gray-900 peer-checked:text-white peer-checked:border-gray-900 transition">OTHERS</div>
+                </label>
+            </div>
+            <div class="flex items-center gap-2 pt-2 pb-4">
+                <% const isChecked = locals.formData ? formData.isDefault : address.isDefault; %>
+                <input type="checkbox" name="isDefault" id="isDefault" class="w-4 h-4 text-red-900 focus:ring-red-900 border-gray-300 rounded cursor-pointer" <%= isChecked ? 'checked' : '' %>>
+                <label for="isDefault" class="text-sm font-medium text-gray-700 cursor-pointer">Make this Default</label>
+            </div>
+            <div class="flex justify-center gap-4 pt-4">
+                <button type="submit" class="bg-red-900 text-white hover:text-white hover:bg-red-950 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider">
+                    Update Address
+                </button>
+                <a href="/profile/address" class="bg-black text-white hover:text-white hover:bg-gray-800 font-bold py-3 px-8 rounded-full transition text-sm shadow-md cursor-pointer uppercase tracking-wider flex items-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
         </div>
     </main>
 </div>

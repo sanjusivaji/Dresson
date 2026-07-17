@@ -1,0 +1,14 @@
+<% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+    <div id="errorAlert" class="w-full bg-red-50 border-l-4 border-red-600 text-red-800 p-4 mb-6 rounded-r-xl shadow-sm flex items-center justify-between transition-all duration-300">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-red-600 text-lg"></i>
+            <div>
+                <p class="font-bold text-sm uppercase tracking-wide">Warning / Error</p>
+                <p class="text-sm font-medium"><%= error %></p>
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('errorAlert').remove();" class="text-red-600 hover:text-red-900 font-bold px-2 py-1 text-lg cursor-pointer transition">
+            &times;
+        </button>
+    </div>
+<% } %>

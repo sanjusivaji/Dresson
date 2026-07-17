@@ -10,27 +10,47 @@
     <p class="text-xs text-gray-400 mt-1">Modify item specification fields, update image assets layers, and allocate custom variant structures.</p>
 </div>
 
+<!-- Shared Common Alerts & Modal Partials -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
 <input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
-<input type="hidden" id="historicalSelectedSubId" value="<%= product.subCategory %>">
+
+<!--  Safely extracts _id whether subCategory is populated or just a raw string -->
+<input type="hidden" id="historicalSelectedSubId" value="<%= product.subCategory ? (product.subCategory._id || product.subCategory) : '' %>">
 
 <form action="/admin/products/edit/<%= product._id %>" method="POST" enctype="multipart/form-data" id="productForm" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-4xl mb-12">
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-        
+    <!-- Product Identity & Categories -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="space-y-6">
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
-                <input type="text" id="baseName" name="productName" value="<%= product.productName %>" required placeholder="e.g., Premium Comfort Polo Tee" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition">
+                <!-- FIXED: Reads product.name with fallback to product.productName -->
+                <input type="text" id="baseName" name="productName" value="<%= product.name || product.productName || '' %>" required placeholder="e.g., Premium Comfort Polo Tee" 
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition font-medium">
             </div>
 
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
-                <input type="text" id="brandName" name="brand" value="<%= product.brand %>" required placeholder="e.g., Levi's, Zara, Dresson Original" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition">
+                <input type="text" id="brandName" name="brand" value="<%= product.brand || '' %>" required placeholder="e.g., Levi's, Zara, Dresson Original" 
+                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
+            </div>
+
+            <!--  Discount Offer (% Off) Field -->
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
+                <div class="relative">
+                    <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
+                           value="<%= locals.formData && formData.discount !== undefined ? formData.discount : (typeof product !== 'undefined' && product.discount !== undefined ? product.discount : '0') %>"
+                           class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
+                </div>
+                <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront circular badge.</span>
             </div>
         </div>
-
+        
         <div class="space-y-6">
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
@@ -53,47 +73,86 @@
         <div class="md:col-span-2 flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
             <textarea name="description" required rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
-                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none"><%= product.description %></textarea>
+                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= product.description || '' %></textarea>
         </div>
     </div>
 
+    <!--  Modern Cropper.js Image Gallery (With Historical Fallback) -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="mb-4">
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery</h3>
-            <p class="text-[11px] text-gray-400 mt-0.5">Uploading fresh images will replace the entire active asset set layers. (Max 4 images)</p>
+            <p class="text-[11px] text-gray-400 mt-0.5">Uploading new replacement photos will overwrite your active historical gallery. Leave untouched to retain current photos.</p>
         </div>
 
-        <div class="border-2 border-dashed border-gray-300 bg-white rounded-xl p-6 text-center transition hover:border-gray-400 group relative mb-4">
-            <input type="file" name="productImages" multiple accept="image/*" id="galleryInput" class="hidden" onchange="previewImages(this)">
+        <!-- Dropzone Area -->
+        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-white hover:border-gray-400 transition cursor-pointer group" onclick="document.getElementById('rawFileInput').click()">
+            <div class="w-12 h-12 rounded-full bg-red-50 mx-auto flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200 mb-3">
+                <i class="fas fa-cloud-upload-alt text-xl"></i>
+            </div>
+            <p class="text-xs font-bold text-gray-700">Click to upload replacement apparel photos</p>
+            <p class="text-[10px] text-gray-400 mt-1">If replacing photos, a minimum of 3 cropped images is required (Aspect ratio 3:4)</p>
             
-            <label for="galleryInput" class="cursor-pointer flex flex-col items-center justify-center space-y-2 py-4">
-                <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200">
-                    <i class="fas fa-images text-xl"></i>
-                </div>
-                <span class="text-xs font-bold text-gray-700">Click to upload replacement display pictures</span>
-                <span class="text-[10px] text-gray-400">Leave blank if you want to keep historical pictures untouched</span>
-            </label>
+            <!-- Hidden Raw Input for initial selection -->
+            <input type="file" id="rawFileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+            
+            <!-- Hidden Final Form Input (Submits to backend Multer) -->
+            <input type="file" name="productImages" id="finalFormFileInput" multiple class="hidden">
         </div>
 
-        <div id="imagePreviewsContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-            <% if (product.productImages && product.productImages.length > 0) { %>
-                <% product.productImages.forEach((img, idx) => { %>
-                    <div class="relative group aspect-square rounded-xl border border-gray-200 overflow-hidden bg-white historical-image-slot">
-                        <img src="<%= img %>" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">Active Slot <%= idx + 1 %></span>
+        <!-- Client-Side Validation Error Box -->
+        <div id="imageCountError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-bold text-red-600 flex items-center gap-2">
+            <i class="fas fa-exclamation-circle text-sm"></i>
+            <span>If you choose to replace images, you must upload and crop at least 3 photos.</span>
+        </div>
+
+        <!-- Gallery Status Badge -->
+        <% const savedImages = product.images || product.productImages || []; %>
+        <div id="galleryStatusBadge" class="mt-4 flex items-center justify-between px-4 py-2.5 bg-gray-100 rounded-lg border border-gray-200 text-xs font-bold text-gray-700">
+            <span><i class="fas fa-history text-gray-400 mr-2"></i>Displaying Active Historical Gallery (<%= savedImages.length %> Saved Photos)</span>
+            <span class="text-[10px] uppercase text-gray-400 font-semibold">Untouched</span>
+        </div>
+
+        <!-- Thumbnail Previews Grid (With Unified Interactive Workspace & Linter Fixes) -->
+        <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <% if (savedImages.length > 0) { %>
+                <% savedImages.forEach((img, index) => { %>
+                    <div class="relative group aspect-3/4 rounded-xl border border-gray-200 overflow-hidden bg-white historical-image-slot shadow-xs" id="historical-slot-<%= index%>">
+                        <img src="<%= img.url || img %>" class="w-full h-full object-cover">
+                        
+                        <!-- Hover Overlay with Slot Label, Crop Button, AND Delete Button -->
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                            <span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">Slot #<%= index + 1 %></span>
+                            
+                            <!-- For open the cropping tool, resize or re-frame it etc for image -->
+                            <button type="button" 
+                                    onclick="handleHistoricalCrop(<%= index %>)" 
+                                    class="p-2 bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer" 
+                                    title="Crop/Resize Saved Photo">
+                                <i class="fas fa-crop-alt"></i>
+                            </button>
+
+                            <!-- For delete the image -->
+                            <button type="button" 
+                                    onclick="handleHistoricalDelete(<%= index %>)" 
+                                    class="p-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer" 
+                                    title="Remove Saved Photo">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
+                        
+                        <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">Active #<%= index + 1 %></span>
                     </div>
                 <% }) %>
             <% } %>
         </div>
     </div>
 
+    <!-- SECTION 3: Variants Workspace -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants Workspaces</h3>
-                <p class="text-[11px] text-gray-400 mt-0.5">Adjust options metrics rows parameters to regenerate sizing and allocation prices matrices</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">Adjust option parameter rows to regenerate sizing and allocation pricing matrices</p>
             </div>
             
             <div class="flex space-x-2">
@@ -118,7 +177,7 @@
                     </select>
                 </div>
                 <div class="col-span-8">
-                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
                 </div>
                 <div class="col-span-1 text-center">
                     <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button>
@@ -127,6 +186,7 @@
         </div>
     </div>
 
+    <!-- SECTION 4: Dynamic Multi-Variant Matrix Card (Pre-populated with Historical Variants) -->
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm" id="combinationsCard">
         <div class="bg-gray-50/80 px-6 py-4 border-b border-gray-200">
             <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation Matrix</h3>
@@ -141,7 +201,7 @@
                         <th class="py-3 px-6 w-32 text-center">Available Stock</th>
                     </tr>
                 </thead>
-                <tbody class="text-xs text-gray-700 divide-y divide-gray-100" id="matrixTableBody">
+                <tbody class="text-xs text-gray-700 divide-y divide-gray-100 font-medium" id="matrixTableBody">
                     <% if (product.variants && product.variants.length > 0) { %>
                         <% product.variants.forEach((v, index) => { %>
                             <tr class="hover:bg-gray-50/50 transition historical-matrix-row">
@@ -154,7 +214,7 @@
                                 </td>
                                 <td class="py-4 px-6 text-right">
                                     <div class="relative inline-block w-full">
-                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
                                         <input type="number" name="variants[<%= index %>][price]" value="<%= v.price %>" required min="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500">
                                     </div>
                                 </td>
@@ -169,14 +229,16 @@
         </div>
     </div>
 
+    <!-- Form Submit Actions -->
     <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-3">
         <a href="/admin/products" class="px-5 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel changes</a>
-        <button type="submit" class="px-6 py-2.5 bg-[#8b3c3c] hover:bg-[#723131] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer">Update Product Live Catalog Unit</button>
+        <button type="submit" class="px-6 py-2.5 bg-[#8b3c3c] hover:bg-[#723131] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer uppercase tracking-wider">Update Product Live Catalog Unit</button>
     </div>
 
 </form>
 
-<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+<!-- MODAL 1: Custom Variant Creator -->
+<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-xs">
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
         <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
             <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
@@ -186,22 +248,25 @@
             <button type="button" onclick="closeCustomVariantModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
         </div>
         <div class="p-5 space-y-4">
-            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed">
+            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed font-medium">
                 <strong>Guide:</strong> Create options that aren't size or color, like <strong>"Water Resistance"</strong> or <strong>"Sleeve Type"</strong>.
             </div>
             <div class="flex flex-col">
                 <label class="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1.5">Variant Parameter Identifier Label</label>
-                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500">
+                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500 font-medium">
             </div>
         </div>
         <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end space-x-2">
             <button type="button" onclick="closeCustomVariantModal()" class="px-3 py-1.5 border border-gray-300 bg-white text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs">Inject Option Row</button>
+            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer">Inject Option Row</button>
         </div>
     </div>
 </div>
 
+<script src="/js/shared/imageCropper.js"></script>
+
 <script>
+    // 1. Parse Database Documents Passed From Server Environment
     let databaseCategories = [];
     try {
         const rawTextData = document.getElementById('rawServerCategories').value;
@@ -210,7 +275,7 @@
         console.error("Critical failure parsing category datasets:", error);
     }
 
-    // 🔥 Dynamic Dropdown Filter Mechanism
+    // 2. DYNAMIC DROPDOWN FILTER & HISTORICAL RECONCILIATION
     function handleParentCategoryChange(historicalSubId = null) {
         const activeGender = document.getElementById('parentCategory').value;
         const subSelect = document.getElementById('subCategory');
@@ -226,15 +291,12 @@
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat._id;
-                
                 const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
                 opt.innerText = parentName + " → " + cat.categoryName;
                 
-                // Pre-select if it matches historical document value data indices
                 if (historicalSubId && cat._id.toString() === historicalSubId.toString()) {
                     opt.selected = true;
                 }
-                
                 subSelect.appendChild(opt);
             });
         } else {
@@ -245,33 +307,13 @@
         }
     }
 
-    // 🚀 Auto-Trigger execution block on page lifecycle load to sync subcategory records
+    // Auto-trigger execution block on page load to sync historical subcategory records
     const initialSubId = document.getElementById('historicalSelectedSubId').value;
     if (document.getElementById('parentCategory').value) {
         handleParentCategoryChange(initialSubId);
     }
 
-    // Live Upload Pictures Rendering Previews Sync
-    function previewImages(input) {
-        const previewContainer = document.getElementById('imagePreviewsContainer');
-        previewContainer.innerHTML = ''; 
-
-        if (input.files && input.files.length > 0) {
-            const filesCount = Math.min(input.files.length, 4);
-            for (let i = 0; i < filesCount; i++) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imgWrapper = document.createElement('div');
-                    imgWrapper.className = "relative group aspect-square rounded-xl border border-gray-200 overflow-hidden bg-white";
-                    imgWrapper.innerHTML = '<img src="' + e.target.result + '" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">New Slot ' + (i + 1) + '</span></div>';
-                    previewContainer.appendChild(imgWrapper);
-                }
-                reader.readAsDataURL(input.files[i]);
-            }
-        }
-    }
-
-    // Option Row Allocations Engine
+    //  VARIANT CONFIGURATION ENGINE
     function addNewOptionRow() {
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
@@ -285,9 +327,9 @@
                 </select>
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
             </div>
-            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>
+            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>
         `;
         container.appendChild(row);
     }
@@ -297,14 +339,20 @@
 
     function submitCustomVariantRow() {
         const inputName = document.getElementById('customVariantInputName').value.trim();
-        if(!inputName) return alert("Please declare a custom parameter label.");
+        if(!inputName) {
+            if (typeof showCustomAlert === 'function') {
+                return showCustomAlert("Please declare a custom parameter label.", "Missing Input", "error");
+            } else {
+                return alert("Please declare a custom parameter label.");
+            }
+        }
         
         const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
         
         row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
-        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash-alt"></i></button></div>';
+        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>';
         
         container.appendChild(row);
         closeCustomVariantModal();
@@ -324,6 +372,7 @@
         generateCombinationsMatrix();
     }
 
+    //  CARTESIAN PRODUCT MATRIX GENERATOR (Overrides historical only when inputs are touched)
     function generateCombinationsMatrix() {
         const rows = document.getElementsByClassName('option-row');
         const baseName = document.getElementById('baseName').value.trim() || "PROD";
@@ -339,7 +388,6 @@
         const matrixCard = document.getElementById('combinationsCard');
         const tableBody = document.getElementById('matrixTableBody');
 
-        // If adjustments to inputs rows are initiated, wipe historical matrix to compile fresh Cartesian products
         if(arraysToCombine.length > 0) {
             tableBody.innerHTML = '';
             if(rows.length !== arraysToCombine.length) return matrixCard.classList.add('hidden');
@@ -355,7 +403,7 @@
                 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50/50 transition";
-                tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
+                tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
                 tableBody.appendChild(tr);
             });
         }
@@ -375,4 +423,163 @@
 
     document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
     document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
+
+    // IMAGE GALLERY MANAGEMENT (With Smart Workspace Import)
+    const processedFilesArray = []; 
+    const dataTransfer = new DataTransfer(); 
+    let isHistoricalConverted = false;
+
+    // Build an array of existing Cloudinary URLs cleanly from EJS
+    const historicalImagesData = [
+        <% savedImages.forEach((img, idx) => { %>
+            { url: "<%= img.url || img %>", name: "historical-dress-<%= idx + 1 %>.jpg" },
+        <% }) %>
+    ];
+
+    // Simultaneously imports ALL historical Cloudinary photos into our working array
+    async function importHistoricalWorkspace() {
+        if (isHistoricalConverted) return;
+        
+        const badge = document.getElementById('galleryStatusBadge');
+        if (badge) badge.innerHTML = `<span><i class="fas fa-spinner fa-spin text-gray-500 mr-2"></i>Loading workspace...</span>`;
+
+        for (let i = 0; i < historicalImagesData.length; i++) {
+            const item = historicalImagesData[i];
+            try {
+                // Because the image is already visible on the screen, fetch() grabs it instantly from the browser disk cache!
+                const res = await fetch(item.url);
+                const blob = await res.blob();
+                const file = new File([blob], item.name, { type: blob.type || 'image/jpeg', lastModified: Date.now() });
+                processedFilesArray.push(file);
+            } catch (error) {
+                console.error("Failed to load historical photo into workspace:", error);
+            }
+        }
+        isHistoricalConverted = true;
+    }
+
+    // Handles Uploading New Replacement Photos
+    async function handleFileSelect(event) {
+        const files = Array.from(event.target.files);
+        if (!files.length) return;
+
+        // Ensure historical photos are imported first so they aren't erased!
+        await importHistoricalWorkspace();
+
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                processedFilesArray.push(file);
+            }
+        });
+
+        updateFormFileInput();
+        renderPreviews();
+        event.target.value = ''; 
+    }
+
+    // Handles Clicking "Crop" on an existing historical photo
+    async function handleHistoricalCrop(index) {
+        await importHistoricalWorkspace();
+        updateFormFileInput();
+        renderPreviews();
+        openCropper(index); // Opens cropper on the exact photo clicked without losing others!
+    }
+
+    // Handles Clicking "Delete" on an existing historical photo
+    async function handleHistoricalDelete(index) {
+        await importHistoricalWorkspace();
+        removeImage(index);
+    }
+
+    function updateFormFileInput() {
+        dataTransfer.items.clear();
+        processedFilesArray.forEach(file => dataTransfer.items.add(file));
+        document.getElementById('finalFormFileInput').files = dataTransfer.files;
+        
+        const badge = document.getElementById('galleryStatusBadge');
+        if (processedFilesArray.length > 0) {
+            badge.className = "mt-4 flex items-center justify-between px-4 py-2.5 bg-amber-50 rounded-lg border border-amber-200 text-xs font-bold text-amber-800";
+            badge.innerHTML = `<span><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Gallery Workspace Active (${processedFilesArray.length} Photos Prepared)</span><button type="button" onclick="restoreHistoricalGallery()" class="text-[10px] underline hover:text-amber-950 font-bold cursor-pointer">Reset to Historical</button>`;
+        }
+        
+        if (processedFilesArray.length === 0 || processedFilesArray.length >= 3) {
+            document.getElementById('imageCountError').classList.add('hidden');
+        }
+    }
+
+    function renderPreviews() {
+        const grid = document.getElementById('imagePreviewGrid');
+        grid.innerHTML = '';
+
+        processedFilesArray.forEach((file, index) => {
+            const url = URL.createObjectURL(file);
+            const card = document.createElement('div');
+            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs";
+            card.innerHTML = `
+                <img src="${url}" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                    <button type="button" onclick="openCropper(${index})" class="p-2 bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer" title="Crop/Resize">
+                        <i class="fas fa-crop-alt"></i>
+                    </button>
+                    <button type="button" onclick="removeImage(${index})" class="p-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">#${index + 1}</span>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function removeImage(index) {
+        processedFilesArray.splice(index, 1);
+        updateFormFileInput();
+        if (processedFilesArray.length === 0) {
+            restoreHistoricalGallery();
+        } else {
+            renderPreviews();
+            if (processedFilesArray.length < 3) {
+                const errorBox = document.getElementById('imageCountError');
+                errorBox.classList.remove('hidden');
+                errorBox.querySelector('span').innerText = `You currently have ${processedFilesArray.length} photo(s). Please upload more to meet the minimum 3 required.`;
+            }
+        }
+    }
+
+    function restoreHistoricalGallery() {
+        window.location.reload(); // Simple reload cleanly restores the original EJS database view!
+    }
+
+    function openCropper(index) {
+        const originalFile = processedFilesArray[index];
+        
+        window.ImageCropper.openCropper({
+            file: originalFile,
+            aspectRatio: NaN,
+            onCrop: (blob, newUrl) => {
+                const croppedFile = new File([blob], originalFile.name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+
+                processedFilesArray[index] = croppedFile;
+                updateFormFileInput();
+                renderPreviews();
+            }
+        });
+    }
+
+    // FORM SUBMISSION INTERCEPTOR (Minimum 3 Photos Rule)
+    document.getElementById('productForm').addEventListener('submit', function(event) {
+        if (processedFilesArray.length > 0 && processedFilesArray.length < 3) {
+            event.preventDefault();
+            const errorBox = document.getElementById('imageCountError');
+            errorBox.classList.remove('hidden');
+            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("A minimum of 3 gallery images is required to publish this product.", "Gallery Error", "error");
+            }
+        }
+    });
 </script>

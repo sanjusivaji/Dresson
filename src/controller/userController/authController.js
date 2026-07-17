@@ -1,5 +1,7 @@
 import logger from '../../utilities/logger.js';
 import * as authService from '../../services/user/authService.js';
+import { COOKIE_KEYS, SESSION_KEYS } from '../../constants/cookieConstants.js';
+import * as userProductService from '../../services/user/userProductServices.js';
 
 // For 'display' sign up page
 export const loadSignUp = async (req,res) => {
@@ -65,8 +67,7 @@ export const verifyOtp = async (req, res) => {
 export const loadLogin = (req, res) => {
     if (req.session.user) return res.redirect('/');  // If 'user' is already 'logedIn' then it directly go to 'home'.
     res.render('user/login', {
-        // error: null,
-        error: "Invalid email or password.",
+        error: null,
         layout: 'layout/auth', 
         pageTitle: "Login - Dresson"
     });
@@ -77,6 +78,9 @@ export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await authService.authenticateLocalUser(email, password);  // It checks is this 'user' or not and 'return' 'user' details     
+        if (!user) {
+            return res.render('login', { error: 'Invalid email or password' });
+        }
         if (user.isBlocked === true || user.status === 'Blocked') {
             return res.render('user/login', { 
                 error: 'Your account has been blocked by the Administrator. Please contact support.' ,
@@ -184,29 +188,39 @@ export const processResetPassword = async (req, res) => {
 
 // For 'logout' process
 export const processLogout = (req, res) => {
+    if (req.session.user) {                    // Here 'delete' the 'user'(ie 'user' is the object that contains 'name','email' etc)instead 'destroy' entire session.
+        delete req.session.user; 
+    }
+    if (req.session[SESSION_KEYS.USER_SESSION]) {
+        delete req.session[SESSION_KEYS.USER_SESSION];   // Here 'delete' the 'user'(ie 'user' is the object that contains 'name','email' etc)instead 'destroy' entire session.
+    }
+    if (req.session.admin) {                   // Here we check if an 'Admin' is still logged in(ie if 'admin' logged in it store)
+        return req.session.save((err) => {
+            if (err) {
+                console.error("Session Save Error during User Logout:", err);
+                return res.status(500).send("Failed to log out cleanly.");
+            }
+            res.redirect('/login');
+        });
+    }
     req.session.destroy((err) => {
         if (err) {
             console.error("Session Destruction Error:", err);
             return res.status(500).send("Failed to log out cleanly.");
         }
+        res.clearCookie('connect.sid');
         res.redirect('/login');
     });
 };
 
-// For only just display sample products
-const mockProducts = [
-    { name: "Test Shirt", price: 999, originalPrice: 1200, brand: "Test Brand", discount: 10, imageUrl: "https://via.placeholder.com/150" }
-];
 
 // For display 'home' page
 export const loadHome = async (req, res) => {
     try {
-        const paginationData = await authService.getHomepageProducts(req);  // 'getHomepageProducts()' retrieve data of 'products' based on each page
+        const catalogData = await userProductService.compileShopCatalog(req.query);  // 'compileShopCatalog()' retrieve data of 'products' based on each page
         res.render('user/home', {
-            products: paginationData.results, 
-            products: mockProducts,       
-            currentPage: paginationData.currentPage,   
-            totalPages: paginationData.totalPages,
+            ...catalogData,                                                          // Automatically unpacks: products, categories, totalProducts, totalPages, currentPage, currentSort, etc.
+            query: req.query,            // Essential: allows pagination links to remember active filters
             layout: 'layout/user', 
             pageTitle: "Home - Dresson"      
         });
@@ -215,5 +229,9 @@ export const loadHome = async (req, res) => {
         res.status(500).send("Server Error");
     }
 };
+
+
+
+
 
 

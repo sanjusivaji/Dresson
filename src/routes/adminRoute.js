@@ -6,6 +6,8 @@ import * as productController from '../controller/adminController/adminProductCo
 import * as categoryController from '../controller/adminController/adminCategoryController.js';
 import upload from '../config/multer.js';
 import { isAdmin } from '../middleware/adminAuth.js';
+import { uploadProduct } from '../middleware/uploadMiddleware.js';
+
 
 const router = express.Router();
 
@@ -38,13 +40,14 @@ router.get('/products', isAdmin, productController.getProductsList);
 
 router.route('/products/add')
       .get(isAdmin, productController.getAddProduct)
-      .post(isAdmin, upload.array('productImages', 4), productController.postAddProduct);
+      //.post(isAdmin, upload.array('productImages', 4), productController.postAddProduct);
+      .post(isAdmin, uploadProduct.array('productImages', 4), productController.postAddProduct);
 
 
 router.route('/products/edit/:id')
       .get(isAdmin, productController.getEditProduct)
-      .post(isAdmin, upload.array('productImages', 4), productController.postEditProduct);
-
+    //   .post(isAdmin, upload.array('productImages', 4), productController.postEditProduct);
+        .post(isAdmin, uploadProduct.array('productImages', 4), productController.postEditProduct);
 
 router.post('/products/toggle-list/:id', isAdmin, productController.toggleProductList);
 

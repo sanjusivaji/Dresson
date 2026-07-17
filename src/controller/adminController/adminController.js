@@ -18,23 +18,19 @@ export const loadLogin = (req, res) => {
 export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        
-        // The service handles bcrypt and throws an error if it fails
         const adminUser = await adminAuthService.verifyAdminCredentials(email, password);
-        
-        req.session.admin = adminUser._id;
+                req.session.admin = adminUser._id;
         res.redirect('/admin/dashboard');
     } catch (error) {
         logger.error("Admin authentication system exception:", error.message);
-        // Fallback to sending the error string exactly as your previous logic did
         res.send(error.message || "Access Denied: Invalid administrative credentials.");
     }
 };
 
+// For 'display' 'dashboard'
 export const loadDashboard = async (req, res) => {
     try {
-        const dashboardData = await adminAuthService.getDashboardData();
-        
+        const dashboardData = await adminAuthService.getDashboardData();        
         res.render('admin/dashboard', {
             ...dashboardData,
             pageTitle: "Dashboard - Dresson",
@@ -48,26 +44,26 @@ export const loadDashboard = async (req, res) => {
 
 // For 'logout'
 export const logout = (req, res) => {
-    try {
-        // Clear auth cookies using your constants
-        res.clearCookie(COOKIE_KEYS.TOKEN); 
-        res.clearCookie(COOKIE_KEYS.ADMIN_TOKEN);        
-        if (req.session) {                   // Clear express-session memories
-            req.session.destroy((err) => {
-                if (err) {
-                    console.error("Session destruction failure during logout routine:", err);
-                    return res.status(500).send("Failed to log out cleanly.");
-                }
-                
-                res.clearCookie(COOKIE_KEYS.SESSION_ID); 
-                return res.redirect('/admin/login');
-            });
-        } else {
-            return res.redirect('/admin/login');
-        }
-    } catch (error) {
-        console.error("Critical failure during logout transaction processing:", error);
-        res.status(500).send("Internal Server Error processing logout sequence.");
+    if (req.session.admin) {
+        delete req.session.admin; 
     }
+    if (req.session.user) {                       // This is 'logout' session for 'admin' but 'session' is common for 'admin' and 'user' and 'save' is 'session built-in' method('not' mongoose method here)and used for save it 'temporarly'.
+        return req.session.save((err) => {        //  Here passing 'error' ass parameter because it is a 'error handling' code and here we apply 'error first callback' rule.
+            if (err) {
+                console.error("Session Save Error during Admin Logout:", err);
+                return res.status(500).send("Failed to log out cleanly.");
+            }
+            res.redirect('/admin/login');
+        });
+    }
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Session Destruction Error:", err);
+            return res.status(500).send("Failed to log out cleanly.");
+        }
+        res.clearCookie('connect.sid');          // Here 'clearCookie()' is th built-in 'cookie' method and it used for 'delete' cookies of 'browser' ie express sends a special HTTP header back to the user's browser and it said / feed that, set 'expiration date' of 'cookie' as '01 Jan 1970 00:00:00 ' ie cookies are already expired.
+        res.redirect('/admin/login');
+    });
 };
+
 

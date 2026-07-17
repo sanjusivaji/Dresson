@@ -1,0 +1,132 @@
+<!-- FIGMA DESIGN SIDEBAR PARTIAL -->
+<aside class="w-full md:w-64 flex-shrink-0 bg-white p-5 rounded-xl border border-gray-200 shadow-xs h-fit space-y-6">
+    
+    <form action="/shop" method="GET" id="filterForm" class="space-y-6">
+        <!-- Preserve pagination and search when changing filters -->
+        <input type="hidden" name="page" value="1">
+
+        <!-- 1. SEARCH BAR -->
+        <div class="relative">
+            <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
+                   placeholder="Search..." 
+                   class="w-full text-xs pl-3.5 pr-8 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-600 focus:bg-white font-medium text-gray-800 transition">
+            
+            <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
+                <a href="/shop?<%= new URLSearchParams({...query, search: '', page: 1}).toString() %>" 
+                   class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-sm font-bold" title="Clear">&times;</a>
+            <% } else { %>
+                <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="fas fa-search text-xs"></i>
+                </button>
+            <% } %>
+        </div>
+
+        <!-- 2. SORT BY (Inline Figma Style) -->
+        <div class="flex items-center justify-between gap-2 pt-1">
+            <label class="text-xs font-bold text-gray-700 whitespace-nowrap">Sort By</label>
+            <% const activeSort = typeof currentSort !== 'undefined' ? currentSort : 'newest'; %>
+            <select name="sort" onchange="this.form.submit()" 
+                    class="w-full text-xs bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-bold text-gray-800 focus:outline-none focus:border-gray-600 cursor-pointer shadow-2xs">
+                <option value="newest" <%= activeSort === 'newest' ? 'selected' : '' %>>Newest Arrivals</option>
+                <option value="price_asc" <%= activeSort === 'price_asc' ? 'selected' : '' %>>Price(Low - High)</option>
+                <option value="price_desc" <%= activeSort === 'price_desc' ? 'selected' : '' %>>Price(High - Low)</option>
+                <option value="alpha_asc" <%= activeSort === 'alpha_asc' ? 'selected' : '' %>>Name(A - Z)</option>
+                <option value="alpha_desc" <%= activeSort === 'alpha_desc' ? 'selected' : '' %>>Name(Z - A)</option>
+            </select>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <!-- 3. FILTER BY HEADING -->
+        <div>
+            <h3 class="text-base font-extrabold text-gray-900 tracking-tight mb-4">Filter By</h3>
+
+            <div class="space-y-3">
+                <!-- Categories Dropdown -->
+                <div>
+                    <select name="category" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
+                        <option value="">All categories</option>
+                        <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                            <% categories.forEach(cat => { %>
+                                <option value="<%= cat._id %>" <%= typeof currentCategory !== 'undefined' && currentCategory === cat._id.toString() ? 'selected' : '' %>>
+                                    <%= cat.gender %> → <%= cat.categoryName %>
+                                </option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Brands Dropdown -->
+                <div>
+                    <select name="brand" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
+                        <option value="">All Brands</option>
+                        <% if (typeof availableBrands !== 'undefined' && availableBrands.length > 0) { %>
+                            <% availableBrands.forEach(b => { %>
+                                <option value="<%= b %>" <%= typeof currentBrand !== 'undefined' && currentBrand === b ? 'selected' : '' %>><%= b %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Colors Dropdown -->
+                <div>
+                    <select name="color" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
+                        <option value="">All Colors</option>
+                        <% if (typeof availableColors !== 'undefined' && availableColors.length > 0) { %>
+                            <% availableColors.forEach(c => { %>
+                                <option value="<%= c %>" <%= typeof currentColor !== 'undefined' && currentColor === c ? 'selected' : '' %>><%= c %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Sizes Dropdown -->
+                <div>
+                    <select name="size" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
+                        <option value="">All sizes</option>
+                        <% if (typeof availableSizes !== 'undefined' && availableSizes.length > 0) { %>
+                            <% availableSizes.forEach(s => { %>
+                                <option value="<%= s %>" <%= typeof currentSize !== 'undefined' && currentSize === s ? 'selected' : '' %>><%= s %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+
+                <!-- Fabric Dropdown -->
+                <div>
+                    <select name="fabric" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
+                        <option value="">All Fabric</option>
+                        <% if (typeof availableFabrics !== 'undefined' && availableFabrics.length > 0) { %>
+                            <% availableFabrics.forEach(f => { %>
+                                <option value="<%= f %>" <%= typeof currentFabric !== 'undefined' && currentFabric === f ? 'selected' : '' %>><%= f %></option>
+                            <% }) %>
+                        <% } %>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <!-- 4. PRICE RANGE SLIDER (₹0 to ₹5000) -->
+        <div>
+            <label class="text-xs font-bold text-gray-700 block mb-1">Price Range</label>
+            <input type="range" name="maxPrice" min="500" max="10000" step="250" 
+                   value="<%= typeof currentMaxPrice !== 'undefined' ? currentMaxPrice : 5000 %>" 
+                   oninput="document.getElementById('priceValDisplay').innerText = '₹' + Number(this.value).toLocaleString('en-IN')"
+                   onchange="this.form.submit()"
+                   class="w-full accent-black cursor-pointer">
+            <div class="flex justify-between items-center text-[11px] font-bold text-gray-500 mt-1">
+                <span>₹0</span>
+                <span id="priceValDisplay" class="text-black font-extrabold">₹<%= typeof currentMaxPrice !== 'undefined' ? Number(currentMaxPrice).toLocaleString('en-IN') : '5,000' %></span>
+            </div>
+        </div>
+
+        <!-- Reset All Button -->
+        <% if ((typeof searchQuery !== 'undefined' && searchQuery) || (typeof currentCategory !== 'undefined' && currentCategory) || (typeof currentBrand !== 'undefined' && currentBrand) || (typeof currentColor !== 'undefined' && currentColor) || (typeof currentSize !== 'undefined' && currentSize) || (typeof currentFabric !== 'undefined' && currentFabric) || (typeof currentSort !== 'undefined' && currentSort !== 'newest') || (typeof currentMaxPrice !== 'undefined' && currentMaxPrice != 5000)) { %>
+            <a href="/shop" class="block w-full text-center py-2 bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-700 text-xs font-bold rounded-lg transition shadow-2xs">
+                Reset All Filters
+            </a>
+        <% } %>
+    </form>
+</aside>

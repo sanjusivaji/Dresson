@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import connectDB from './src/config/dbConnect.js'; 
 import adminRoutes from './src/routes/adminRoute.js'; 
 import session from 'express-session';
+import { COOKIE_KEYS } from './src/constants/cookieConstants.js';
 import userRoute from './src/routes/userRoute.js';
 import passport from './src/config/passport.js'; 
 import logger from './src/utilities/logger.js';
@@ -19,18 +20,24 @@ app.set('view engine', 'ejs');
 app.set('views', './view'); 
 app.set('layout', 'layout/admin');
 
- app.use(express.static('public'));
+app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(expressLayouts);
 
-// For embedding 'session' to store the 'OTP' and User Data
+// For embedding 'session' and 'cookies'
 app.use(session({
+    name: COOKIE_KEYS.SESSION_ID,                   
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }           // If we use 'HTTPS' we can change it into '{secure:true}'
+    saveUninitialized: false,                       
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',    // If we use 'HTTPS' we can change it into '{secure:true}'
+        httpOnly: true,                         
+        maxAge: 1000 * 60 * 60 * 24             
+    }
 }));
+
 
 // For debugging purpose
 app.get('/test', (req, res) => {

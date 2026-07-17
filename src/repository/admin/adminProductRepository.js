@@ -21,7 +21,7 @@ export const findProductById = async (id) => {
 };
 
 export const updateProductById = async (id, updateData) => {
-    return await Product.findByIdAndUpdate(id, updateData, { new: true });
+    return await Product.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });
 };
 
 // Category Operations (Needed for dropdowns in Product views)
@@ -31,4 +31,8 @@ export const findActiveCategories = async () => {
 
 export const findActiveCategoriesWithParents = async () => {
     return await Category.find({ isListed: true }).populate('parentCategory').sort({ categoryName: 1 });
+};
+
+export const createProduct = async (productData) => {
+    return await Product.create(productData);
 };

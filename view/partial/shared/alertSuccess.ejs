@@ -1,0 +1,14 @@
+<% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+    <div id="successAlert" class="w-full bg-green-50 border-l-4 border-green-600 text-green-800 p-4 mb-6 rounded-r-xl shadow-sm flex items-center justify-between transition-all duration-300">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+            <div>
+                <p class="font-bold text-sm uppercase tracking-wide">Success</p>
+                <p class="text-sm font-medium"><%= success %></p>
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('successAlert').remove();" class="text-green-600 hover:text-green-900 font-bold px-2 py-1 text-lg cursor-pointer transition">
+            &times;
+        </button>
+    </div>
+<% } %>

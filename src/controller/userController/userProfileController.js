@@ -9,7 +9,7 @@ export const loadProfile = async (req, res) => {
         res.render('user/profile', { 
             user, 
             error: null, 
-            success: null,               // It prevent 'ejs' crash 
+            success: null,                                                         // It prevent 'ejs' crash 
             layout: 'layout/user', 
             pageTitle: "My Profile - Dresson",
             activeSidebar: 'account' 

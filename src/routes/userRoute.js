@@ -5,6 +5,7 @@ import * as userProfileController from '../controller/userController/userProfile
 import * as userAddressController from '../controller/userController/userAddressController.js';
 import uploadCloud from '../middleware/uploadMiddleware.js';
 import { requireActiveUser } from '../middleware/userAuth.js';
+import * as productController from '../controller/userController/productController.js';
 
 const router = express.Router();
 
@@ -58,6 +59,11 @@ router.route('/reset-password')
       .get(authController.loadResetPassword)
       .post(authController.processResetPassword);
 
+
+router.get('/shop', productController.getShopPage);
+router.get('/', productController.getShopPage);
+
+
 //  Route for 'middleware' to check user is 'blocked' or not by 'admin'
 router.use('/profile', requireActiveUser);
 
@@ -92,5 +98,6 @@ router.route('/profile/address/edit/:id')
 
 // Route for 'delete' address
 router.post('/profile/address/delete/:id', userAddressController.deleteAddress);
+
 
 export default router;

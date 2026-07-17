@@ -16,3 +16,12 @@ export const createNewUser = async (userData) => {
 export const updateUserById = async (id, updateFields) => {
     return await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true }); // '{ new: true }' ensure the the field 'up to date' when changing the field and value.
 };
+
+
+export const findUserByNormalizedEmail = async (normalizedEmail) => {
+    try {
+        return await User.findOne({ normalizedEmail: normalizedEmail });
+    } catch (error) {
+        throw new Error(`Database Error while checking email: ${error.message}`);
+    }
+};

@@ -61,50 +61,63 @@
                 <% products.forEach(product => { %>
                     <tr class="hover:bg-gray-50/30 transition">
                         
+                        <!-- Media Thumbnail (Fixed: Uses product.images) -->
                         <td class="py-4 px-6">
                             <div class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shadow-xs flex items-center justify-center">
-                                <% if (product.productImages && product.productImages.length > 0) { %>
-                                    <img src="<%= product.productImages[0] %>" alt="Product thumbnail" class="w-full h-full object-cover">
+                                <% const displayImages = product.images || product.productImages || []; %>
+                                <% if (displayImages.length > 0) { %>
+                                    <img src="<%= displayImages[0].url %>" alt="Product thumbnail" class="w-full h-full object-cover">
+                                    <!-- <img src="<%= displayImages[0] %>" alt="Product thumbnail" class="w-full h-full object-cover"> -->
                                 <% } else { %>
                                     <i class="fas fa-tshirt text-gray-300 text-lg"></i>
                                 <% } %>
                             </div>
                         </td>
 
+                        <!-- Product Details (Fixed: Uses product.name) -->
                         <td class="py-4 px-6">
-                            <span class="font-bold text-gray-900 block text-sm"><%= product.productName %></span>
+                            <span class="font-bold text-gray-900 block text-sm"><%= product.name || product.productName %></span>
                             <span class="text-[11px] text-gray-400 block font-medium mt-0.5"><i class="fas fa-tag text-[9px] text-gray-300 mr-1"></i><%= product.brand || 'Dresson Original' %></span>
                         </td>
 
+                        <!-- Subcategory Classification (Fixed: Resilient Object vs String ID handling) -->
                         <td class="py-4 px-6 text-gray-600 font-medium">
-                            <% if (product.subCategory && typeof product.subCategory === 'object') { %>
+                            <% if (product.subCategory && typeof product.subCategory === 'object' && product.subCategory.categoryName) { %>
                                 <div class="flex flex-col">
                                     <span class="text-gray-800 font-bold text-xs"><%= product.subCategory.categoryName %></span>
                                     <span class="text-[10px] text-gray-400 tracking-wide font-normal mt-0.5 uppercase"><%= product.parentCategory || product.subCategory.gender %></span>
                                 </div>
                             <% } else { %>
-                                <span class="text-gray-400 italic text-xs">Uncategorized Legacy Data</span>
+                                <div class="flex flex-col">
+                                    <span class="text-gray-800 font-bold text-xs"><%= product.subCategory || 'General' %></span>
+                                    <span class="text-[10px] text-gray-400 tracking-wide font-normal mt-0.5 uppercase"><%= product.parentCategory || 'Uncategorized' %></span>
+                                </div>
                             <% } %>
                         </td>
 
+                        <!-- Retail Base Price -->
                         <td class="py-4 px-6 text-right font-bold text-gray-900">
                             <% 
                                 let displayPrice = 0;
-                                if (product.variants && product.variants.length > 0) {
+                                if (product.variants && product.variants.length > 0 && product.variants[0].price !== undefined) {
                                     displayPrice = product.variants[0].price; 
-                                } else if (product.price) {
+                                } else if (product.price !== undefined) {
                                     displayPrice = product.price; 
                                 }
                             %>
                             ₹<%= typeof displayPrice === 'number' ? displayPrice.toLocaleString('en-IN') : displayPrice %>
                         </td>
 
+                        <!-- Available Volume (Fixed: Cleaned totalStock & variants calculation) -->
                         <td class="py-4 px-6 text-center">
                             <% 
-                                let currentStock = product.totalStock !== undefined ? product.totalStock : (product.stock || 0); 
-                                let MatildaStockCount = 0;
-                                if (product.variants && product.variants.length > 0) {
-                                    currentStock = product.variants.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0);
+                                let currentStock = product.totalStock;
+                                if (currentStock === undefined || currentStock === null) {
+                                    if (product.variants && product.variants.length > 0) {
+                                        currentStock = product.variants.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0);
+                                    } else {
+                                        currentStock = product.stock || 0;
+                                    }
                                 }
                             %>
                             <% if (currentStock === 0) { %>
@@ -116,12 +129,14 @@
                             <% } %>
                         </td>
 
+                        <!-- Status -->
                         <td class="py-4 px-6 text-center">
                             <span class="px-2.5 py-1 text-[11px] font-semibold rounded-full <%= product.isListed ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' %>">
                                 <%= product.isListed ? 'Listed' : 'Unlisted' %>
                             </span>
                         </td>
 
+                        <!-- Actions -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center space-x-2 justify-end">
                                 <a href="/admin/products/edit/<%= product._id %>" class="p-1.5 bg-gray-100 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-200 transition text-xs" title="Edit Inventory Unit">

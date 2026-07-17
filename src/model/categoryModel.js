@@ -38,42 +38,59 @@ categorySchema.index({ categoryName: 1, gender: 1, parentCategory: 1 }, { unique
 export default mongoose.model("Category", categorySchema);
 
 
+
+
 // import mongoose from 'mongoose';
 
 // const categorySchema = new mongoose.Schema({
 //     categoryName: {
 //         type: String,
-//         unique: true,
-//         required: true
+//         required: [true, 'Category name is required'],
+//         trim: true
+//     },
+//     parent: {
+//         type: String,
+//         required: [true, 'Parent category is required'],
+//         enum: ['Men', 'Women', 'Kids', 'Unisex'],       // Matches Figma 'Parent' column
+//         default: 'Women'
 //     },
 //     slug: {
 //         type: String,
 //         required: true,
-//         unique: true
-//     },
-//     description: {
-//         type: String,
-//         required: true
+//         unique: true,
+//         lowercase: true,
+//         trim: true
 //     },
 //     isActive: {
 //         type: Boolean,
-//         required: true,
 //         default: true
 //     },
-//     parentCategory: {
+//     isDeleted: {
+//         type: Boolean,
+//         default: false 
+//     },
+//     productCount: {
+//         type: Number,
+//         default: 0
+//     },
+//        description: {
 //         type: String,
 //         required: true,
-//         enum: ['Men', 'Women', 'Kids']
-//     },
-//     offer: {
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: "Offer",
-//         default: null
+//         trim: true
 //     },
 //     isListed: { 
 //         type: Boolean, 
 //         default: true 
 //     }
-// }, { timestamps: true });
+// }, { 
+//     timestamps: true 
+// });
+// categorySchema.pre('validate', function(next) {             // Auto-generate slug before saving if not provided
+//     if (this.name && !this.slug) {
+//         this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+//     }
+//     next();
+// });
 
-// export default mongoose.model("Category", categorySchema);
+// export default mongoose.model('Category', categorySchema);
+
