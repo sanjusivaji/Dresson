@@ -48,7 +48,7 @@ const variantSchema = new mongoose.Schema({
     }
 });
 
-// 3. Main Product Schema
+//  Main Product Schema
 const productSchema = new mongoose.Schema({
     name: { 
         type: String, 
@@ -60,15 +60,35 @@ const productSchema = new mongoose.Schema({
         required: true, 
         trim: true 
     },
-    parentCategory: { 
-        type: String, // e.g., Men, Women, Kids
-        required: true 
-    }, 
-    subCategory: { 
-        type: mongoose.Schema.Types.ObjectId, // Upgraded to ObjectId for .populate()
+    color: { 
+        type: String, 
+        required: false, 
+        trim: true,
+        index: true      // Indexed for super-fast sidebar queries
+    },
+    fabric: { 
+        type: String, 
+        required: false, 
+        default: 'General Blend',
+        trim: true,
+        index: true
+    },
+
+    parentCategory: {
+        type: String,
+        required: true,
+        enum: ['Men', 'Women', 'Kids']
+    },
+    subCategory: {
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
-        required: true 
-    },   
+        required: true
+    },
+    categoryAncestors: [{
+        type: mongoose.Schema.Types.ObjectId,     // Stores IDs of [Level 4, Level 3, Level 2, Level 1]
+        ref: 'Category',
+        index: true
+    }],   
     description: { 
         type: String, 
         required: true, 
@@ -86,16 +106,15 @@ const productSchema = new mongoose.Schema({
         min: 0, 
         max: 99 
     },
-    reviews: [reviewSchema], // Array holding all submitted reviews
+    reviews: [reviewSchema], 
     rating: { 
         type: Number, 
-        default: 0 // Will store average, e.g., 4.5
+        default: 0 
     },
     numReviews: { 
         type: Number, 
-        default: 0 // Stores total count of reviews
+        default: 0 
     },
-
 
     totalStock: { 
         type: Number, 

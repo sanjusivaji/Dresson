@@ -1,7 +1,7 @@
-<!-- FIGMA MATCHING PRODUCT CARD PARTIAL -->
+
 <div class="bg-[#fcfcfc] rounded-xl border border-gray-200/80 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group">
     
-    <!-- 1. IMAGE & CIRCULAR DISCOUNT BADGE -->
+    <!-- 1 IMAGE & CIRCULAR DISCOUNT BADGE -->
     <div class="relative aspect-3/4 bg-gray-100 overflow-hidden">
         
         <!-- Safe Image Extraction -->
@@ -13,10 +13,9 @@
             <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
         </a>
 
-        <!-- Smart Discount & MRP Calculation (Fallbacks if not yet in Admin DB) -->
+        <!-- Smart Discount & MRP Calculation -->
         <% 
             const displayPrice = product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 1499);
-            // If admin hasn't added original MRP yet, simulate one ~7-9% higher so Figma UI works cleanly
             const mrp = product.mrp || product.originalPrice || Math.round(displayPrice * 1.08);
             const discountPercent = product.discount || Math.max(5, Math.round(((mrp - displayPrice) / mrp) * 100));
         %>
@@ -33,7 +32,7 @@
         </button>
     </div>
 
-    <!-- 2. PRODUCT DETAILS & PRICING -->
+    <!-- PRODUCT DETAILS & PRICING -->
     <div class="p-4 flex flex-col flex-grow justify-between space-y-3 bg-[#faf9f9]">
         <div>
             <!-- Brand Name (Figma Red Style) -->
@@ -68,8 +67,12 @@
                 </div>
             </div>
 
-            <!-- 5. STOCK STATUS -->
-            <% const isStockAvailable = (product.totalStock !== undefined ? product.totalStock : 10) > 0; %>
+            <!-- 5. STOCK STATUS & VARIANT RESOLUTION -->
+            <% 
+                const isStockAvailable = (product.totalStock !== undefined ? product.totalStock : 10) > 0;
+                // Grabs the first variant ID by default so the backend knows which item to add
+                const defaultVariantId = (product.variants && product.variants.length > 0) ? product.variants[0]._id : '';
+            %>
             <div class="mt-1.5 text-xs font-extrabold">
                 <% if (isStockAvailable) { %>
                     <span class="text-green-600 flex items-center gap-1">
@@ -83,27 +86,54 @@
             </div>
         </div>
 
-        <!-- 6. QUANTITY DROPDOWN & ACTION BUTTONS -->
-        <div class="space-y-2 pt-2 border-t border-gray-200/80">
-            
-            <!-- Quantity Select Dropdown -->
-            <div class="w-full">
-                <select name="quantity" class="w-full border border-gray-300 rounded-md px-2.5 py-1 text-xs bg-white text-gray-700 font-semibold focus:outline-none focus:border-gray-500 cursor-pointer shadow-2xs">
-                    <option value="1">Quantity: 1</option>
-                    <option value="2">Quantity: 2</option>
-                    <option value="3">Quantity: 3</option>
-                    <option value="4">Quantity: 4</option>
-                    <option value="5">Quantity: 5</option>
-                </select>
-            </div>
+        <!-- 6. FORM CONNECTED TO BACKEND: QUANTITY & ACTION BUTTONS -->
+        <div class="pt-2 border-t border-gray-200/80">
+            <% if (isStockAvailable) { %>
+                <!-- Active Form for In-Stock Items -->
+                <form action="/cart/add" method="POST" class="space-y-2 m-0">
+                    <!-- Hidden inputs required by your postAddToCart controller -->
+                    <input type="hidden" name="productId" value="<%= product._id %>">
+                    <input type="hidden" name="variantId" value="<%= defaultVariantId %>">
+                    <input type="hidden" name="actionType" value="cart">
 
-            <!-- Figma Yellow & Orange Buttons -->
-            <button type="button" class="w-full py-2 bg-[#facc15] hover:bg-[#eab308] text-gray-900 text-xs font-black rounded-md shadow-2xs transition cursor-pointer">
-                Add to Cart
-            </button>
-            <a href="/product/<%= product._id %>" class="block w-full text-center py-2 bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-black rounded-md shadow-2xs transition">
-                Buy Now
-            </a>
+                    <!-- Quantity Select Dropdown (Value sent directly to backend) -->
+                    <div class="w-full">
+                        <select name="quantity" class="w-full border border-gray-300 rounded-md px-2.5 py-1 text-xs bg-white text-gray-700 font-semibold focus:outline-none focus:border-gray-500 cursor-pointer shadow-2xs">
+                            <option value="1">Quantity: 1</option>
+                            <option value="2">Quantity: 2</option>
+                            <option value="3">Quantity: 3</option>
+                            <option value="4">Quantity: 4</option>
+                            <option value="5">Quantity: 5</option>
+                        </select>
+                    </div>
+
+                    <!-- Figma Yellow Add To Cart Button (Changed to type="submit") -->
+                    <button type="submit" class="w-full py-2 bg-[#facc15] hover:bg-[#eab308] active:scale-[0.99] text-gray-900 text-xs font-black rounded-md shadow-2xs transition cursor-pointer flex items-center justify-center space-x-1.5">
+                        <i class="fas fa-shopping-bag text-[11px]"></i>
+                        <span>Add to Cart</span>
+                    </button>
+                    
+                    <!-- Buy Now Button (Redirects to Details Page to pick Size/Color) -->
+                    <a href="/product/<%= product._id %>" class="block w-full text-center py-2 bg-[#f97316] hover:bg-[#ea580c] active:scale-[0.99] text-white text-xs font-black rounded-md shadow-2xs transition">
+                        Buy Now
+                    </a>
+                </form>
+            <% } else { %>
+                <!-- Disabled State for Sold-Out Items -->
+                <div class="space-y-2">
+                    <select disabled class="w-full border border-gray-200 rounded-md px-2.5 py-1 text-xs bg-gray-100 text-gray-400 font-semibold cursor-not-allowed">
+                        <option>Quantity: N/A</option>
+                    </select>
+                    <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed flex items-center justify-center space-x-1">
+                        <i class="fas fa-ban text-[11px]"></i>
+                        <span>Sold Out</span>
+                    </button>
+                    <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed">
+                        Unavailable
+                    </button>
+                </div>
+            <% } %>
         </div>
+
     </div>
 </div>

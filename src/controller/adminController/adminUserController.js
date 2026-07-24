@@ -29,6 +29,7 @@ export const getUsersList = async (req, res) => {
     }
 };
 
+// For 'block' or 'Unblock' user
 export const toggleBlockStatus = async (req, res) => {
     try {
         await adminUserService.processToggleBlock(req.params.id);
@@ -52,15 +53,6 @@ export const updateUserDetails = async (req, res) => {
     }
 };
 
-// export const updateUser = async (req, res) => {
-//     try {
-//         await adminUserService.modifyUserProfile(req.params.id, req.body, req.file);
-//         res.redirect(`/admin/users/${req.params.id}`);
-//     } catch (error) {
-//         logger.error("Error updating user:", error);
-//         res.status(500).send("Internal Server Error");
-//     }
-// };
 
 export const getUserDetails = async (req, res) => {
     try {
@@ -140,9 +132,7 @@ export const getUserOrders = async (req, res) => {
         let query = { user: req.params.id };
         if (currentStatus !== 'All') query.deliveryStatus = currentStatus;
         if (searchQuery) query.orderId = { $regex: searchQuery, $options: 'i' };
-
         const { results: orders, currentPage, totalPages } = await paginate(Order, req, 5, query);
-
         res.render('admin/userOrders', {
             user, orders, currentPage, totalPages, currentStatus, searchQuery
         });

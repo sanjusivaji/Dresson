@@ -33,6 +33,8 @@ export const findActiveCategoriesWithParents = async () => {
     return await Category.find({ isListed: true }).populate('parentCategory').sort({ categoryName: 1 });
 };
 
-export const createProduct = async (productData) => {
-    return await Product.create(productData);
+
+export const createProduct = async (payload) => {
+    const product = new Product(payload);
+    return await product.save();
 };

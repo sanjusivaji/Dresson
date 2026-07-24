@@ -1,0 +1,279 @@
+<!-- ============================================================================
+     SHOPPING CART STOREFRONT VIEW (Matching Figma UI + Live Stock Guards)
+============================================================================= -->
+
+<%- contentFor('body') %>
+
+<!-- Shared Alerts Partial -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
+<!-- Quick URL Error Catching Script -->
+<% if (typeof query !== 'undefined' && query.error) { %>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("<%= decodeURIComponent(query.error) %>", "Cart Action Blocked", "error");
+            } else {
+                alert("<%= decodeURIComponent(query.error) %>");
+            }
+        });
+    </script>
+<% } %>
+
+<main class="min-h-[75vh] bg-[#f9f9f9] py-12 px-4 sm:px-6 lg:px-8 flex items-start justify-center font-sans">
+    
+    <!-- Centered Minimalist White Workspace Card (Figma Style) -->
+    <div class="w-full max-w-3xl bg-white rounded-3xl shadow-sm border border-gray-200/60 p-6 sm:p-10 md:p-12">
+        
+        <!-- Heading -->
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-8">
+            Shopping Cart
+        </h1>
+
+        <% if (cart && cart.items && cart.items.length > 0) { %>
+            
+            <!-- Requirement: Banner Warning if Cart Contains Invalid/Sold-Out Items -->
+            <% if (cart.hasInvalidItems) { %>
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start space-x-3 text-red-800 animate-fade-in">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-lg mt-0.5"></i>
+                    <div class="text-xs sm:text-sm font-medium">
+                        <span class="font-bold block">Action Required:</span>
+                        One or more items in your cart are currently out of stock or no longer available. Please remove them or adjust quantities to proceed to checkout.
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- ===============================================================
+                 CART ITEMS LIST (Figma Row Structure)
+            ================================================================ -->
+            <div class="divide-y divide-gray-100" id="cartItemsContainer">
+                <% cart.items.forEach(item => { %>
+                    <div class="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group transition <%= !item.isValid ? 'bg-red-50/40 -mx-4 px-4 rounded-2xl border border-red-100 my-2' : '' %>" 
+                         id="cart-row-<%= item._id %>">
+                        
+                        <!-- Left Side: Thumbnail & Product Specifications -->
+                        <div class="flex items-center space-x-4 sm:space-x-6 flex-1 min-w-0">
+                            <!-- Thumbnail -->
+                            <a href="/product/<%= item.product._id %>" class="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden bg-gray-100 border border-gray-200/80 shrink-0 block relative">
+                                <img src="<%= item.image %>" alt="<%= item.name %>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                <% if (!item.isValid) { %>
+                                    <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                                        <i class="fas fa-ban text-red-600 text-xl"></i>
+                                    </div>
+                                <% } %>
+                            </a>
+
+                            <!-- Details -->
+                            <div class="flex-1 min-w-0">
+                                <a href="/product/<%= item.product._id %>" class="text-sm sm:text-base font-bold text-gray-900 truncate block hover:text-[#6b66d6] transition">
+                                    <%= item.name %>
+                                </a>
+                                
+                                <!-- Variant Attributes Below Title (e.g., M Black Cotton) -->
+                                <p class="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wide truncate">
+                                    <%= item.variantName.replace(/\//g, ' ') %>
+                                </p>
+                                
+                                <!-- Price Display -->
+                                <div class="mt-2 flex items-center space-x-2">
+                                    <span class="text-sm sm:text-base font-extrabold text-gray-900" id="item-total-<%= item._id %>">
+                                        ₹ <%= (item.livePrice * item.quantity).toLocaleString('en-IN') %>
+                                    </span>
+                                    <% if (item.quantity > 1) { %>
+                                        <span class="text-[10px] font-semibold text-gray-400">
+                                            (₹ <%= item.livePrice.toLocaleString('en-IN') %> each)
+                                        </span>
+                                    <% } %>
+                                </div>
+
+                                <!-- Dynamic Status Badges for Invalid Items -->
+                                <% if (item.isUnlisted) { %>
+                                    <span class="inline-block mt-1.5 px-2.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-extrabold rounded-md uppercase tracking-wider">Unlisted by Admin</span>
+                                <% } else if (item.isOutOfStock) { %>
+                                    <span class="inline-block mt-1.5 px-2.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-extrabold rounded-md uppercase tracking-wider">Sold Out</span>
+                                <% } else if (item.isExceedingStock) { %>
+                                    <span class="inline-block mt-1.5 px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md uppercase tracking-wider">Only <%= item.liveStock %> units available!</span>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Figma Quantity Pill (- 1 +) & Trash Icon -->
+                        <div class="flex items-center justify-end space-x-4 sm:space-x-6 shrink-0 self-end sm:self-center">
+                            
+                            <!-- Quantity Pill Selector (Disabled if unlisted or sold out) -->
+                            <% if (item.isValid) { %>
+                                <div class="inline-flex items-center bg-transparent border border-gray-300/80 rounded-lg overflow-hidden h-8 sm:h-9 px-1">
+                                    <button type="button" 
+                                            onclick="updateCartQty('<%= item._id %>', <%= item.quantity - 1 %>)" 
+                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity <= 1 ? 'opacity-30 cursor-not-allowed' : '' %>"
+                                            <%= item.quantity <= 1 ? 'disabled' : '' %>>
+                                        -
+                                    </button>
+                                    
+                                    <span class="w-8 text-center font-bold text-xs sm:text-sm text-gray-900 select-none" id="qty-val-<%= item._id %>">
+                                        <%= item.quantity %>
+                                    </span>
+                                    
+                                    <button type="button" 
+                                            onclick="updateCartQty('<%= item._id %>', <%= item.quantity + 1 %>)" 
+                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity >= Math.min(10, item.liveStock) ? 'opacity-30 cursor-not-allowed' : '' %>"
+                                            <%= item.quantity >= Math.min(10, item.liveStock) ? 'disabled' : '' %>>
+                                        +
+                                    </button>
+                                </div>
+                            <% } else { %>
+                                <!-- Placeholder space if controls disabled -->
+                                <span class="text-xs font-bold text-red-500 uppercase tracking-wider">Unavailable</span>
+                            <% } %>
+
+                            <!-- Trash / Delete Icon (Figma Style) -->
+                            <button type="button" 
+                                    onclick="removeCartItem('<%= item._id %>', '<%= item.name.replace(/'/g, "\\'") %>')" 
+                                    class="w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition flex items-center justify-center text-sm cursor-pointer"
+                                    title="Remove Item">
+                                <i class="far fa-trash-can"></i>
+                            </button>
+
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+
+            <!-- Horizontal Divider (Figma Style) -->
+            <hr class="my-8 border-gray-200">
+
+            <!-- ===============================================================
+                 TOTAL SUMMARY & FIGMA GREEN CHECKOUT BUTTON
+            ================================================================ -->
+            <div class="flex flex-col items-center sm:items-end space-y-6">
+                
+                <!-- Total Row -->
+                <div class="w-full sm:w-80 flex items-center justify-between text-base sm:text-lg font-bold text-gray-900 px-2">
+                    <span>Total</span>
+                    <span id="cartTotalDisplay" class="text-xl sm:text-2xl font-black">
+                        ₹ <%= cart.cartTotal.toLocaleString('en-IN') %>
+                    </span>
+                </div>
+
+                <!-- Green Pill Checkout Button (#16a34a / Figma Style) -->
+                <!-- Strictly Disabled if hasInvalidItems is true! -->
+                <div class="w-full sm:w-64 flex flex-col items-center sm:items-end">
+                    <a href="<%= !cart.hasInvalidItems ? '/checkout' : '#' %>" 
+                       id="checkoutBtnCTA"
+                       class="w-full py-3.5 px-8 rounded-full font-extrabold text-sm text-white text-center transition shadow-md flex items-center justify-center space-x-2 uppercase tracking-wider <%= cart.hasInvalidItems ? 'bg-gray-400 opacity-60 cursor-not-allowed pointer-events-none' : 'bg-[#16a34a] hover:bg-[#15803d] hover:shadow-lg active:scale-[0.99] cursor-pointer' %>">
+                        <span>Checkout</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+
+                    <% if (cart.hasInvalidItems) { %>
+                        <span class="text-[10px] font-bold text-red-500 mt-2 text-center">
+                            Remove unavailable items to proceed
+                        </span>
+                    <% } %>
+                </div>
+
+            </div>
+
+        <% } else { %>
+            
+            <!-- EMPTY CART STATE -->
+            <div class="py-16 text-center space-y-4">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300 border border-gray-200">
+                    <i class="fas fa-shopping-bag text-2xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">Your shopping cart is empty</h3>
+                <p class="text-xs text-gray-400 max-w-sm mx-auto">Explore our premium apparel catalog and discover timeless pieces tailored for you.</p>
+                <div class="pt-4">
+                    <a href="/shop" class="inline-flex items-center px-6 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-xs font-extrabold uppercase tracking-widest transition shadow-sm">
+                        <span>Explore Shop</span>
+                    </a>
+                </div>
+            </div>
+
+        <% } %>
+
+    </div>
+</main>
+
+<!-- ============================================================================
+     CLIENT-SIDE CART ENGINE (AJAX Quantity Updates & Instant Deletions)
+============================================================================= -->
+<script>
+    // 1. AJAX QUANTITY UPDATER (- / + Buttons)
+    async function updateCartQty(itemId, newQty) {
+        if (newQty < 1) return;
+
+        try {
+            const response = await fetch('/cart/update-quantity', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId, quantity: newQty })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Smoothly refresh the page to reflect accurate price totals & stock badge states
+                window.location.reload();
+            } else {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(data.message || "Could not update quantity.", "Stock Restriction", "warning");
+                } else {
+                    alert(data.message);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to sync quantity:", error);
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("Network error while updating cart. Please try again.", "Connection Error", "error");
+            } else {
+                alert("Network error while updating cart.");
+            }
+        }
+    }
+
+    // 2. AJAX ITEM DELETION WITH CONFIRMATION
+    function removeCartItem(itemId, itemName) {
+        const confirmMsg = `Are you sure you want to remove "${itemName}" from your shopping cart?`;
+
+        const executeDelete = async () => {
+            try {
+                const response = await fetch(`/cart/remove/${itemId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Animate row removal before reloading
+                    const rowEl = document.getElementById(`cart-row-${itemId}`);
+                    if (rowEl) {
+                        rowEl.style.transition = 'all 0.3s ease';
+                        rowEl.style.opacity = '0';
+                        rowEl.style.transform = 'translateX(20px)';
+                    }
+                    setTimeout(() => window.location.reload(), 250);
+                } else {
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert(data.message || "Could not remove item.", "Error", "error");
+                    } else {
+                        alert(data.message || "Could not remove item.");
+                    }
+                }
+            } catch (error) {
+                console.error("Delete request error:", error);
+                alert("Network error while removing item.");
+            }
+        };
+
+        // Use custom UI confirmation modal if available in your theme
+        if (typeof showCustomConfirm === 'function') {
+            showCustomConfirm(confirmMsg, executeDelete, "Remove Item?");
+        } else if (confirm(confirmMsg)) {
+            executeDelete();
+        }
+    }
+</script>

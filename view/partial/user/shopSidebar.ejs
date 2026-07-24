@@ -5,23 +5,8 @@
         <!-- Preserve pagination and search when changing filters -->
         <input type="hidden" name="page" value="1">
 
-        <!-- 1. SEARCH BAR -->
-        <div class="relative">
-            <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
-                   placeholder="Search..." 
-                   class="w-full text-xs pl-3.5 pr-8 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-600 focus:bg-white font-medium text-gray-800 transition">
-            
-            <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
-                <a href="/shop?<%= new URLSearchParams({...query, search: '', page: 1}).toString() %>" 
-                   class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 text-sm font-bold" title="Clear">&times;</a>
-            <% } else { %>
-                <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                    <i class="fas fa-search text-xs"></i>
-                </button>
-            <% } %>
-        </div>
 
-        <!-- 2. SORT BY (Inline Figma Style) -->
+        <!--  SORT BY (Inline Figma Style) -->
         <div class="flex items-center justify-between gap-2 pt-1">
             <label class="text-xs font-bold text-gray-700 whitespace-nowrap">Sort By</label>
             <% const activeSort = typeof currentSort !== 'undefined' ? currentSort : 'newest'; %>
@@ -37,12 +22,11 @@
 
         <hr class="border-gray-100">
 
-        <!-- 3. FILTER BY HEADING -->
+        <!-- FILTER BY HEADING -->
         <div>
             <h3 class="text-base font-extrabold text-gray-900 tracking-tight mb-4">Filter By</h3>
 
             <div class="space-y-3">
-                <!-- Categories Dropdown -->
                 <div>
                     <select name="category" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
                         <option value="">All categories</option>

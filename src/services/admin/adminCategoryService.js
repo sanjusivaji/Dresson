@@ -121,3 +121,35 @@ export const executeCategoryUpdate = async (categoryId, bodyData) => {
         description: (description || '').trim()
     });
 };
+
+export const buildInfiniteCategoryTree = (categories, parentId = null, currentDepth = 1, parentPath = [], visited = new Set()) => {
+    let tree = [];
+
+    const children = categories.filter(cat => {
+        if (!parentId) return !cat.parentCategory || cat.parentCategory === 'none' || cat.parentCategory === null;
+        return cat.parentCategory && cat.parentCategory.toString() === parentId.toString();
+    });
+
+    for (let child of children) {
+        if (visited.has(child._id.toString())) continue;
+        visited.add(child._id.toString());
+
+        // Build the full breadcrumb array: e.g., ["Men", "Topwear", "Shirts"]
+        const currentPath = [...parentPath, child.categoryName];
+
+        tree.push({
+            ...child, // Copies all database fields (description, isListed, slug, etc.)
+            _id: child._id,
+            categoryName: child.categoryName,
+            gender: child.gender,
+            depth: currentDepth,
+            lineage: currentPath, 
+            breadcrumb: currentPath.join(' > '), 
+            displayName: ('— '.repeat(currentDepth - 1)) + child.categoryName
+        });
+
+        const subChildren = buildInfiniteCategoryTree(categories, child._id, currentDepth + 1, currentPath, new Set(visited));
+        tree = tree.concat(subChildren);
+    }
+    return tree;
+};

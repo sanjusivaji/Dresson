@@ -55,7 +55,7 @@ export const loadAddAddressPage = async (req, res) => {
 export const processAddAddress = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
-        await userAddressService.addNewAddress(req.session.user, req.body); // Way of 'Request' data(ie 'req.body')is 'view -> server.js -> middleware -> route -> controller'
+       const address = await userAddressService.addNewAddress(req.session.user, req.body); // Way of 'Request' data(ie 'req.body')is 'view -> server.js -> middleware -> route -> controller'     
         res.redirect('/profile/address'); 
     } catch (error) {
         logger.error("Error saving new address:", error);

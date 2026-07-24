@@ -10,15 +10,18 @@
     <p class="text-xs text-gray-400 mt-1">Configure your product identity, gallery media assets, variants matrix, and categories.</p>
 </div>
 
-<!-- Shared Common Alerts & Modal Partials -->
 <%- include('../partial/shared/alertSuccess') %>
 <%- include('../partial/shared/alertError') %>
 <%- include('../partial/shared/warning') %>
 
+<!-- Serialized Database Categories for Client-Side Filtering -->
 <input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
 
 <form action="/admin/products/add" method="POST" enctype="multipart/form-data" id="productForm" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-4xl mb-12">
     
+    <!-- INVISIBLE ANCESTOR LINEAGE TRACKER: Automatically submits all 4 hierarchy level IDs! -->
+    <div id="ancestorsContainer" class="hidden"></div>
+
     <!-- SECTION 1: Product Identity & Categories -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="space-y-6">
@@ -50,7 +53,8 @@
 
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Sub-Category Assignment Tree</label>
-                <select id="subCategory" name="subCategory" required disabled class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-100 shadow-sm transition cursor-not-allowed font-medium text-gray-800">
+                <!-- ADDED: onchange="handleSubCategoryChange()" to track all 4 hierarchy levels! -->
+                <select id="subCategory" name="subCategory" required disabled onchange="handleSubCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-100 shadow-sm transition cursor-not-allowed font-medium text-gray-800">
                     <option value="" disabled selected>Please select a gender target first</option>
                 </select>
             </div>
@@ -61,6 +65,7 @@
             <textarea name="description" required rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : '' %></textarea>
         </div>
+        
         <div class="flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
             <div class="relative">
@@ -73,50 +78,43 @@
         </div>
     </div>
 
-    <!-- SECTION 2: Modern Cropper.js Image Gallery (Min. 3 Required) -->
+    <!--  Modern Cropper.js Image Gallery (Min. 3 Required) -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="mb-4">
             <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery (Min. 3 Images Required)</h3>
             <p class="text-[11px] text-gray-400 mt-0.5">Upload high-resolution dress photos. Click any preview card to crop and resize before submitting.</p>
         </div>
 
-        <!-- Dropzone Area -->
         <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-white hover:border-gray-400 transition cursor-pointer group" onclick="document.getElementById('rawFileInput').click()">
             <div class="w-12 h-12 rounded-full bg-red-50 mx-auto flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200 mb-3">
                 <i class="fas fa-cloud-upload-alt text-xl"></i>
             </div>
             <p class="text-xs font-bold text-gray-700">Click to browse or drag & drop apparel photos</p>
             <p class="text-[10px] text-gray-400 mt-1">Supports PNG, JPG, WEBP (Recommended aspect ratio 3:4)</p>
-            
-            <!-- Hidden Raw Input for initial selection -->
             <input type="file" id="rawFileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
-            
-            <!-- Hidden Final Form Input (Submits to backend Multer) -->
             <input type="file" name="productImages" id="finalFormFileInput" multiple class="hidden">
         </div>
 
-        <!-- Client-Side Validation Error Box -->
         <div id="imageCountError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-bold text-red-600 flex items-center gap-2">
             <i class="fas fa-exclamation-circle text-sm"></i>
             <span>You must upload and confirm at least 3 images for the catalog.</span>
         </div>
 
-        <!-- Thumbnail Previews Grid -->
         <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 empty:hidden"></div>
     </div>
 
-    <!-- SECTION 3: Variants Workspace -->
+    <!-- SECTION 3: Upgraded Variants & Apparel Attributes Workspace -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div>
-                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants Workspaces</h3>
-                <p class="text-[11px] text-gray-400 mt-0.5">Map default attributes or construct specialized custom options blocks</p>
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants & Apparel Attributes Workspace</h3>
+                <p class="text-[11px] text-gray-400 mt-0.5">Use industry-standard presets for storefront filtering consistency, or construct custom rules.</p>
             </div>
             
-            <div class="flex space-x-2">
-                <button type="button" onclick="addNewOptionRow()" class="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition shadow-xs flex items-center space-x-1.5 cursor-pointer">
-                    <i class="fas fa-list text-gray-400"></i>
-                    <span>Add Standard Option</span>
+            <div class="flex items-center space-x-2">
+                <button type="button" onclick="addNewOptionRow('Size')" class="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition shadow-xs flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fas fa-plus text-gray-400"></i>
+                    <span>Add Standard Row</span>
                 </button>
                 <button type="button" onclick="openCustomVariantModal()" class="px-3 py-1.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
                     <i class="fas fa-magic"></i>
@@ -125,20 +123,38 @@
             </div>
         </div>
 
+        <div class="bg-white p-3 rounded-lg border border-gray-200 mb-6 shadow-2xs flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+                <i class="fas fa-bolt text-amber-500"></i> Quick Presets:
+            </span>
+            <button type="button" onclick="addNewOptionRow('Size')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Size</button>
+            <button type="button" onclick="addNewOptionRow('Color')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Color</button>
+            <button type="button" onclick="addNewOptionRow('Fit Type')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fit Type</button>
+            <button type="button" onclick="addNewOptionRow('Sleeve Length')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Sleeve Length</button>
+            <button type="button" onclick="addNewOptionRow('Fabric / Material')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fabric</button>
+            <button type="button" onclick="addNewOptionRow('Neckline / Collar')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Neckline</button>
+            <button type="button" onclick="addNewOptionRow('Pattern / Print')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Pattern</button>
+        </div>
+
         <div id="optionsContainer" class="space-y-4">
             <div class="grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row">
                 <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                    <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type">
-                        <option value="Size">Size</option>
+                    <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer">
+                        <option value="Size" selected>Size</option>
                         <option value="Color">Color</option>
-                        <option value="Fabric">Fabric</option>
+                        <option value="Fit Type">Fit Type</option>
+                        <option value="Sleeve Length">Sleeve Length</option>
+                        <option value="Fabric / Material">Fabric / Material</option>
+                        <option value="Neckline / Collar">Neckline / Collar</option>
+                        <option value="Pattern / Print">Pattern / Print</option>
+                        <option value="Occasion">Occasion</option>
                     </select>
                 </div>
                 <div class="col-span-8">
-                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
+                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL, XXL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
                 </div>
                 <div class="col-span-1 text-center">
-                    <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button>
+                    <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button>
                 </div>
             </div>
         </div>
@@ -172,7 +188,7 @@
 
 </form>
 
-<!-- MODAL 1: Custom Variant Creator (Placed outside form to avoid auto-submitting) -->
+<!-- MODAL 1: Custom Variant Creator -->
 <div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-xs">
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
         <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -198,12 +214,9 @@
     </div>
 </div>
 
-
-<!-- Include your standalone Cropper script -->
 <script src="/js/shared/imageCropper.js"></script>
 
 <script>
-    // 1. Parse Database Documents Passed From Server Environment
     let databaseCategories = [];
     try {
         const rawTextData = document.getElementById('rawServerCategories').value;
@@ -212,60 +225,114 @@
         console.error("Critical failure parsing category datasets:", error);
     }
 
-    // Initialize dropdown if data was sent back on validation fail
     document.addEventListener("DOMContentLoaded", () => {
         if (document.getElementById('parentCategory').value) {
             handleParentCategoryChange();
         }
     });
 
-    // 2. CATEGORY SELECT RECONCILIATION: Filters child classifications dynamically
     function handleParentCategoryChange() {
         const activeGender = document.getElementById('parentCategory').value;
-        const subSelect = document.getElementById('subCategory');
-        
+        const subSelect = document.getElementById('subCategory');    
         subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
-        const filteredMatches = databaseCategories.filter(cat => cat.gender === activeGender && cat.parentCategory !== null);
+
+        const filteredMatches = databaseCategories.filter(cat => {
+            const isMatchingGender = cat.gender === activeGender;
+            const isNotRoot = cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined;
+            return isMatchingGender && isNotRoot;
+        });
 
         if (filteredMatches.length > 0) {
             subSelect.disabled = false;
             subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.add('bg-white', 'cursor-pointer');
-
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option');
-                opt.value = cat._id; 
-                const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
-                opt.innerText = parentName + " → " + cat.categoryName;
+                opt.value = cat._id;                 
+                if (cat.breadcrumb) {
+                    opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`;
+                } else if (cat.lineage && Array.isArray(cat.lineage)) {
+                    opt.innerText = cat.lineage.join(" → ") + ` (Level ${cat.depth || 2})`;
+                } else {
+                    let parentName = "Subcategory";
+                    if (cat.parentCategory && typeof cat.parentCategory === 'object' && cat.parentCategory.categoryName) {
+                        parentName = cat.parentCategory.categoryName;
+                    } else if (typeof cat.parentCategory === 'string') {
+                        const foundParent = databaseCategories.find(p => p._id.toString() === cat.parentCategory.toString());
+                        if (foundParent) parentName = foundParent.categoryName;
+                    }
+                    opt.innerText = `${parentName} → ${cat.categoryName}`;
+                }
                 subSelect.appendChild(opt);
             });
         } else {
             subSelect.disabled = true;
             subSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.remove('bg-white', 'cursor-pointer');
-            subSelect.innerHTML = '<option value="" disabled selected>No sub-categories exist for ' + activeGender + '</option>';
+            subSelect.innerHTML = `<option value="" disabled selected>No sub-categories exist for ${activeGender}</option>`;
         }
+        
+        // Reset ancestors when gender changes
+        document.getElementById('ancestorsContainer').innerHTML = '';
     }
+    function handleSubCategoryChange() {
+        const selectedId = document.getElementById('subCategory').value;
+        const container = document.getElementById('ancestorsContainer');
+        container.innerHTML = ''; // Clear previous tree
 
-    // 3. VARIANT CONFIGURATION ENGINE
-    function addNewOptionRow() {
+        if (!selectedId) return;
+
+        let currentCat = databaseCategories.find(c => c._id.toString() === selectedId.toString());
+        const ancestors = [];
+        while (currentCat) {
+            ancestors.push(currentCat._id);
+            if (currentCat.parentCategory && currentCat.parentCategory !== 'none') {
+                const parentId = typeof currentCat.parentCategory === 'object' ? currentCat.parentCategory._id : currentCat.parentCategory;
+                currentCat = databaseCategories.find(c => c._id.toString() === parentId.toString());
+            } else {
+                currentCat = null;
+            }
+        }
+        ancestors.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'categoryAncestors[]';
+            input.value = id;
+            container.appendChild(input);
+        });
+        
+        console.log(" Indexed 4-Level Lineage Captured:", ancestors);
+    }
+    function addNewOptionRow(presetType = 'Size') {
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
-        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
+        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        
+        const standardAttributes = [
+            "Size", "Color", "Fit Type", "Sleeve Length", 
+            "Fabric / Material", "Neckline / Collar", "Pattern / Print", "Occasion"
+        ];
+
+        let optionsHtml = standardAttributes.map(attr => {
+            const isSelected = attr === presetType ? 'selected' : '';
+            return `<option value="${attr}" ${isSelected}>${attr}</option>`;
+        }).join('');
+
         row.innerHTML = `
             <div class="col-span-3">
-                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type">
-                    <option value="Size">Size</option>
-                    <option value="Color">Color</option>
-                    <option value="Fabric">Fabric</option>
+                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer">
+                    ${optionsHtml}
                 </select>
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
             </div>
-            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>
+            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button></div>
         `;
+        
         container.appendChild(row);
+        const newSelect = row.querySelector('.option-type');
+        updateRowPlaceholders(newSelect);
     }
 
     function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
@@ -285,8 +352,8 @@
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
         
-        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row";
-        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button></div>';
+        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button></div>';
         
         container.appendChild(row);
         closeCustomVariantModal();
@@ -300,13 +367,22 @@
 
     function updateRowPlaceholders(select) {
         const input = select.closest('.option-row').querySelector('.option-values');
-        if(select.value === 'Size') input.placeholder = "e.g., S, M, L, XL (separate entries with commas)";
-        if(select.value === 'Color') input.placeholder = "e.g., Red, Blue, Black (separate entries with commas)";
-        if(select.value === 'Fabric') input.placeholder = "e.g., Cotton, Denim, Linen (separate entries with commas)";
+        const type = select.value;
+
+        const placeholderMap = {
+            'Size': "e.g., S, M, L, XL, XXL or 30, 32, 34 (separate with commas)",
+            'Color': "e.g., Navy Blue, Olive Green, Maroon, Classic Black (separate with commas)",
+            'Fit Type': "e.g., Slim Fit, Oversized, Regular Fit, Relaxed, Tailored (separate with commas)",
+            'Sleeve Length': "e.g., Full Sleeve, Half Sleeve, Sleeveless, 3/4 Sleeve (separate with commas)",
+            'Fabric / Material': "e.g., 100% Cotton, Pure Linen, Denim, Poly-Blend, Silk (separate with commas)",
+            'Neckline / Collar': "e.g., Crew Neck, V-Neck, Polo Collar, Mandarin Collar, Hooded (separate with commas)",
+            'Pattern / Print': "e.g., Solid, Striped, Checked, Floral Print, Graphic Print (separate with commas)",
+            'Occasion': "e.g., Casual Wear, Formal, Party Wear, Athletic / Sports (separate with commas)"
+        };
+        input.placeholder = placeholderMap[type] || `Enter discrete variables for ${type} (separate with commas)`;
         generateCombinationsMatrix();
     }
 
-    // 4. CARTESIAN PRODUCT MATRIX GENERATOR
     function generateCombinationsMatrix() {
         const rows = document.getElementsByClassName('option-row');
         const baseName = document.getElementById('baseName').value.trim() || "PROD";
@@ -359,7 +435,7 @@
     document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
     document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
 
-    // 5. IMAGE GALLERY MANAGEMENT (Cleaned & Linked to External Module)
+    //  IMAGE GALLERY MANAGEMENT
     const processedFilesArray = []; 
     const dataTransfer = new DataTransfer(); 
 
@@ -391,7 +467,6 @@
     function renderPreviews() {
         const grid = document.getElementById('imagePreviewGrid');
         grid.innerHTML = '';
-
         processedFilesArray.forEach((file, index) => {
             const url = URL.createObjectURL(file);
             const card = document.createElement('div');
@@ -418,19 +493,16 @@
         renderPreviews();
     }
 
-    // This cleanly calls your new external window.ImageCropper module!
     function openCropper(index) {
-        const originalFile = processedFilesArray[index];
-        
+        const originalFile = processedFilesArray[index];    
         window.ImageCropper.openCropper({
             file: originalFile,
-            aspectRatio: NaN, // Free-form custom cropping
+            aspectRatio: NaN,
             onCrop: (blob, newUrl) => {
                 const croppedFile = new File([blob], originalFile.name, {
                     type: 'image/jpeg',
                     lastModified: Date.now()
                 });
-
                 processedFilesArray[index] = croppedFile;
                 updateFormFileInput();
                 renderPreviews();
@@ -438,14 +510,13 @@
         });
     }
 
-    // 6. FORM SUBMISSION INTERCEPTOR (Minimum 3 Images Rule)
+    // FORM SUBMISSION INTERCEPTOR
     document.getElementById('productForm').addEventListener('submit', function(event) {
         if (processedFilesArray.length < 3) {
             event.preventDefault();
             const errorBox = document.getElementById('imageCountError');
             errorBox.classList.remove('hidden');
-            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
+            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });            
             if (typeof showCustomAlert === 'function') {
                 showCustomAlert("A minimum of 3 cropped gallery images is required to publish this product.", "Gallery Error", "error");
             }

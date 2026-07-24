@@ -81,7 +81,7 @@
 <script>
 function handleDeleteConfirm(event, formElement) {
     event.preventDefault();
-    showCustomConfirm(
+    showCustomConfirm(                                                     // This function created in 'view/partial/shared/warning.ejs' file
         'Are you sure you want to delete this address? This action cannot be undone.', 
         function() {
             formElement.submit();

@@ -15,4 +15,3 @@ const transactionSchema = new mongoose.Schema({
 
 export default mongoose.model("WalletTransactions", transactionSchema, "walletTransactions");
 
-//export default mongoose.model('Transaction', transactionSchema);

@@ -1,34 +1,30 @@
-// public/js/shared/imageCropper.js
 
 let cropperInstance = null;
-
 window.ImageCropper = (function () {
-
-    // 1. Automatically load Cropper.js CSS & Script if missing from the page
     function ensureCropperLoaded(callback) {
         if (typeof Cropper !== 'undefined') {
             return callback();
         }
-
-        // Load CSS
         if (!document.querySelector('link[href*="cropper.min.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css';  // For 'css' file from 'cloudflare' library
             document.head.appendChild(link);
         }
-
-        // Load JS
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js';
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js';     // For 'js' file from 'cloudflare' library
         script.onload = () => callback();
-        script.onerror = () => alert('Failed to load image cropping library. Please check your internet connection.');
+        script.onerror = () => {                                                                  //  For 'display' error and here we dynamically create a 'custom' message instead 'alert()'.                                                           
+            const toast = document.createElement('div');
+            toast.style.cssText = "position:fixed; bottom:20px; right:20px; background:#dc3545; color:white; padding:12px 24px; border-radius:8px; z-index:100000; box-shadow:0 4px 12px rgba(0,0,0,0.3);";
+            toast.innerText = "Failed to load cropping tool, check network";
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);          // Remove after 4 seconds
+        };
         document.head.appendChild(script);
     }
-
-    function createModal() {
+    function createModal() {                                                                     // Function for create a 'modal'
         if (document.getElementById('cropperModal')) return;
-
         const modal = document.createElement('div');
         modal.id = 'cropperModal';
         modal.style.cssText = `
@@ -37,8 +33,7 @@ window.ImageCropper = (function () {
             padding: 16px; backdrop-filter: blur(4px);
         `;
         modal.innerHTML = `
-            <div style="background:#111; border:1px solid #222; border-radius:16px; padding:20px; width:min(650px, 98vw); max-height:92vh; display:flex; flex-direction:column; gap:16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-                
+            <div style="background:#111; border:1px solid #222; border-radius:16px; padding:20px; width:min(650px, 98vw); max-height:92vh; display:flex; flex-direction:column; gap:16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">            
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
                     <p style="color:#f8f9fa; font-weight:600; font-size:16px; margin:0; letter-spacing:0.5px;">Crop & Adjust Apparel Photo</p>
                     <button id="cropperCloseBtn" style="background:none; border:none; color:#a3a3a3; font-size:26px; cursor:pointer; line-height:1; padding:4px;">&times;</button>
@@ -58,8 +53,7 @@ window.ImageCropper = (function () {
                     <button type="button" class="cropper-action-btn" data-action="zoom-out" title="Zoom Out"
                         style="padding:8px 12px; background:#1e1e1e; border:1px solid #333; color:#d4af37; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;">− Zoom</button>
                     <button type="button" class="cropper-action-btn" data-action="flip-h" title="Flip Horizontal"
-                        style="padding:8px 12px; background:#1e1e1e; border:1px solid #333; color:#d4af37; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;">⇄ Flip</button>
-                    
+                        style="padding:8px 12px; background:#1e1e1e; border:1px solid #333; color:#d4af37; border-radius:8px; cursor:pointer; font-size:12px; font-weight:600;">⇄ Flip</button>                    
                     <div style="margin-left:auto; display:flex; gap:10px; width:100%; justify-content:flex-end; margin-top:4px;">
                         <button type="button" id="cropperCancelBtn"
                             style="padding:10px 20px; background:#1e1e1e; border:1px solid #333; color:#a3a3a3; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;">Cancel</button>
@@ -67,20 +61,17 @@ window.ImageCropper = (function () {
                             style="padding:10px 24px; background:#6b66d6; border:none; color:#ffffff; border-radius:8px; cursor:pointer; font-size:13px; font-weight:700; box-shadow: 0 4px 12px rgba(107,102,214,0.3);">Apply Crop</button>
                     </div>
                 </div>
-
             </div>
         `;
         document.body.appendChild(modal);
 
-        document.getElementById('cropperCloseBtn').onclick = closeModal;
+        document.getElementById('cropperCloseBtn').onclick = closeModal;                        // 'cropperCloseBtn' is the 'id' in 'ejs' file
         document.getElementById('cropperCancelBtn').onclick = closeModal;
-
-        // Attach action buttons safely
-        modal.querySelectorAll('.cropper-action-btn').forEach(btn => {
-            btn.onclick = (e) => {
+        modal.querySelectorAll('.cropper-action-btn').forEach(item => {
+            item.onclick = (e) => {
                 e.preventDefault();
-                if (!cropperInstance) return;
-                const action = btn.dataset.action;
+                if (!cropperInstance) return;                                                   // 'cropperInstance' is object created below by using 'new Cropper(img, { })'
+                const action = item.dataset.action;
                 if (action === 'rotate-left') cropperInstance.rotate(-90);
                 if (action === 'rotate-right') cropperInstance.rotate(90);
                 if (action === 'zoom-in') cropperInstance.zoom(0.1);
@@ -91,9 +82,8 @@ window.ImageCropper = (function () {
                 }
             };
         });
-    }
-
-    function closeModal() {
+    }  
+    function closeModal() {                                                                     //  For 'close' the 'modal' when click the 'X' symbol or 'Close' button.       
         const modal = document.getElementById('cropperModal');
         if (modal) modal.style.display = 'none';
         if (cropperInstance) { 
@@ -101,33 +91,29 @@ window.ImageCropper = (function () {
             cropperInstance = null; 
         }
     }
-
     function openCropper({ file, aspectRatio = NaN, onCrop }) {
-        if (!file || !file.type.startsWith('image/')) {
-            alert('Please select a valid image file');
+       if (!file || !file.type.startsWith('image/')) {
+            const toast = document.createElement('div');                                       // For 'display' a custom message instead we can put 'alert()'
+            toast.style.cssText = "position:fixed; top:20px; right:20px; background:#e53e3e; color:#fff; padding:12px 20px; border-radius:8px; z-index:999999; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,0.3);";
+            toast.innerText = "Please select a valid image file (JPG, PNG, WEBP).";
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000); 
             return;
         }
-
-        // Ensure the Cropper library is loaded before creating the modal
         ensureCropperLoaded(() => {
-            createModal();
-
+            createModal();                                                                  // 'createModal()' already created above
             const reader = new FileReader();
             reader.onload = (e) => {
                 const modal = document.getElementById('cropperModal');
-                const img = document.getElementById('cropperImage');
-                
+                const img = document.getElementById('cropperImage');                            
                 modal.style.display = 'flex';
                 if (cropperInstance) { 
                     cropperInstance.destroy(); 
                     cropperInstance = null; 
                 }
-
-                // ATTACH ONLOAD BEFORE SETTING SRC TO PREVENT RACE CONDITIONS
                 img.onload = () => {
                     requestAnimationFrame(() => {
-                        if (cropperInstance) cropperInstance.destroy();
-                        
+                        if (cropperInstance) cropperInstance.destroy();                    
                         cropperInstance = new Cropper(img, {
                             aspectRatio: aspectRatio, 
                             viewMode: 1,
@@ -143,14 +129,10 @@ window.ImageCropper = (function () {
                         });
                     });
                 };
-
-                // Set image source after attaching event listener
                 img.src = e.target.result;
-
                 document.getElementById('cropperConfirmBtn').onclick = (event) => {
                     event.preventDefault();
-                    if (!cropperInstance) return;
-                    
+                    if (!cropperInstance) return;                    
                     cropperInstance.getCroppedCanvas({
                         maxWidth: 1200,
                         maxHeight: 1200,
@@ -166,6 +148,5 @@ window.ImageCropper = (function () {
             reader.readAsDataURL(file);
         });
     }
-
     return { openCropper };
 })();

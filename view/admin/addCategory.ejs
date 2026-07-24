@@ -7,22 +7,20 @@
 
 <div class="mb-8">
     <h1 class="text-3xl font-bold text-black tracking-tight">Add New Category</h1>
-    <p class="text-xs text-gray-400 mt-1">Create main categories (Topwear, Bottomwear) or granular sub-categories (T-Shirts, Hoodies).</p>
+    <p class="text-xs text-gray-400 mt-1">Create root categories or nest sub-categories indefinitely (e.g., Men &rarr; Ethnic &rarr; Shirts &rarr; Formal &rarr; Silk).</p>
 </div>
 
-<% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
-    <div class="bg-red-50 border border-red-200 text-red-600 text-xs font-semibold px-4 py-3 rounded-xl max-w-xl mb-6 flex items-center space-x-2">
-        <i class="fas fa-exclamation-circle text-sm"></i>
-        <span><%= errorMessage %></span>
-    </div>
-<% } %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/warning') %>
 
-<form action="/admin/category/add" method="POST" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-xl">
+<form action="/admin/category/add" method="POST" id="addCategoryForm" novalidate class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-xl">
     <div class="space-y-6">
         
+        <!-- Gender Target -->
         <div class="flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Gender Target</label>
-            <select name="gender" id="genderSelect" required class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer">
+            <select name="gender" id="genderSelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium">
                 <option value="" disabled selected>Select Gender Target Scope</option>
                 <option value="Men">Men</option>
                 <option value="Women">Women</option>
@@ -30,33 +28,37 @@
             </select>
         </div>
 
+        <!-- Infinite-Depth Parent Selection -->
         <div class="flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category Assignment</label>
-            <select name="parentCategory" id="parentCategorySelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer">
-                <option value="none">None (Set as a Main Category - e.g., Topwear, Bottomwear)</option>
-                <% if (typeof mainCategories !== 'undefined' && mainCategories) { %>
-                    <% mainCategories.forEach(cat => { %>
-                        <option value="<%= cat._id %>" data-gender="<%= cat.gender %>" class="hidden">
-                            <%= cat.categoryName %>
+            <select name="parentCategory" id="parentCategorySelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium">
+                <option value="none">None (Set as a Root Category - e.g., Topwear, Bottomwear)</option>
+                <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat._id %>" data-gender="<%= cat.gender %>" class="hidden font-mono">
+                            <%= cat.displayName %> (Level <%= cat.depth %>)
                         </option>
                     <% }) %>
                 <% } %>
             </select>
-            <span class="text-[11px] text-gray-400 mt-1.5">Leave as 'None' if you are creating a primary folder container option like Topwear or Ethnic Wear.</span>
+            <span class="text-[11px] text-gray-400 mt-1.5">Select any folder in your tree to nest this category under—there are no depth limits!</span>
         </div>
 
+        <!-- Category Name -->
         <div class="flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Category Classification Name</label>
-            <input type="text" name="categoryName" required placeholder="e.g., Topwear, T-Shirts, Casual Shirts" 
-                   class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/20 shadow-sm transition">
+            <input type="text" name="categoryName" id="categoryName" placeholder="e.g., Formal Shirts, Hoodies, Chinos" 
+                   class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/20 shadow-sm transition font-medium">
         </div>
 
+        <!-- Category Description -->
         <div class="flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Category Description</label>
-            <textarea name="description" required rows="3" placeholder="Provide category context details..." 
-                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/20 shadow-sm transition resize-none"></textarea>
+            <textarea name="description" id="categoryDescription" rows="3" placeholder="Provide category context details..." 
+                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/20 shadow-sm transition resize-none font-medium"></textarea>
         </div>
 
+        <!-- List Toggle -->
         <div class="flex items-center space-x-3 bg-gray-50/50 border border-gray-200 p-4 rounded-lg">
             <div class="flex items-center h-5">
                 <input type="checkbox" name="isListed" value="true" checked id="listToggle" class="w-4 h-4 text-[#6b66d6] border-gray-300 rounded cursor-pointer">
@@ -69,7 +71,7 @@
 
     <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-3">
         <a href="/admin/categories" class="px-5 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel</a>
-        <button type="submit" class="px-6 py-2.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition">Save Category</button>
+        <button type="submit" class="px-6 py-2.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer">Save Category</button>
     </div>
 </form>
 
@@ -78,21 +80,36 @@
     const parentCategorySelect = document.getElementById('parentCategorySelect');
     const parentOptions = parentCategorySelect.querySelectorAll('option');
 
+    // 1. Dynamic Gender Filtering for the Parent Tree
     genderSelect.addEventListener('change', function() {
         const selectedGender = this.value;
-        
-        // Reset parent selection to default 'None' state initially
         parentCategorySelect.value = "none";
-
         parentOptions.forEach(option => {
-            if (option.value === "none") return; // Always display the 'None' base node
-            
-            // Show options matching the selected gender group, hide the rest
+            if (option.value === "none") return;        
             if (option.getAttribute('data-gender') === selectedGender) {
                 option.classList.remove('hidden');
             } else {
                 option.classList.add('hidden');
             }
         });
+    });
+
+    document.getElementById('addCategoryForm').addEventListener('submit', function(e) {
+        const gender = genderSelect.value;
+        const name = document.getElementById('categoryName').value.trim();
+        const desc = document.getElementById('categoryDescription').value.trim();
+        if (!gender) {
+            e.preventDefault();
+            return showCustomAlert("Please select a target gender scope before saving.", "Validation Error", "error");
+        }
+        if (name.length < 2) {
+            e.preventDefault();
+            return showCustomAlert("Category Name must be at least 2 characters long.", "Invalid Input", "error");
+        }
+
+        if (desc.length < 10) {
+            e.preventDefault();
+            return showCustomAlert("Please provide a description of at least 10 characters.", "Invalid Input", "error");
+        }
     });
 </script>

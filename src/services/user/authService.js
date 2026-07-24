@@ -5,6 +5,7 @@ import paginate from '../../utilities/paginationHelper.js';
 import Product from '../../model/productModel.js';
 import { AUTH_REGEX, AUTH_CONFIG, AUTH_ROLES } from '../../constants/userAuthConstants.js';
 import  normalizeEmail  from '../../utilities/emailHelper.js'; 
+import logger from '../../utilities/logger.js'; 
 
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();  // This function is only used here for generate 'random' nubers for 'OTP'.
 
@@ -34,7 +35,7 @@ export const initiateUserRegistration = async (bodyData) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     const otp = generateNumericOtp();                             // Already created just above.
     await sendOtpEmail(cleanEmail, otp);                          // This is the 'function' create in 'utilities/emailSender.js' file and used for send 'email'
-    return {
+    return {                                                      // Returns '3' values includes 'tempUser' object.
         tempUser: { 
             name: cleanName, 
             email: cleanEmail, 
@@ -48,98 +49,62 @@ export const initiateUserRegistration = async (bodyData) => {
 };
 
 // For 'register' user after 'inputting' the 'OTP'
-export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {
-    if (!sessionData.tempUser || !sessionData.otp) {
+export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
+    if (!sessionData.tempUser || !sessionData.otp) {        // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'.
         throw new Error("Session expired. Please sign up again.");
     }
-    if (Date.now() > sessionData.otpExpiry) {
+    if (Date.now() > sessionData.otpExpiry) {               // Checks 'OTP' time period expires or not
         throw new Error("OTP has expired. Please request a new one.");
     }
-    if (inputtedOtp !== sessionData.otp) {
+    if (inputtedOtp !== sessionData.otp) {                 // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
         throw new Error("Invalid OTP. Please try again.");
     }
     const { name, email, normalizedEmail, password } = sessionData.tempUser;
-    const nameParts = name.trim().split(/\s+/);
+    const nameParts = name.trim().split(/\s+/);            // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
     const givenName = nameParts[0];
     const familyName = nameParts.slice(1).join(' ') || '';
-    await authRepository.createNewUser({
+    await authRepository.createNewUser({                    // 'createNewUser()' is the function in 'repository/user/userAuthRepository.js' used for 'save' the data into 'data base' by using 'save()'.
         firstName: givenName,
         lastName: familyName,
-        email: email,                     // Saves: sajith+shopping@gmail.com (for sending emails)
-        normalizedEmail: normalizedEmail, // Saves: sajith@gmail.com (for unique index DB blocking)
-        password: password,               // This is already hashed!
+        email: email,                                       // Saves: sajith+shopping@gmail.com (for sending emails)
+        normalizedEmail: normalizedEmail,                   // Saves: sajith@gmail.com (for unique index DB blocking)
+        password: password,            
         isVerified: true,
-        role: AUTH_ROLES.USER,
+        role: AUTH_ROLES.USER,                              // From 'constants/userAuthConstants.js'
         isBlocked: false
     });
 };
 
 
-
-// export const initiateUserRegistration = async (bodyData) => {
-//     const { name, email, password, confirmPassword, referralCode } = bodyData;
-//     if (!AUTH_REGEX.NAME.test(name)) {                       // 'AUTH_REGEX' created 'constants' folder for validation of 'name', 'email', 'password' etc
-//         throw new Error("Invalid Name: Must be at least 3 characters and contain only letters.");
-//     }
-//     if (!AUTH_REGEX.EMAIL.test(email)) {
-//         throw new Error("Invalid Email format.");
-//     }
-//     if (!AUTH_REGEX.PASSWORD.test(password)) {
-//         throw new Error("Weak Password: Must be at least 8 characters and include uppercase, lowercase, number, and special character.");
-//     }
-//     if (password !== confirmPassword) {
-//         throw new Error("Passwords do not match!");
-//     }
-//     const existingUser = await authRepository.findUserByEmail(email);
-//     if (existingUser) {
-//         throw new Error("Email is already registered. Please log in.");
-//     }
-//     const otp = generateNumericOtp();                  // Already created just above.
-//     await sendOtpEmail(email, otp);                    // This is the 'function' create in 'utilities/emailSender.js' file and used for send 'email'
-//     return {                                           // Returns '3' values.
-//         tempUser: { name, email, password, referralCode },
-//         otp,
-//         otpExpiry: Date.now() + AUTH_CONFIG.SIGNUP_OTP_EXPIRY_MS    // Value of 'expiry' time created in 'constants/userAuthConstants.js' folder
-//     };
-// };
-
-// // For 'register' user after 'inputting' the 'OTP'
-// export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
-//     if (!sessionData.tempUser || !sessionData.otp) {                        // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'. 
-//         throw new Error("Session expired. Please sign up again.");
-//     }
-//     if (Date.now() > sessionData.otpExpiry) {                               // Checks 'OTP' time period expires or not
-//         throw new Error("OTP has expired. Please request a new one.");
-//     }
-//     if (inputtedOtp !== sessionData.otp) {                                 // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
-//         throw new Error("Invalid OTP. Please try again.");
-//     }
-//     const { name, email, password } = sessionData.tempUser;
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-//     const givenName = name.split(' ')[0];                           // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
-//     const familyName = name.split(' ').slice(1).join(' ') || '';    // It 'first' 'split' into array and then 'slice' from '1'(ie it avoids 'first' array)Eg, "Harry James Potter" output: "James Potter"
-//     await authRepository.createNewUser({                            // 'createNewUser()' is the function in 'repository/user/userAuthRepository.js' used for 'save' the data into 'data base' by using 'save()'.
-//         firstName: givenName,
-//         lastName: familyName,
-//         email: email,
-//         password: hashedPassword,
-//         isVerified: true,
-//         role: AUTH_ROLES.USER,                                        // From 'constants/userAuthConstants.js'
-//         isBlocked: false
-//     });
-// };
-
 // For 'authenticate' is it 'user' or 'not'
 export const authenticateLocalUser = async (email, password) => {
-    const user = await authRepository.findUserByEmail(email);         // Retrieve 'data' of 'user' based on 'email'.
-    if (!user) throw new Error("Invalid email or password.");
-    if (user.isBlocked) throw new Error("Your account has been blocked by the admin.");
-    if (!user.password) throw new Error("This account uses Google Sign-In. Please click 'Continue with Google' below."); // We already confirm 'user' is 'signed up' or not by '!user' and even after 'user' has 'no' password, then it 'signed up' by 'google'.
-    const passwordMatch = await bcrypt.compare(password, user.password); // Compare 'user given' and 'already stored' passwords inside 'bcrypt'
-    if (!passwordMatch) throw new Error("Invalid email or password.");
-    return user;
+    try {
+        const user = await authRepository.findUserByEmail(email);                        // Retrieve 'data' of 'user' based on 'email'.         
+        if (!user) {
+            logger.warn(`Auth failed: User not found for email: ${email}`);
+            throw new Error("Invalid email or password.");
+        }
+        if (user.isBlocked) {
+            logger.warn(`Auth failed: Blocked account login attempt for email: ${email}`);
+            throw new Error("Your account has been blocked by the admin.");
+        }
+        if (!user.password) {                                                              // We already confirm 'user' is 'signed up' or not by '!user' and even after 'user' has 'no' password, then it 'signed up' by 'google'.
+            logger.warn(`Auth failed: Google Sign-In expected for email: ${email}`);
+            throw new Error("This account uses Google Sign-In. Please click 'Continue with Google' below."); 
+        }
+        const passwordMatch = await bcrypt.compare(password, user.password);               // Compare 'user given' and 'already stored' passwords inside 'bcrypt'     
+        if (!passwordMatch) {
+            logger.warn(`Auth failed: Incorrect password for email: ${email}`);
+            throw new Error("Invalid email or password.");
+        }
+        logger.info(`Authentication successful for user ID: ${user._id || email}`);
+        return user;
+    } catch (error) {
+        logger.error(`Error in authenticateLocalUser for ${email}: ${error.message}`, { stack: error.stack });
+        throw error;
+    }
 };
+
 
 // For 'process' password reset
 export const initiatePasswordReset = async (email) => {

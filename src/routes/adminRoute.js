@@ -23,9 +23,9 @@ router.get('/dashboard', isAdmin, adminController.loadDashboard);
 router.get('/users', isAdmin, userController.getUsersList);
 router.get('/users/:id', isAdmin, userController.getUserDetails);
 
-router.route('/users/:id/edit')
-      .get(isAdmin, userController.loadEditUser)
-      .post(isAdmin, upload.single('image'), userController.updateUserDetails);
+// router.route('/users/:id/edit')
+//       .get(isAdmin, userController.loadEditUser)
+//       .post(isAdmin, upload.single('image'), userController.updateUserDetails);
 
 router.route('/users/:id/balance')
       .get(isAdmin, userController.loadEditBalance)
@@ -40,13 +40,11 @@ router.get('/products', isAdmin, productController.getProductsList);
 
 router.route('/products/add')
       .get(isAdmin, productController.getAddProduct)
-      //.post(isAdmin, upload.array('productImages', 4), productController.postAddProduct);
       .post(isAdmin, uploadProduct.array('productImages', 4), productController.postAddProduct);
 
 
 router.route('/products/edit/:id')
       .get(isAdmin, productController.getEditProduct)
-    //   .post(isAdmin, upload.array('productImages', 4), productController.postEditProduct);
         .post(isAdmin, uploadProduct.array('productImages', 4), productController.postEditProduct);
 
 router.post('/products/toggle-list/:id', isAdmin, productController.toggleProductList);

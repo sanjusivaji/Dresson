@@ -1,0 +1,35 @@
+
+
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+    <div class="flex justify-center items-center space-x-2 pt-8 border-t border-gray-200 mt-8 w-full">
+        <% const queryParams = (typeof query !== 'undefined' && query) ? query : {}; %>
+        <% const targetUrl = (typeof baseUrl !== 'undefined' && baseUrl) ? baseUrl : ''; %>
+        <% if (currentPage > 1) { %>
+            <a href="<%= targetUrl %>?<%= new URLSearchParams({...queryParams, page: currentPage - 1}).toString() %>" 
+               class="px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-bold bg-white hover:bg-gray-100 text-gray-800 transition shadow-2xs">
+                &laquo; Prev
+            </a>
+        <% } else { %>
+            <span class="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 text-gray-300 cursor-not-allowed">
+                &laquo; Prev
+            </span>
+        <% } %>
+        <% for(let i = 1; i <= totalPages; i++) { %>
+            <a href="<%= targetUrl %>?<%= new URLSearchParams({...queryParams, page: i}).toString() %>" 
+               class="w-9 h-9 flex items-center justify-center border rounded-xl text-xs font-extrabold transition <%= currentPage === i ? 'bg-gray-900 border-gray-900 text-white shadow-md scale-105' : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700' %>">
+                <%= i %>
+            </a>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+            <a href="<%= targetUrl %>?<%= new URLSearchParams({...queryParams, page: currentPage + 1}).toString() %>" 
+               class="px-3.5 py-2 border border-gray-300 rounded-xl text-xs font-bold bg-white hover:bg-gray-100 text-gray-800 transition shadow-2xs">
+                Next &raquo;
+            </a>
+        <% } else { %>
+            <span class="px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 text-gray-300 cursor-not-allowed">
+                Next &raquo;
+            </span>
+        <% } %>
+
+    </div>
+<% } %>

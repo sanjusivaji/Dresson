@@ -1,12 +1,25 @@
 import * as productRepository from '../../repository/admin/adminProductRepository.js';
 import { PRODUCT_PAGINATION } from '../../constants/adminProductConstants.js';
+import Product from '../../model/productModel.js';
+import mongoose from 'mongoose';
+import Category from '../../model/categoryModel.js';
+import logger from '../../utilities/logger.js'; 
+
 
 export const executeProductCreate = async (bodyData, files) => {
-    const { productName, brand, discount, parentCategory, subCategory, description, variants, isListed } = bodyData;
-
+    const { 
+        productName, 
+        brand, 
+        discount, 
+        parentCategory, 
+        subCategory, 
+        categoryAncestors, 
+        description, 
+        variants, 
+        isListed 
+    } = bodyData;
     const parsedDiscount = parseInt(discount, 10);
     const finalDiscount = isNaN(parsedDiscount) ? 0 : Math.min(Math.max(parsedDiscount, 0), 99);
-
     if (!files || files.length < 3) {
         throw new Error("Validation Error: A minimum of 3 cropped images is mandatory.");
     }
@@ -22,60 +35,94 @@ export const executeProductCreate = async (bodyData, files) => {
             public_id: imageId
         };
     });
-
     const parsedVariants = variants ? Object.values(variants) : [];
     const totalCalculatedStock = parsedVariants.reduce((sum, v) => sum + (parseInt(v.stock) || 0), 0);
-
+    let normalizedAncestors = [];    
+    if (categoryAncestors) {
+        normalizedAncestors = Array.isArray(categoryAncestors) ? categoryAncestors : [categoryAncestors];
+    } else if (subCategory) {
+        normalizedAncestors = [subCategory]; 
+    }
+    normalizedAncestors = [...new Set(normalizedAncestors.filter(Boolean))];
     const newProductPayload = {
         name: (productName || '').trim(),         
         brand: (brand || 'Dresson Original').trim(),
         parentCategory: parentCategory,
         subCategory: subCategory,
+        categoryAncestors: normalizedAncestors, 
         discount: finalDiscount,
         description: (description || '').trim(),
-        images: imageDetails, // Inject the bulletproofed array
+        images: imageDetails, 
         variants: parsedVariants,
         totalStock: totalCalculatedStock,
-        isListed: isListed === 'on' || isListed === true
+        isListed: isListed === 'on' || isListed === true || isListed === 'true'
     };
     return await productRepository.createProduct(newProductPayload);
 };
 
 
 
-export const buildProductsListDashboard = async (query) => {
-    const page = parseInt(query.page) || 1;
-    const limit = PRODUCT_PAGINATION.LIMIT;
+export const buildProductsListDashboard = async (query = {}) => {
+    const page = Math.max(1, parseInt(query.page) || 1);
+    const limit = parseInt(query.limit) || 4;
     const skip = (page - 1) * limit;    
-    const searchQuery = query.search || '';
-    const selectedCategory = query.category || ''; 
-    let filterQuery = {};    
-    if (searchQuery) {
-        filterQuery.$or = [
-            { productName: { $regex: searchQuery, $options: 'i' } },
-            { brand: { $regex: searchQuery, $options: 'i' } }
-        ];
+    const filter = {};    
+    const andConditions = []; 
+    if (query.search && query.search.trim() !== '') {
+        const regex = new RegExp(query.search.trim(), 'i');
+        andConditions.push({
+            $or: [
+                { name: regex }, 
+                { productName: regex }, 
+                { brand: regex }
+            ]
+        });
+    }    
+    if (query.category && query.category.trim() !== '') {
+        let categoryId;
+        try {
+            categoryId = new mongoose.Types.ObjectId(query.category.trim());
+        } catch (error) {
+            categoryId = query.category.trim(); 
+        }
+        const relatedCategories = await Category.find({
+            $or: [
+                { _id: categoryId },              // Matches if it's the exact child category
+                { parentCategory: categoryId }    // Matches all children if a parent was selected
+            ]
+        }).select('_id').lean();
+        const categoryIdsToSearch = relatedCategories.map(cat => cat._id);
+        andConditions.push({ 
+            subCategory: { $in: categoryIdsToSearch } 
+        });
     }
-    if (selectedCategory) {
-        filterQuery.subCategory = selectedCategory;
+    if (andConditions.length > 0) {
+        filter.$and = andConditions;
     }
-    const products = await productRepository.findProductsWithFilter(filterQuery, skip, limit);
-    const totalProductsCount = await productRepository.countProducts(filterQuery);
-    const categories = await productRepository.findActiveCategories();
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limit) || 1;    
+    const products = await Product.find(filter)
+        .populate('subCategory') 
+        .sort({ createdAt: -1 }) 
+        .skip(skip)
+        .limit(limit)
+        .lean();        
+    const categories = await Category.find({ isListed: true }).sort({ categoryName: 1 }).lean();    
     return {
         products,
+        totalProducts,
+        totalPages,
         categories,
-        searchQuery,
-        selectedCategory,
-        currentPage: page,
-        totalPages: Math.ceil(totalProductsCount / limit)
+        isPaginated: true 
     };
 };
+
 
 export const fetchProductFormOptions = async () => {
     const categories = await productRepository.findActiveCategoriesWithParents();
     return { categories };
 };
+
 
 export const fetchEditProductData = async (productId) => {
     const product = await productRepository.findProductById(productId);
@@ -135,6 +182,16 @@ export const toggleProductListing = async (productId) => {
     const product = await productRepository.findProductById(productId);
     if (!product) throw new Error("Target product instance missing.");
 
+    product.isListed = !product.isListed;
+    await product.save();
+    return product;
+};
+
+export const toggleProductStatus = async (productId) => {
+    const product = await Product.findById(productId);
+    if (!product) {
+        throw new Error("Product not found in database.");
+    }
     product.isListed = !product.isListed;
     await product.save();
     return product;

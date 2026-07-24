@@ -6,6 +6,8 @@ import * as userAddressController from '../controller/userController/userAddress
 import uploadCloud from '../middleware/uploadMiddleware.js';
 import { requireActiveUser } from '../middleware/userAuth.js';
 import * as productController from '../controller/userController/productController.js';
+import * as cartController from '../controller/userController/cartController.js';
+
 
 const router = express.Router();
 
@@ -59,9 +61,11 @@ router.route('/reset-password')
       .get(authController.loadResetPassword)
       .post(authController.processResetPassword);
 
-
+// Route for user 'home' page
 router.get('/shop', productController.getShopPage);
 router.get('/', productController.getShopPage);
+
+router.get('/product/:id', productController.getProductDetails);
 
 
 //  Route for 'middleware' to check user is 'blocked' or not by 'admin'
@@ -98,6 +102,12 @@ router.route('/profile/address/edit/:id')
 
 // Route for 'delete' address
 router.post('/profile/address/delete/:id', userAddressController.deleteAddress);
+
+// Route for 'cart' operations
+router.get('/cart', requireActiveUser, cartController.getCartPage);
+router.post('/cart/add', requireActiveUser, cartController.postAddToCart);
+router.patch('/cart/update-quantity', requireActiveUser, cartController.patchUpdateQuantity);
+router.delete('/cart/remove/:itemId', requireActiveUser, cartController.deleteRemoveItem);
 
 
 export default router;

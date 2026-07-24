@@ -1,5 +1,5 @@
 export const SHOP_CONSTANTS = {
-    DEFAULT_PAGE_LIMIT: 9, // 3 columns x 3 rows grid
+    DEFAULT_PAGE_LIMIT: 3,        // Images in '3' rows
     DEFAULT_MAX_PRICE: 5000,
     SORT_MAPPINGS: {
         'price_asc': { 'variants.0.price': 1 },

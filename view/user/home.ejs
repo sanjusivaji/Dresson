@@ -1,9 +1,15 @@
 <div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full px-4 py-8">
     
-    <!-- INCLUDE SEPARATED FIGMA SIDEBAR -->
-    <%- include('../partial/user/shopSidebar') %>
+    <!--  LEFT SIDEBAR (Locked Width & Protected from Shrinking) -->
+    <aside class="w-full md:w-64 shrink-0">
+        <%- include('../partial/user/shopSidebar', { 
+            categories: typeof categories !== 'undefined' ? categories : [], 
+            query: typeof query !== 'undefined' ? query : {},
+            currentGender: typeof currentGender !== 'undefined' ? currentGender : '' 
+        }) %>
+    </aside>
 
-    <!-- RIGHT CONTENT AREA -->
+    <!-- RIGHT CONTENT AREA (Promotions, Grid & Pagination) -->
     <section class="flex-grow space-y-6 min-w-0">
         
         <!-- Promotional Banner Matching Figma -->
@@ -17,7 +23,9 @@
 
         <!-- Results Counter -->
         <div class="flex justify-between items-center px-1">
-            <span class="text-xs text-gray-500 font-medium">Showing <strong class="text-gray-900"><%= products ? products.length : 0 %></strong> of <strong class="text-gray-900"><%= typeof totalProducts !== 'undefined' ? totalProducts : 0 %></strong> items</span>
+            <span class="text-xs text-gray-500 font-medium">
+                Showing <strong class="text-gray-900"><%= products ? products.length : 0 %></strong> of <strong class="text-gray-900"><%= typeof totalProducts !== 'undefined' ? totalProducts : 0 %></strong> items
+            </span>
         </div>
 
         <!-- Product Grid -->
@@ -27,33 +35,32 @@
                     <%- include('../partial/user/productCard', { product: product }) %>
                 <% }) %>
             <% } else { %>
+                <!-- Empty State with Clear Filters CTA -->
                 <div class="col-span-full text-center py-20 bg-white rounded-xl border border-gray-200 p-8 space-y-3 shadow-2xs">
                     <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto text-gray-400 text-xl">
                         <i class="fas fa-search"></i>
                     </div>
                     <p class="text-sm font-bold text-gray-800">No products matched your criteria.</p>
                     <p class="text-xs text-gray-400">Try adjusting your price range, category, or clearing filters.</p>
-                    <a href="/shop" class="inline-block mt-2 px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition">Clear All Filters</a>
+                    <a href="/shop" class="inline-block mt-2 px-4 py-2 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition shadow-xs">
+                        Clear All Filters
+                    </a>
                 </div>
             <% } %>
         </div>
 
-        <!-- Pagination Footer -->
-        <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
-            <div class="flex justify-center items-center space-x-1.5 pt-8 border-t border-gray-200">
-                <% if (currentPage > 1) { %>
-                    <a href="/shop?<%= new URLSearchParams({...query, page: currentPage - 1}).toString() %>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold bg-white hover:bg-gray-50 text-gray-700">&laquo; Prev</a>
-                <% } %>
-
-                <% for(let i = 1; i <= totalPages; i++) { %>
-                    <a href="/shop?<%= new URLSearchParams({...query, page: i}).toString() %>" class="px-3.5 py-1.5 border rounded-lg text-xs font-bold transition <%= currentPage === i ? 'bg-black border-black text-white shadow-xs' : 'border-gray-300 bg-white hover:bg-gray-50 text-gray-700' %>"><%= i %></a>
-                <% } %>
-
-                <% if (currentPage < totalPages) { %>
-                    <a href="/shop?<%= new URLSearchParams({...query, page: currentPage + 1}).toString() %>" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs font-bold bg-white hover:bg-gray-50 text-gray-700">Next &raquo;</a>
-                <% } %>
-            </div>
-        <% } %>
+        
+        <%- include('../partial/shared/pagination', { 
+            baseUrl: '/shop', 
+            currentPage: typeof currentPage !== 'undefined' ? currentPage : 1, 
+            totalPages: typeof totalPages !== 'undefined' ? totalPages : 1,
+            query: typeof query !== 'undefined' ? query : {} 
+        }) %>
 
     </section>
 </div>
+
+
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>

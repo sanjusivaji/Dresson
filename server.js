@@ -11,6 +11,7 @@ import { globalErrorHandler } from './src/middleware/errorMiddleware.js';
 // import path from 'path';
 // import { fileURLToPath } from 'url'; 
 import expressLayouts from 'express-ejs-layouts';
+import flash from 'connect-flash';
 
 
 dotenv.config();
@@ -50,6 +51,14 @@ app.use(passport.session());
 app.use('/', userRoute);
 app.use('/admin', adminRoutes);
 
+app.use(flash());
+
+// 3. OPTIONAL BUT RECOMMENDED: Make flash messages globally available to all EJS files!
+app.use((req, res, next) => {
+    res.locals.errorMessage = req.flash('error');
+    res.locals.successMessage = req.flash('success');
+    next();
+});
 
 // Global error middleware 
 app.use(globalErrorHandler);

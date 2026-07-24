@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// 1. Define a clean, static structure for the historical order snapshot
 const checkoutAddressSnapshotSchema = new mongoose.Schema({
     fullName: String,
     addressLine: String,

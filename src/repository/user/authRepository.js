@@ -10,7 +10,7 @@ export const findUserById = async (id) => {
 
 export const createNewUser = async (userData) => {
     const newUser = new User(userData);
-    return await newUser.save();              // 'save()' is a built-in Mongoose method and it used for 'save' data permanently into 'document'.
+    return await newUser.save();                                          // 'save()' is a built-in Mongoose method and it used for 'save' data permanently into 'document'.
 };
 
 export const updateUserById = async (id, updateFields) => {

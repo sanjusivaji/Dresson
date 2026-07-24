@@ -1,18 +1,7 @@
-// src/model/categoryModel.js
+
 import mongoose from 'mongoose';
 
 const categorySchema = new mongoose.Schema({
-    categoryName: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    slug: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true
-    },
     gender: {
         type: String,
         required: true,
@@ -23,74 +12,37 @@ const categorySchema = new mongoose.Schema({
         ref: 'Category',
         default: null
     },
+    categoryName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    slug: {
+        type: String,
+        required: true,
+        unique: true, // We keep slugs unique for SEO storefront URLs
+        lowercase: true,
+        trim: true
+    },
     description: {
         type: String,
         required: true,
         trim: true
     },
-    isListed: { 
-        type: Boolean, 
-        default: true 
+    isListed: {
+        type: Boolean,
+        default: true
     }
-}, { timestamps: true });
-categorySchema.index({ categoryName: 1, gender: 1, parentCategory: 1 }, { unique: true });
+}, { 
+    timestamps: true 
+});
 
-export default mongoose.model("Category", categorySchema);
+categorySchema.index({ gender: 1, parentCategory: 1, categoryName: 1 }, { unique: true });   // This allows "Inner wear" under Men AND "Inner wear" under Women, but blocks you from accidentally creating two "Inner wear" folders inside Men!
+
+const Category = mongoose.model('Category', categorySchema);
+
+export default Category;
 
 
 
-
-// import mongoose from 'mongoose';
-
-// const categorySchema = new mongoose.Schema({
-//     categoryName: {
-//         type: String,
-//         required: [true, 'Category name is required'],
-//         trim: true
-//     },
-//     parent: {
-//         type: String,
-//         required: [true, 'Parent category is required'],
-//         enum: ['Men', 'Women', 'Kids', 'Unisex'],       // Matches Figma 'Parent' column
-//         default: 'Women'
-//     },
-//     slug: {
-//         type: String,
-//         required: true,
-//         unique: true,
-//         lowercase: true,
-//         trim: true
-//     },
-//     isActive: {
-//         type: Boolean,
-//         default: true
-//     },
-//     isDeleted: {
-//         type: Boolean,
-//         default: false 
-//     },
-//     productCount: {
-//         type: Number,
-//         default: 0
-//     },
-//        description: {
-//         type: String,
-//         required: true,
-//         trim: true
-//     },
-//     isListed: { 
-//         type: Boolean, 
-//         default: true 
-//     }
-// }, { 
-//     timestamps: true 
-// });
-// categorySchema.pre('validate', function(next) {             // Auto-generate slug before saving if not provided
-//     if (this.name && !this.slug) {
-//         this.slug = this.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-//     }
-//     next();
-// });
-
-// export default mongoose.model('Category', categorySchema);
 

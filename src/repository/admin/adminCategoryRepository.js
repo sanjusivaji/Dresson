@@ -1,4 +1,4 @@
-// Navigating up two levels to 'src', then into 'model'
+
 import Category from '../../model/categoryModel.js';
 
 export const findMainCategories = async (excludeId = null) => {

@@ -1,0 +1,355 @@
+
+<%- contentFor('body') %>
+
+<!-- For create a navigation bar with '<a>' link and '<i>' for '>>' on top of the page -->
+<nav class="bg-gray-50 border-b border-gray-200 py-3 px-4 sm:px-6 lg:px-8 mb-8 font-medium">
+    <div class="max-w-7xl mx-auto flex items-center space-x-2 text-xs text-gray-500 overflow-x-auto whitespace-nowrap">
+        <a href="/" class="hover:text-black transition">Home</a>
+        <i class="fas fa-chevron-right text-[9px] text-gray-400"></i>        
+        <a href="/shop?gender=<%= product.parentCategory %>" class="hover:text-black transition"><%= product.parentCategory %></a>
+        <i class="fas fa-chevron-right text-[9px] text-gray-400"></i>        
+        <% if (product.subCategory && product.subCategory.categoryName) { %>
+            <a href="/shop?category=<%= product.subCategory._id %>" class="hover:text-black transition"><%= product.subCategory.categoryName %></a>
+            <i class="fas fa-chevron-right text-[9px] text-gray-400"></i>
+        <% } %>        
+        <a href="/shop?brand=<%= product.brand %>" class="hover:text-black transition font-bold text-gray-800"><%= product.brand %></a>
+    </div>
+</nav>
+
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">        
+        <div class="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-4 sticky top-6">
+
+            <!-- For display thumb nail images -->
+            <div class="flex sm:flex-col gap-3 overflow-x-auto sm:overflow-y-auto sm:max-h-[580px] sm:w-20 shrink-0 scrollbar-none py-1">
+                <% const galleryImages = product.images || []; %>
+                <% if (galleryImages.length > 0) { %>
+                    <% galleryImages.forEach((item, index) => { %>
+                        <button type="button"  onclick="switchMainImage('<%= item.url %>', this)" class="thumbnail-btn relative w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border-2 transition cursor-pointer shrink-0 bg-gray-100 <%= index === 0 ? 'border-[#6b66d6] shadow-md scale-95' : 'border-transparent opacity-70 hover:opacity-100' %>">
+                            <img src="<%= item.url %>" alt="Thumbnail <%= index + 1 %>" class="w-full h-full object-cover">
+                        </button>
+                    <% }) %>
+                <% } else { %>
+                    <div class="w-20 h-24 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300 border border-gray-200">
+                        <i class="fas fa-image"></i>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- For display main image -->
+            <div class="relative flex-1 rounded-2xl overflow-hidden bg-gray-50 border border-gray-200 shadow-sm aspect-4/5 flex items-center justify-center group">
+                <img id="mainViewerImage" 
+                     src="<%= galleryImages.length > 0 ? galleryImages[0].url : '/images/default-dress.jpg' %>" 
+                     alt="<%= product.name %>" 
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                
+                <!-- For 'wishlist' button -->
+                <button type="button" 
+                        onclick="toggleWishlist('<%= product._id %>', this)"
+                        class="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/80 backdrop-blur-md border border-gray-200/60 shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 hover:scale-110 transition duration-200 cursor-pointer"
+                        title="Add to Wishlist">
+                    <i class="far fa-heart text-lg"></i>
+                </button>
+
+                <!-- For display discount -->
+                <% if (product.discount && product.discount > 0) { %>
+                    <div class="absolute top-4 left-4 bg-red-600 text-white font-black text-xs uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                        <%= product.discount %>% OFF
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- For display 'brand', 'name of product', 'rating', 'price','SKU' etc -->
+        <div class="lg:col-span-5 flex flex-col justify-between">
+            <div>
+                <a href="/shop?brand=<%= product.brand %>" class="inline-block text-xs font-black uppercase tracking-widest text-[#6b66d6] hover:underline mb-1">
+                    <%= product.brand || 'Dresson Original' %>
+                </a>
+                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-snug">
+                    <%= product.name %>
+                </h1>
+                <div class="flex items-center space-x-3 mt-3">
+                    <div class="flex items-center bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-amber-700 font-bold text-xs">
+                        <span><%= product.rating ? product.rating.toFixed(1) : '4.5' %></span>
+                        <i class="fas fa-star text-amber-400 ml-1 text-[10px]"></i>
+                    </div>
+                    <span class="text-gray-300">|</span>
+                    <a href="#reviewsSection" class="text-xs font-semibold text-gray-500 hover:text-black transition">
+                        <%= product.numReviews || 100 %> verified reviews
+                    </a>
+                </div>
+                <% 
+                    let initialPrice = product.price || 0;
+                    let initialStock = product.totalStock || 0;
+                    let initialSku = 'GENERIC-SKU';                
+                    if (product.variants && product.variants.length > 0) {
+                        initialPrice = product.variants[0].price || initialPrice;
+                        initialStock = product.variants[0].stock !== undefined ? product.variants[0].stock : initialStock;
+                        initialSku = product.variants[0].sku || initialSku;
+                    }
+                    let calculatedMrp = initialPrice;
+                    if (product.discount && product.discount > 0) {
+                        calculatedMrp = Math.round(initialPrice / (1 - (product.discount / 100)));
+                    }
+                %>
+                <div class="mt-6 p-4 rounded-2xl bg-gray-50/80 border border-gray-200/80 flex items-baseline justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 block uppercase tracking-wider">Retail Price</span>
+                        <div class="flex items-baseline space-x-2 mt-0.5">
+                            <span class="text-3xl font-black text-gray-900" id="displayPrice">₹<%= initialPrice.toLocaleString('en-IN') %></span>
+                            <% if (product.discount && product.discount > 0) { %>
+                                <span class="text-sm font-semibold text-gray-400 line-through" id="displayMrp">₹<%= calculatedMrp.toLocaleString('en-IN') %></span>
+                            <% } %>
+                        </div>
+                    </div>
+                    
+                    <!-- For displsy stock -->
+                    <div id="stockBadgeContainer">
+                        <% if (initialStock === 0) { %>
+                            <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-extrabold rounded-full border border-red-200 uppercase tracking-wide">Out of Stock</span>
+                        <% } else if (initialStock <= 5) { %>
+                            <span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-full border border-amber-200 animate-pulse">Only <%= initialStock %> Left!</span>
+                        <% } else { %>
+                            <span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-extrabold rounded-full border border-green-200">In Stock</span>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- '<form>' used for select 'variant', 'Quantity', 'Add To Cart', 'Buy Now' etc   -->
+                <hr class="my-6 border-gray-200">
+                <form id="addToCartForm" action="/cart/add" method="POST" class="space-y-6">
+                    <input type="hidden" name="productId" value="<%= product._id %>">
+                    <input type="hidden" name="variantId" id="selectedVariantId" value="<%= product.variants && product.variants.length > 0 ? product.variants[0]._id : '' %>">  
+                    <input type="hidden" name="actionType" id="formActionType" value="cart">      
+                    <!--  Above we just put 'hidden' 'input' for retrieve 'productId', 'variant id' -->
+                    <% if (product.variants && product.variants.length > 0) { %>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                                    Select Variant / Option: <span class="text-[#6b66d6] ml-1" id="selectedVariantLabel"><%= product.variants[0].name %></span>
+                                </label>
+                                <span class="text-[11px] font-mono text-gray-400 uppercase" id="displaySku">SKU: <%= initialSku %></span>
+                            </div>
+
+                            <!-- For select variant -->
+                            <div class="flex flex-wrap gap-2.5">
+                                <% product.variants.forEach((item, idx) => { %>
+                                    <button type="button" 
+                                            onclick="selectProductVariant(<%= JSON.stringify(item) %>, this)"
+                                            class="variant-pill px-4 py-2.5 rounded-xl border text-xs font-bold transition cursor-pointer flex items-center space-x-1.5 <%= idx === 0 ? 'bg-gray-900 text-white border-gray-900 shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400' %> <%= item.stock === 0 ? 'opacity-40 line-through cursor-not-allowed bg-gray-100' : '' %>"
+                                            <%= item.stock === 0 ? 'disabled' : '' %>>
+                                        <span><%= item.name %></span>
+                                        <% if (item.stock === 0) { %>
+                                            <span class="text-[9px] text-red-500 font-normal">(Sold out)</span>
+                                        <% } %>
+                                    </button>
+                                <% }) %>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <!-- For select 'Quantity' -->
+                    <div class="flex items-center space-x-4 pt-2">
+                        <label class="text-xs font-bold text-gray-800 uppercase tracking-wider">Quantity :</label>                   
+                        <div class="inline-flex items-center border border-gray-300 rounded-xl bg-white shadow-2xs overflow-hidden">
+                            <button type="button" onclick="adjustQuantity(-1)" class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 font-black transition flex items-center justify-center cursor-pointer text-sm border-r border-gray-200">
+                                <i class="fas fa-minus text-[10px]"></i>
+                            </button>                            
+                            <input type="number" name="quantity" id="quantityInput" value="1" min="1" max="<%= Math.min(10, initialStock) %>" readonly 
+                                   class="w-12 text-center font-bold text-sm text-gray-900 bg-transparent focus:outline-none select-none">                            
+                            <button type="button" onclick="adjustQuantity(1)" class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-600 font-black transition flex items-center justify-center cursor-pointer text-sm border-l border-gray-200">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </button>
+                        </div>
+                        <span class="text-[11px] text-gray-400" id="stockLimitWarning">Max 10 units per order</span>
+                    </div>
+        
+                    <!-- For display 'Add To Cart' and 'Buy Now' button -->
+                    <div class="grid grid-cols-2 gap-4 pt-4">
+                        <button type="submit" 
+                                onclick="document.getElementById('formActionType').value = 'cart'"
+                                id="addToCartBtn"
+                                class="w-full py-3.5 px-4 bg-[#FBBF24] hover:bg-[#f59e0b] active:scale-[0.99] text-gray-900 font-extrabold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer uppercase tracking-wider <%= initialStock === 0 ? 'opacity-50 cursor-not-allowed bg-gray-300' : '' %>"
+                                <%= initialStock === 0 ? 'disabled' : '' %>>
+                            <i class="fas fa-shopping-bag"></i>
+                            <span id="cartBtnText"><%= initialStock === 0 ? 'Sold Out' : 'Add To Cart' %></span>
+                        </button>
+                        <button type="submit" 
+                                onclick="document.getElementById('formActionType').value = 'buy_now'"
+                                id="buyNowBtn"
+                                class="w-full py-3.5 px-4 bg-gray-900 hover:bg-gray-800 active:scale-[0.99] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer uppercase tracking-wider <%= initialStock === 0 ? 'opacity-50 cursor-not-allowed bg-gray-400' : '' %>"
+                                <%= initialStock === 0 ? 'disabled' : '' %>>
+                            <i class="fas fa-bolt text-amber-400"></i>
+                            <span>Buy Now</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Product Overview & Fabric Cut</h3>                
+                <div class="text-xs sm:text-sm text-gray-600 leading-relaxed font-normal relative">
+                    <p id="descriptionText" class="line-clamp-3 transition-all duration-300">
+                        <%= product.description || "Elevate your everyday office wardrobe with this impeccably tailored formal shirt from Van Heusen. Crafted from premium 100% breathable cotton, this garment delivers superior comfort, a wrinkle-resistant finish, and a sharp silhouette designed for the modern professional." %>
+                    </p>
+                    <button type="button" 
+                            onclick="toggleDescriptionExpand(this)" 
+                            class="text-[#6b66d6] hover:underline font-bold text-xs mt-1 inline-block cursor-pointer">
+                        more...
+                    </button>
+                </div>
+            </div>
+
+            <!-- For display trust icons and text at bottom-->
+            <div class="grid grid-cols-3 gap-2 mt-8 py-4 px-3 bg-gray-50 rounded-xl border border-gray-200/60 text-center">
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-truck-fast text-[#6b66d6] text-base mb-1"></i>
+                    <span class="text-[10px] font-bold text-gray-700">Express Delivery</span>
+                </div>
+                <div class="flex flex-col items-center border-x border-gray-200">
+                    <i class="fas fa-rotate-left text-[#6b66d6] text-base mb-1"></i>
+                    <span class="text-[10px] font-bold text-gray-700">7 Days Return</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-shield-halved text-[#6b66d6] text-base mb-1"></i>
+                    <span class="text-[10px] font-bold text-gray-700">100% Authentic</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script>
+    // For change the image
+    function switchMainImage(newUrl, btnElement) {                    // Here 'newUrl'(ie 'url' is the 'key' of image and value 'newUrl' get when we iterate it like 'item.url')and 'btnElement'(ie it represents 'button')are arguments.
+        const mainImage = document.getElementById('mainViewerImage'); // 'mainImage' is for display 'hero'/ 'main' image(ie main image of product).
+        mainImage.style.opacity = '0.4';
+        setTimeout(() => {
+            mainImage.src = newUrl;                                  // Value of 'mainImage' and its 'opacity' change/ swap to 'newUrl' after '150' seconds
+            mainImage.style.opacity = '1';
+        }, 150);
+        document.querySelectorAll('.thumbnail-btn').forEach(item => {
+            item.classList.remove('border-[#6b66d6]', 'shadow-md', 'scale-95');
+            item.classList.add('border-transparent', 'opacity-70');
+        });
+        btnElement.classList.remove('border-transparent', 'opacity-70');                   // 'btnElement' means '<button>' passes as argument we remove classes 'added' just before
+        btnElement.classList.add('border-[#6b66d6]', 'shadow-md', 'scale-95', 'opacity-100');
+    }
+
+    // For select variant
+    let currentMaxStock = "<%= initialStock %>";                                            // Here 'ejs' gives value of 'initialStock' to 'js'(ie it happens before 'browser' get 'js')and we declared 'currentMaxStock' 'outside' of the function so we can use it any other function.
+    const globalDiscount = "<%= product.discount || 0 %>";
+    function selectProductVariant(variantData, pillElement) {
+        if (variantData.stock === 0) return;
+        document.getElementById('selectedVariantId').value = variantData._id;              // It is 'hidden' '<input>' element
+        document.getElementById('selectedVariantLabel').innerText = variantData.name;
+        document.getElementById('displaySku').innerText = `SKU: ${variantData.sku || 'N/A'}`;  // 'sku'(ie 'single key unit') is the 'key' that store in 'mongodb' and here we display the 'SKU'
+        document.querySelectorAll('.variant-pill').forEach(item => {
+            if (!item.disabled) {
+                item.classList.remove('bg-gray-900', 'text-white', 'border-gray-900', 'shadow-sm');
+                item.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+            }
+        });
+        pillElement.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+        pillElement.classList.add('bg-gray-900', 'text-white', 'border-gray-900', 'shadow-sm');
+        const newPrice = variantData.price || 0;
+        document.getElementById('displayPrice').innerText = `₹${newPrice.toLocaleString('en-IN')}`;        
+        if (globalDiscount > 0) {
+            const newMrp = Math.round(newPrice / (1 - (globalDiscount / 100)));
+            const mrpEl = document.getElementById('displayMrp');
+            if (mrpEl) mrpEl.innerText = `₹${newMrp.toLocaleString('en-IN')}`;
+        }
+        currentMaxStock = variantData.stock;
+        const stockContainer = document.getElementById('stockBadgeContainer');
+        const addBtn = document.getElementById('addToCartBtn');
+        const buyBtn = document.getElementById('buyNowBtn');
+        const cartText = document.getElementById('cartBtnText');
+        const qtyInput = document.getElementById('quantityInput');
+        if (currentMaxStock === 0) {
+            stockContainer.innerHTML = '<span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-extrabold rounded-full border border-red-200 uppercase tracking-wide">Out of Stock</span>';
+            addBtn.disabled = true;
+            buyBtn.disabled = true;
+            addBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-300');
+            buyBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            cartText.innerText = 'Sold Out';
+            qtyInput.value = 0;
+        } else {
+            addBtn.disabled = false;
+            buyBtn.disabled = false;
+            addBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-300');
+            buyBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            cartText.innerText = 'Add To Cart';
+            if (parseInt(qtyInput.value) > currentMaxStock || parseInt(qtyInput.value) === 0) {
+                qtyInput.value = 1;
+            }
+            if (currentMaxStock <= 5) {
+                stockContainer.innerHTML = `<span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-extrabold rounded-full border border-amber-200 animate-pulse">Only ${currentMaxStock} Left!</span>`;
+            } else {
+                stockContainer.innerHTML = '<span class="px-3 py-1 bg-green-100 text-green-800 text-xs font-extrabold rounded-full border border-green-200">In Stock</span>';
+            }
+        }
+    }
+
+    // For 'update quantity'
+    function adjustQuantity(change) {
+        const qtyInput = document.getElementById('quantityInput');
+        let currentVal = parseInt(qtyInput.value) || 1;
+        const limit = Math.min(10, currentMaxStock);
+        if (currentMaxStock === 0) return;
+        currentVal += change;
+        if (currentVal < 1) currentVal = 1;
+        if (currentVal > limit) {
+            currentVal = limit;
+            const warningEl = document.getElementById('stockLimitWarning');
+            warningEl.classList.add('text-red-500', 'font-bold');
+            setTimeout(() => warningEl.classList.remove('text-red-500', 'font-bold'), 1500);
+        }
+        qtyInput.value = currentVal;
+    }
+
+    // For 'expand' product 'description' ie for 'more...'
+    function toggleDescriptionExpand(btn) {
+        const textEl = document.getElementById('descriptionText');
+        if (textEl.classList.contains('line-clamp-3')) {
+            textEl.classList.remove('line-clamp-3');
+            btn.innerText = 'show less';
+        } else {
+            textEl.classList.add('line-clamp-3');
+            btn.innerText = 'more...';
+        }
+    }
+
+    // For 'wishlist'
+    async function toggleWishlist(productId, btnElement) {
+        try {
+            const icon = btnElement.querySelector('i');
+            const response = await fetch('/wishlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId })
+            });
+            const data = await response.json();
+            if (data.success) {
+                if (data.action === 'added') {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-red-500');
+                    if (typeof showCustomAlert === 'function') showCustomAlert("Item saved to your Wishlist!", "Wishlist Updated", "success");
+                } else {
+                    icon.classList.remove('fas', 'text-red-500');
+                    icon.classList.add('far');
+                    if (typeof showCustomAlert === 'function') showCustomAlert("Item removed from Wishlist.", "Wishlist Updated", "warning");
+                }
+            } else if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+            }
+        } catch (error) {
+            console.error("Wishlist sync error:", error);
+        }
+    }
+</script>
