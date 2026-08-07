@@ -1,0 +1,239 @@
+<%- contentFor('body') %>
+
+<!-- Shared Alerts -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <h1 class="text-3xl font-black text-gray-800 mb-8 tracking-tight">Checkout</h1>
+
+    <form id="checkoutForm" action="/checkout/place-order" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        
+        <!--  For 'left column'-->
+        <div class="lg:col-span-8 space-y-10">
+            
+            <!-- Order items -->
+            <section>
+                <h2 class="text-base font-extrabold text-gray-900 mb-4">Order Items</h2>
+                <div class="space-y-4">
+                    <% if (cart && cart.items && cart.items.length > 0) { %>
+                        <% cart.items.forEach(item => { %>
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                                <div class="flex items-center space-x-4">
+                                    <img src="<%= item.image || '/images/default-dress.jpg' %>" alt="<%= item.name %>" class="w-10 h-14 object-cover rounded-md border border-gray-200">
+                                    <div>
+                                        <h3 class="text-sm font-bold text-gray-800"><%= item.name %></h3>
+                                        <p class="text-[10px] text-gray-500 font-medium mt-0.5">
+                                            <%= item.variantName || 'Standard' %> &nbsp;|&nbsp; Qty: <%= item.quantity %>
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-black text-gray-900">₹ <%= (item.livePrice * item.quantity).toLocaleString('en-IN') %></span>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <p class="text-sm text-red-500 font-semibold">Your cart is empty.</p>
+                    <% } %>
+                </div>
+            </section>
+
+            <!--For 'delivery address' -->
+            <section>
+                <h2 class="text-base font-extrabold text-gray-900 mb-4">Delivery Address</h2>
+                <div class="space-y-3">
+                    
+                    <% if (addresses && addresses.length > 0) { %>
+                        <% addresses.forEach((address, index) => { %>
+                            <!-- Address Option -->
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-md cursor-pointer hover:border-gray-300 transition has-[:checked]:border-[#6b66d6] has-[:checked]:bg-[#f8f7ff]">
+                                <div class="flex items-center space-x-3">
+                                    <!-- Auto-select the default address, or the first one in the list -->
+                                    <input type="radio" name="selectedAddress" value="<%= address._id %>" class="w-3.5 h-3.5 text-[#6b66d6] focus:ring-[#6b66d6] border-gray-300 cursor-pointer" <%= address.isDefault || index === 0 ? 'checked' : '' %>>
+                                    <div class="text-xs">
+                                        <span class="font-bold text-gray-800 mr-2 uppercase"><%= address.type || 'HOME' %></span>
+                                        <span class="text-gray-600"><%= address.addressLine %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></span>
+                                    </div>
+                                </div>
+                                <a href="/profile/address/edit/<%= address._id %>" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] font-bold rounded-sm transition">Edit</a>
+                            </label>
+                        <% }) %>
+                    <% } else { %>
+                        <p class="text-xs text-red-500 font-semibold mb-2">No addresses found. Please add a delivery address to continue.</p>
+                    <% } %>
+
+                    <!-- Add New Address Button -->
+                    <a href="/profile/address/add" class="inline-block mt-2 px-4 py-2 bg-[#a39a96] hover:bg-[#8b837f] text-white text-[11px] font-bold rounded-md shadow-sm transition cursor-pointer">
+                        Add new Address
+                    </a>
+                </div>
+            </section>
+
+            <!-- PAYMENT METHOD -->
+            <section>
+                <h2 class="text-base font-extrabold text-gray-900 mb-4">Payment Method</h2>
+                <div class="space-y-3">
+                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
+                        <input type="radio" name="paymentMethod" value="razorpay" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
+                        <span class="ml-3 text-xs font-bold text-gray-700">Razorpay</span>
+                    </label>
+
+                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
+                        <input type="radio" name="paymentMethod" value="card" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer" checked>
+                        <span class="ml-3 text-xs font-bold text-gray-700">Debit / Credit card</span>
+                    </label>
+
+                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
+                        <input type="radio" name="paymentMethod" value="cod" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
+                        <span class="ml-3 text-xs font-bold text-gray-700">Cash On Delivery</span>
+                    </label>
+
+                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
+                        <input type="radio" name="paymentMethod" value="wallet" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
+                        <span class="ml-3 text-xs font-bold text-gray-700">Wallet</span>
+                    </label>
+                </div>
+            </section>
+        </div>
+
+        <!-- For 'right side' column (Summary & Coupon)-->
+        <div class="lg:col-span-4">
+            <div class="sticky top-6 flex flex-col items-center w-full max-w-xs mx-auto lg:mx-0">               
+                <!-- Coupons Section -->
+                <div class="w-full mb-8 flex flex-col items-center space-y-3 relative">
+                    
+                    <!-- View Coupon Toggle Button -->
+                    <button type="button" id="viewCouponBtn" class="w-48 flex items-center justify-between px-3 py-1.5 border border-gray-300 rounded-md bg-white text-xs font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50">
+                        <span>View Coupons</span>
+                        <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" id="couponChevron"></i>
+                    </button>
+
+                    <!-- Hidden Dropdown Menu -->
+                    <div id="couponDropdown" class="hidden absolute top-8 z-20 w-64 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden mt-2">
+                        <div class="max-h-56 overflow-y-auto p-2 space-y-2">
+                            <% if (typeof coupons !== 'undefined' && coupons.length > 0) { %>
+                                <% coupons.forEach(coupon => { %>
+                                    <!-- Clickable Coupon Card -->
+                                    <div class="p-3 border border-dashed border-[#fc6c6c] rounded-md bg-[#fdf5f5] hover:bg-red-50 transition cursor-pointer" onclick="selectCoupon('<%= coupon.couponCode %>')">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="font-black text-xs text-red-600 uppercase tracking-wider"><%= coupon.couponCode %></span>
+                                            <span class="text-[10px] font-extrabold text-gray-700">
+                                                <%= coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %> OFF
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] font-bold text-gray-800"><%= coupon.couponName %></p>
+                                        <p class="text-[9px] font-semibold text-gray-500 mt-0.5">
+                                            Min spend: ₹<%= coupon.minCartValue %> 
+                                            <% if (coupon.maxDiscount) { %> | Max discount: ₹<%= coupon.maxDiscount %> <% } %>
+                                        </p>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="p-4 text-center text-xs font-semibold text-gray-500">
+                                    No active coupons available right now.
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Coupon Input -->
+                    <input type="text" id="couponCode" name="couponCode" placeholder="Coupon Code" class="w-48 px-3 py-2 bg-[#fdf5f5] border-0 rounded-md text-center text-xs font-bold text-gray-800 uppercase placeholder-gray-400 focus:ring-2 focus:ring-[#fc6c6c] outline-none transition">
+                    
+                    <!-- Apply Button -->
+                    <button type="button" id="applyCouponBtn" class="w-32 py-1.5 bg-[#9c9c9c] hover:bg-gray-500 text-white text-xs font-bold rounded-md shadow-sm transition">
+                        Apply
+                    </button>
+                </div>
+
+                <!-- Order Summary Section (DYNAMIC) -->
+                <div class="w-full">
+                    <h2 class="text-base font-extrabold text-gray-900 mb-4 text-center">Order Summary</h2>
+                    
+                    <div class="space-y-2 text-xs font-semibold text-gray-500 mb-6 px-4">
+                        <div class="flex justify-between">
+                            <span>Sub Total</span>
+                            <span class="text-gray-800">₹ <%= totals.subTotal.toLocaleString('en-IN') %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shipping</span>
+                            <span class="text-gray-800">₹ <%= totals.shipping.toLocaleString('en-IN') %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Discount</span>
+                            <span class="text-gray-800">- ₹ <%= totals.discount.toLocaleString('en-IN') %></span>
+                        </div>
+                        <div class="flex justify-between pt-2 mt-2 border-t border-gray-200 text-sm font-black text-gray-900">
+                            <span>Grand Total</span>
+                            <span>₹ <%= totals.grandTotal.toLocaleString('en-IN') %></span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col items-center space-y-3">
+                        <!-- Confirm Payment (For Razorpay, Card, Wallet) -->
+                        <button type="button" id="confirmPaymentBtn" class="w-48 py-2 bg-[#3da436] hover:bg-green-700 text-white text-xs font-bold rounded-md shadow-sm transition">
+                            Confirm Payment
+                        </button>
+                        
+                        <!-- Place Order (For COD) - Hidden by default -->
+                        <button type="submit" id="placeOrderBtn" <%= (!addresses || addresses.length === 0) ? 'disabled' : '' %> class="hidden w-40 py-2 bg-[#4cbe44] hover:bg-green-600 text-white text-xs font-bold rounded-md shadow-sm transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            Place Order
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</main>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- PAYMENT METHOD TOGGLE LOGIC ---
+        const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+
+        paymentRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'cod') {
+                    // Show Place Order, Hide Confirm Payment
+                    confirmBtn.classList.add('hidden');
+                    placeOrderBtn.classList.remove('hidden');
+                } else {
+                    // Show Confirm Payment, Hide Place Order
+                    confirmBtn.classList.remove('hidden');
+                    placeOrderBtn.classList.add('hidden');
+                }
+            });
+        });
+
+        // --- For 'coupon' drop down ---
+        const viewCouponBtn = document.getElementById('viewCouponBtn');
+        const couponDropdown = document.getElementById('couponDropdown');
+        const couponChevron = document.getElementById('couponChevron');
+        viewCouponBtn.addEventListener('click', (e) => {
+            e.stopPropagation();                                       // Prevent closing immediately
+            couponDropdown.classList.toggle('hidden');
+            couponChevron.classList.toggle('rotate-180');
+        });
+
+        // Close dropdown if clicking anywhere else on the page
+        document.addEventListener('click', (e) => {
+            if (!couponDropdown.contains(e.target) && !viewCouponBtn.contains(e.target)) {
+                couponDropdown.classList.add('hidden');
+                couponChevron.classList.remove('rotate-180');
+            }
+        });
+    });
+
+    // Function triggered when a user clicks a coupon card inside the dropdown
+    function selectCoupon(code) {
+        // Put the code in the input box
+        document.getElementById('couponCode').value = code;
+        
+        // Hide the dropdown
+        document.getElementById('couponDropdown').classList.add('hidden');
+        document.getElementById('couponChevron').classList.remove('rotate-180');
+    }
+</script>

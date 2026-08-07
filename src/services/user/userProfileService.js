@@ -2,6 +2,9 @@ import bcrypt from 'bcrypt';
 import * as profileRepository from '../../repository/user/userProfileRepository.js';
 import {sendOtpEmail} from '../../utilities/emailSender.js';
 import { PROFILE_CONFIG, PROFILE_REGEX } from '../../constants/userProfileConstants.js';
+import { extractCloudinaryId } from '../../utilities/cloudinaryExtract.js';
+import { v2 as cloudinary } from 'cloudinary';
+
 
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();  // This function uses inside the file
 
@@ -85,6 +88,22 @@ export const executeProfilePasswordChange = async (userId, bodyData) => {
 
 // For 'update' profile picture of 'user'
 export const executeAvatarUpdate = async (userId, cloudinaryUrl) => {
-    await profileRepository.updateUserById(userId, { profileImage: cloudinaryUrl });    
-    return cloudinaryUrl;
+    await profileRepository.updateUserById(userId, { profileImage: cloudinaryUrl }); //  Here 'cloudinaryUrl' is the 'url' of 'uloaded' image in 'cloudinary' and we updating /adding value of 'profileImage' field as 'cloudinaryUrl', and also 'return' this 'url', so we can retrieve this link display image in forntend.    
+    return cloudinaryUrl;                                                            //  Here we 'return' url that actually what we pass as argument, because 'controller.js' recieve data that get from 'service'(ie also from 'repository'), so we keep that flow.  
+};
+
+
+
+export const processProfileImageUpdate = async (userId, newImagePath) => {
+    const user = await userRepository.findUserById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
+    if (user.profileImage) {
+        const publicId = extractCloudinaryId.extractCloudinaryId(user.profileImage);             // Retrieving 'extractCloudinaryId' from 'src/utilities/cloudinaryExtracts.js' file and 'checking' the is this 'profile image' of 'user' and if it is 'true', 'delete' the old image from Cloudinary
+        if (publicId) {
+            await cloudinary.uploader.destroy(publicId);
+        }
+    }
+    return await profileRepository.updateProfileImage(userId, newImagePath);   // Save the new image path to the database
 };

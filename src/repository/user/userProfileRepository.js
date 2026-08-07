@@ -12,3 +12,12 @@ export const findUserByEmail = async (email) => {
 export const updateUserById = async (id, updateFields) => {
     return await User.findByIdAndUpdate(id, { $set: updateFields }, { new: true });
 };
+
+
+export const updateProfileImage = async (userId, newImagePath) => {
+    return await User.findByIdAndUpdate(
+        userId, 
+        { profileImage: newImagePath }, 
+        { new: true }
+    );
+};

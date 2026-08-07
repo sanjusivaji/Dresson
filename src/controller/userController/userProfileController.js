@@ -1,5 +1,7 @@
 import logger from '../../utilities/logger.js';
 import * as userProfileService from '../../services/user/userProfileService.js';
+import { v2 as cloudinary } from 'cloudinary';
+import * as userService from '../../services/user/userProfileService.js';
 
 // For 'display' user profile (when route '/profile')
 export const loadProfile = async (req, res) => {
@@ -31,11 +33,11 @@ export const changeEmailRequest = async (req, res) => {
                 message: "For security, please re-authenticate your Google account first." 
             });
         }
-        req.session.updateNameTemp = result.updateNameTemp;     // Store data for future operation       
+        req.session.updateNameTemp = result.updateNameTemp;                           // Store data for future operation       
         req.session.updateEmailTemp = result.updateEmailTemp;
         req.session.updateEmailOtp = result.updateEmailOtp;
         req.session.updateEmailOtpExpiry = result.updateEmailOtpExpiry;
-        res.json({ success: true });                           // It is for 'front end' for inform '{ success: true }'
+        res.json({ success: true });                                                 // It is for 'front end' for inform '{ success: true }'
     } catch (error) {
         logger.error("Change profile info request failure:", error);
         res.json({ success: false, message: error.message || "Server configuration failure." });
@@ -61,7 +63,7 @@ export const changeEmailVerify = async (req, res) => {
 export const changePassword = async (req, res) => {
     try {
         const user = await userProfileService.executeProfilePasswordChange(req.session.user, req.body);  // For updating password      
-        return res.render('user/profile', {                                                              //
+        return res.render('user/profile', {                                                             
             user, 
             error: null, 
             success: "Password changed successfully!",
@@ -71,7 +73,7 @@ export const changePassword = async (req, res) => {
     } catch (error) {
         logger.error("Change password profile update fail:", error);
         try {
-            const user = await userProfileService.prepareProfileData(req.session.user); // For go to 'user profile'
+            const user = await userProfileService.prepareProfileData(req.session.user);                 // For go to 'user profile'
             return res.render('user/profile', { 
                 user, 
                 error: error.message || "Internal error", 
@@ -92,11 +94,28 @@ export const updateAvatar = async (req, res) => {
             return res.json({ success: false, message: "No image file provided." });
         }
         const cloudinaryUrl = req.file.secure_url;
-        const imageUrl = await userProfileService.executeAvatarUpdate(req.session.user, cloudinaryUrl);        
+        const imageUrl = await userProfileService.executeAvatarUpdate(req.session.user, cloudinaryUrl);   // It just 'update' the 'cloudinaryUrl' as value of 'profileImage' and 'return' the 'same' value for keep the flow.     
         res.json({ success: true, imageUrl });
     } catch (error) {
         console.error("Avatar update failure:", error);
         res.json({ success: false, message: "Server storage error." });
     }
 };
+
+
+
+export const updateProfileImage = async (req, res) => {
+    try {
+        const userId = req.session.user._id;
+        const newImagePath = req.file.path;
+        await userService.processProfileImageUpdate(userId, newImagePath);
+        res.redirect('/profile');
+
+    } catch (error) {
+        console.error("Profile image update failed:", error);
+        res.status(500).send("Error updating profile");
+    }
+};
+
+
 

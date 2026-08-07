@@ -139,14 +139,15 @@
                         <!-- Actions -->
                         <td class="py-4 px-6 text-right whitespace-nowrap">
                             <div class="flex items-center space-x-2 justify-end">
-                                <a href="/admin/products/edit/<%= product._id %>" class="p-1.5 bg-gray-100 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-200 transition text-xs" title="Edit Inventory Unit">
+                                <a href="/admin/products/edit/<%= product._id %>?page=<%= currentPage %>" class="p-1.5 bg-gray-100 text-gray-500 hover:text-gray-700 rounded-md hover:bg-gray-200 transition text-xs" title="Edit Inventory Unit">
                                     <i class="fas fa-edit px-0.5"></i>
-                                </a>
-                                <form action="/admin/products/toggle-list/<%= product._id %>" method="POST" class="inline m-0">
-                                    <button type="submit" class="px-2.5 py-1.5 rounded-md text-xs font-semibold shadow-xs transition cursor-pointer <%= product.isListed ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100' %>">
+                                </a>                                
+                                <form id="toggleForm-<%= product._id %>" action="/admin/products/toggle-list/<%= product._id %>" method="POST" class="inline m-0">
+                                    <button type="button" onclick="confirmToggleStatus('<%= product._id %>', <%= product.isListed %>)" class="px-2.5 py-1.5 rounded-md text-xs font-semibold shadow-xs transition cursor-pointer <%= product.isListed ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100' %>">
                                         <%= product.isListed ? 'Unlist' : 'List' %>
                                     </button>
                                 </form>
+
                             </div>
                         </td>
                     </tr>
@@ -163,6 +164,7 @@
 <%- include('../partial/admin/pagination', { baseUrl: '/admin/products', currentPage: currentPage, totalPages: totalPages }) %>
 
 <div class="h-12"></div> 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     //  Category Dropdown Filter (Preserves active search queries)
@@ -186,17 +188,27 @@
     }
 
     //  Search Form Interceptor: Ensure search submissions reset to Page 1
-    document.getElementById('searchForm').addEventListener('submit', function(e) {
-        // const urlParams = new URLSearchParams(window.location.search);
-        // urlParams.set('page', '1');
-        // const activeCategory = document.getElementById('hiddenCategoryInput').value;
-        // if (activeCategory) {
-        //     const hiddenInput = document.createElement('input');
-        //     hiddenInput.type = 'hidden';
-        //     hiddenInput.name = 'category';
-        //     hiddenInput.value = activeCategory;
-        //     this.appendChild(hiddenInput);
-        // }
+    document.getElementById('searchForm').addEventListener('submit', function(e) {     
         const urlParams = new URLSearchParams(window.location.search);
     });
+
+    function confirmToggleStatus(productId, isListed) {
+        const actionText = isListed ? 'unlist' : 'list';
+        const confirmColor = isListed ? '#d33' : '#16a34a'; // Red for unlist, Green for list
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `Do you want to ${actionText} this product?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: confirmColor,
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: `Yes, ${actionText} it!`
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Submit the specific hidden form if confirmed
+                document.getElementById(`toggleForm-${productId}`).submit();
+            }
+        });
+    }
 </script>

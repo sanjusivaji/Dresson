@@ -1,12 +1,10 @@
-<!-- FIGMA DESIGN SIDEBAR PARTIAL -->
+
 <aside class="w-full md:w-64 flex-shrink-0 bg-white p-5 rounded-xl border border-gray-200 shadow-xs h-fit space-y-6">
     
     <form action="/shop" method="GET" id="filterForm" class="space-y-6">
         <!-- Preserve pagination and search when changing filters -->
         <input type="hidden" name="page" value="1">
 
-
-        <!--  SORT BY (Inline Figma Style) -->
         <div class="flex items-center justify-between gap-2 pt-1">
             <label class="text-xs font-bold text-gray-700 whitespace-nowrap">Sort By</label>
             <% const activeSort = typeof currentSort !== 'undefined' ? currentSort : 'newest'; %>
@@ -22,7 +20,6 @@
 
         <hr class="border-gray-100">
 
-        <!-- FILTER BY HEADING -->
         <div>
             <h3 class="text-base font-extrabold text-gray-900 tracking-tight mb-4">Filter By</h3>
 
@@ -92,7 +89,7 @@
 
         <hr class="border-gray-100">
 
-        <!-- 4. PRICE RANGE SLIDER (₹0 to ₹5000) -->
+        <!-- For 'price range'(0 to 10000) -->
         <div>
             <label class="text-xs font-bold text-gray-700 block mb-1">Price Range</label>
             <input type="range" name="maxPrice" min="500" max="10000" step="250" 

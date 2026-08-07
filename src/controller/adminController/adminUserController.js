@@ -44,7 +44,7 @@ export const updateUserDetails = async (req, res) => {
     try {
         const userId = req.params.id;
         const bodyData = req.body;
-        const file = req.file;               // For  multer for profile image uploads
+        const file = req.file;                                     // For  multer for profile image uploads
         await adminUserService.modifyUserProfile(userId, bodyData, file);
         res.redirect(`/admin/users/details/${userId}`);
     } catch (error) {

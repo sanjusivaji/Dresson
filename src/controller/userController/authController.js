@@ -176,7 +176,7 @@ export const loadResetPassword = async (req, res) => {
 export const processResetPassword = async (req, res) => {
     try {
         await authService.executeForgottenPasswordReset(req.session, req.body.password, req.body.confirmPassword); // We call this function with '3' arguments(ie 'session','password', 'confirmPassword')and it update the 'email' with 'new password'.     
-        delete req.session.forgotEmail;         // After updation 'delete' 'email', 'otp' and 'verification'(ie it is a 'boolean' value).  
+        delete req.session.forgotEmail;                                                                            // After updation 'delete' 'email', 'otp' and 'verification'(ie it is a 'boolean' value).  
         delete req.session.forgotOtp;
         delete req.session.forgotOtpVerified;        
         res.redirect('/login');
@@ -188,13 +188,13 @@ export const processResetPassword = async (req, res) => {
 
 // For 'logout' process
 export const processLogout = (req, res) => {
-    if (req.session.user) {                    // Here 'delete' the 'user'(ie 'user' is the object that contains 'name','email' etc)instead 'destroy' entire session.
+    if (req.session.user) {                              // Here 'delete' the 'user'(ie 'user' is the object that contains 'name','email' etc)instead 'destroy' entire session.
         delete req.session.user; 
     }
     if (req.session[SESSION_KEYS.USER_SESSION]) {
         delete req.session[SESSION_KEYS.USER_SESSION];   // Here 'delete' the 'user'(ie 'user' is the object that contains 'name','email' etc)instead 'destroy' entire session.
     }
-    if (req.session.admin) {                   // Here we check if an 'Admin' is still logged in(ie if 'admin' logged in it store)
+    if (req.session.admin) {                             // Here we check if an 'Admin' is still logged in(ie if 'admin' logged in it store)
         return req.session.save((err) => {
             if (err) {
                 console.error("Session Save Error during User Logout:", err);
@@ -220,7 +220,7 @@ export const loadHome = async (req, res) => {
         const catalogData = await userProductService.compileShopCatalog(req.query);  // 'compileShopCatalog()' retrieve data of 'products' based on each page
         res.render('user/home', {
             ...catalogData,                                                          // Automatically unpacks: products, categories, totalProducts, totalPages, currentPage, currentSort, etc.
-            query: req.query,            // Essential: allows pagination links to remember active filters
+            query: req.query,                                                        // Essential: allows pagination links to remember active filters
             layout: 'layout/user', 
             pageTitle: "Home - Dresson"      
         });

@@ -1,8 +1,4 @@
-
-
 import mongoose from 'mongoose';
-
-
 const userSchema = new mongoose.Schema({
     firstName: { type: String, required: true },
     lastName: { type: String },
@@ -15,14 +11,11 @@ const userSchema = new mongoose.Schema({
     password: { type: String },
     status: { type: String, enum: ['Active', 'InActive', 'Blocked'], default: 'Active'  },
     orderCount: { type: Number, default: 0 },
-
     phone: { type: String, default: 'Not provided' },
     address: { type: String, default: 'Address not updated yet' },
     walletBalance: { type: Number, default: 0 },
     profileImage: { type: String, default: '' },
-     avatar: { type: String,},
-    avatarId:{type:String,},
-    
+    avatar: { type: String,},
+    avatarId:{type:String,},    
 }, { timestamps: true });
-
 export default mongoose.model('User', userSchema);

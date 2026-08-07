@@ -1,0 +1,73 @@
+<%- contentFor('body') %>
+
+<div class="px-6 py-8 w-full">
+    <!-- Header -->
+    <div class="flex justify-between items-end mb-6">
+        <div>
+            <h1 class="text-2xl font-black text-gray-900 tracking-tight">Coupons</h1>
+            <p class="text-xs text-gray-500 font-medium mt-1">Manage discount and promotional codes</p>
+        </div>
+        <a href="/admin/coupons/add" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold py-2 px-4 rounded-full transition flex items-center shadow-sm">
+            <span class="mr-1.5 text-lg leading-none">+</span> Create Coupon
+        </a>
+    </div>
+
+    <!-- Table Container -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-100 bg-[#fbfbfb]">
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Coupon Name</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Coupon Code</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Discount Value</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Min Cart Value</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Max Discount</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Expiry Date</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-[11px] font-extrabold text-gray-900 uppercase tracking-wider text-center"><i class="fas fa-edit"></i></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <% if (coupons && coupons.length > 0) { %>
+                    <% coupons.forEach(coupon => { %>
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 text-xs text-gray-600 font-medium"><%= coupon.couponName %></td>
+                            <td class="px-6 py-4 text-xs font-bold text-gray-800 uppercase"><%= coupon.couponCode %></td>
+                            <td class="px-6 py-4 text-xs text-gray-600">
+                                <%= coupon.discountValue %><%= coupon.discountType === 'percentage' ? '%' : '₹' %>
+                            </td>
+                            <td class="px-6 py-4 text-xs text-gray-600">₹<%= coupon.minCartValue %></td>
+                            <td class="px-6 py-4 text-xs text-gray-600">₹<%= coupon.maxDiscount || 'N/A' %></td>
+                            <td class="px-6 py-4 text-xs text-gray-600">
+                                <%= new Date(coupon.validTill).toLocaleDateString('en-GB') %>
+                            </td>
+                            <td class="px-6 py-4 text-xs font-bold <%= coupon.calculatedStatus === 'Active' ? 'text-green-600' : 'text-red-500' %>">
+                                <%= coupon.calculatedStatus %>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="/admin/coupons/edit/<%= coupon._id %>" class="text-gray-400 hover:text-gray-800 transition">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="px-6 py-10 text-center text-sm text-gray-500">No coupons found. Create one to get started.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Figma Style Pagination -->
+    <div class="flex justify-center items-center space-x-4 mt-8 text-xs font-bold text-gray-600">
+        <a href="?page=<%= currentPage - 1 %>" class="<%= currentPage === 1 ? 'pointer-events-none opacity-50' : 'hover:text-gray-900' %>">&lt;</a>
+        
+        <% for(let i = 1; i <= totalPages; i++) { %>
+            <a href="?page=<%= i %>" class="<%= currentPage === i ? 'text-gray-900' : 'hover:text-gray-900' %>"><%= i %></a>
+        <% } %>
+
+        <a href="?page=<%= currentPage + 1 %>" class="<%= currentPage === totalPages ? 'pointer-events-none opacity-50' : 'hover:text-gray-900' %>">&gt;</a>
+    </div>
+</div>

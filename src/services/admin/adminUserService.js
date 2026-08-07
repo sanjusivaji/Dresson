@@ -6,16 +6,12 @@ export const buildUsersListDashboard = async (query) => {
     const page = parseInt(query.page) || 1;
     const limit = PAGINATION_LIMITS.USERS;
     const skip = (page - 1) * limit;
-
     const selectedStatus = query.status || 'All';
     const searchQuery = query.search || '';
     const joiningDate = query.joiningDate || '';
     const loginDate = query.loginDate || '';
-
     let filterQuery = { role: DEFAULT_ROLES.USER };
-
     if (selectedStatus !== 'All') filterQuery.status = selectedStatus;
-
     if (searchQuery) {
         filterQuery.$or = [
             { firstName: { $regex: searchQuery, $options: 'i' } },
@@ -23,19 +19,16 @@ export const buildUsersListDashboard = async (query) => {
             { email: { $regex: searchQuery, $options: 'i' } }
         ];
     }
-
     if (joiningDate) {
         const start = new Date(joiningDate); start.setHours(0, 0, 0, 0);
         const end = new Date(joiningDate); end.setHours(23, 59, 59, 999);
         filterQuery.createdAt = { $gte: start, $lte: end };
     }
-
     if (loginDate) {
         const start = new Date(loginDate); start.setHours(0, 0, 0, 0);
         const end = new Date(loginDate); end.setHours(23, 59, 59, 999);
         filterQuery.updatedAt = { $gte: start, $lte: end };
     }
-
     const users = await userRepository.findUsersWithFilter(filterQuery, skip, limit);
     const absoluteTotalMatching = await userRepository.countUsers(filterQuery);
     const totalUsersCount = await userRepository.countUsers({ role: DEFAULT_ROLES.USER });
@@ -58,15 +51,13 @@ export const buildUsersListDashboard = async (query) => {
 export const processToggleBlock = async (id) => {
     const user = await userRepository.findUserById(id);
     if (!user) throw new Error("User account signature record missing.");
-
-    const isCurrentlyBlocked = user.status === 'Blocked';
-    
+    const isCurrentlyBlocked = user.status === 'Blocked';    
     user.status = isCurrentlyBlocked ? 'Active' : 'Blocked';
-    user.isBlocked = !isCurrentlyBlocked; 
-    
+    user.isBlocked = !isCurrentlyBlocked;     
     await user.save();
     return user;
 };
+
 
 export const fetchUserDetails = async (id) => {
     const user = await userRepository.findUserById(id);
@@ -74,11 +65,11 @@ export const fetchUserDetails = async (id) => {
     return user;
 };
 
+
 export const modifyUserProfile = async (id, bodyData, file) => {
     const nameParts = (bodyData.name || '').trim().split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ');
-
     const updateData = {
         status: bodyData.status,
         firstName,
@@ -87,7 +78,6 @@ export const modifyUserProfile = async (id, bodyData, file) => {
         email: bodyData.email,
         address: bodyData.address
     };
-
     if (file) {
         updateData.profileImage = file.filename;
     }
@@ -99,7 +89,6 @@ export const executeBalanceAdjustment = async (id, adjustmentData) => {
     const { adjustmentType, amount, reason } = adjustmentData;
     const user = await userRepository.findUserById(id);
     if (!user) throw new Error("Target account parameters missing.");
-
     const parsedAmount = Number(amount);
     const originalBalance = user.walletBalance;
     let newBalance = originalBalance;
@@ -128,12 +117,9 @@ export const executeBalanceAdjustment = async (id, adjustmentData) => {
             dbAdjustmentType = 'Deduct Funds';
         }
     }
-
     user.walletBalance = newBalance;
     await user.save();
-
     const uniqueTxId = 'TX-' + Date.now().toString().slice(-6) + Math.floor(100 + Math.random() * 900);
-
     await userRepository.createWalletTransaction({
         user: user._id,
         transactionId: uniqueTxId,
@@ -147,21 +133,19 @@ export const executeBalanceAdjustment = async (id, adjustmentData) => {
         status: 'Success',
         balanceAfter: newBalance
     });
-
     return user;
 };
+
+
 
 export const fetchUserLedgerTransactions = async (id, queryPage) => {
     const page = parseInt(queryPage) || 1;
     const limit = PAGINATION_LIMITS.TRANSACTIONS;
     const skip = (page - 1) * limit;
-
     const user = await userRepository.findUserById(id);
     if (!user) throw new Error("User index node matches blank outputs.");
-
     const dbTransactions = await userRepository.findTransactionsByUserId(id, skip, limit);
     const totalTransactionsCount = await userRepository.countTransactionsByUserId(id);
-
     const transactions = dbTransactions.map(t => ({
         transactionId: t.transactionId,
         date: t.createdAt,
@@ -171,16 +155,13 @@ export const fetchUserLedgerTransactions = async (id, queryPage) => {
         gateway: t.gateway,
         status: t.status
     }));
-
     let totalCredit = 0, totalDebit = 0, totalRefund = 0;
-    const allUserTransactions = await userRepository.findAllTransactionsByUserId(id);
-    
+    const allUserTransactions = await userRepository.findAllTransactionsByUserId(id);    
     allUserTransactions.forEach(t => {
         if (t.type === 'Credit') totalCredit += t.amount;
         if (t.type === 'Debit') totalDebit += t.amount;
         if (t.type === 'Refund') totalRefund += t.amount;
     });
-
     return {
         user,
         transactions,
@@ -190,17 +171,16 @@ export const fetchUserLedgerTransactions = async (id, queryPage) => {
     };
 };
 
+
+
 export const fetchUserOrderLogs = async (id, query) => {
     if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid User Identifier format.");
     const userObjectId = new mongoose.Types.ObjectId(id);
-
     const page = parseInt(query.page) || 1;
     const limit = PAGINATION_LIMITS.ORDERS;
     const skip = (page - 1) * limit;
-
     const currentStatus = query.status || 'All';
     const searchQuery = query.search || '';
-
     let filterQuery = {
         $or: [
             { user: userObjectId },
@@ -208,7 +188,6 @@ export const fetchUserOrderLogs = async (id, query) => {
             { user: id }
         ]
     };
-
     if (currentStatus !== 'All') {
         filterQuery = {
             $and: [
@@ -217,7 +196,6 @@ export const fetchUserOrderLogs = async (id, query) => {
             ]
         };
     }
-
     if (searchQuery) {
         const searchCondition = {
             $or: [
@@ -236,11 +214,9 @@ export const fetchUserOrderLogs = async (id, query) => {
             };
         }
     }
-
     const orders = await userRepository.findOrdersWithFilter(filterQuery, skip, limit);
     const totalMatchingOrders = await userRepository.countOrdersWithFilter(filterQuery);
     const user = await userRepository.findUserById(userObjectId);
-
     return {
         orders,
         currentPage: page,

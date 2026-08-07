@@ -1,0 +1,198 @@
+<%- contentFor('body') %>
+
+<!-- Shared Alerts -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <aside class="lg:col-span-3">
+            <%- include('../partial/user/userSidebar') %>
+        </aside>
+
+        <!-- Wish list content -->
+        <div class="lg:col-span-9">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-8 text-center md:text-left">My Wishlist</h1>
+
+            <!-- Styled Rounded Beige Container -->
+            <div class="bg-[#f5eeeb] rounded-[2.5rem] p-6 sm:p-10 shadow-sm border border-gray-100 min-h-[400px]">
+                
+                <!-- Table Headers -->
+                <div class="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-gray-300 text-sm font-extrabold text-gray-900 tracking-wide px-4">
+                    <div class="col-span-5">Product</div>
+                    <div class="col-span-3">Price</div>
+                    <div class="col-span-4 text-right"></div> <!-- Actions -->
+                </div>
+
+                <!-- Wishlist Items List -->
+                <div id="wishlistContainer" class="flex flex-col">
+                    <% if (typeof wishlist !== 'undefined' && wishlist.products && wishlist.products.length > 0) { %>
+                        <% wishlist.products.forEach((item) => { %>                            
+                            <% 
+                                const product = item.productId || item; 
+                                let displayPrice = product.price || 0;
+                                let defaultVariantId = '';                                 
+                                if (product.variants && product.variants.length > 0) {
+                                    displayPrice = product.variants[0].price;
+                                    defaultVariantId = product.variants[0]._id; // FIX: Extract the variant ID
+                                }
+                                const imageUrl = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
+                            %>
+
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center py-5 border-b border-gray-200/70 last:border-0 px-2 sm:px-4 transition hover:bg-white/40 rounded-xl" id="wishlist-row-<%= product._id %>">
+                                
+                                <!-- Product Image & Name -->
+                                <div class="col-span-5 flex items-center space-x-4">
+                                    <a href="/product/<%= product._id %>" class="shrink-0">
+                                        <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-12 h-16 object-cover rounded-md shadow-sm border border-gray-200">
+                                    </a>
+                                    <a href="/product/<%= product._id %>" class="text-sm font-bold text-gray-800 hover:text-black transition truncate">
+                                        <%= product.name %>
+                                    </a>
+                                </div>
+
+                                <!-- Price -->
+                                <div class="col-span-3 font-extrabold text-gray-900 text-sm">
+                                    ₹ <%= displayPrice.toLocaleString('en-IN') %>
+                                </div>
+
+                                <!-- Actions (Add to Cart & Remove) -->
+                                <div class="col-span-4 flex items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
+                                 <!-- Brown Pill Button -->
+                                    <button type="button" onclick="moveToCart('<%= product._id %>', '<%= defaultVariantId || '' %>')" class="bg-[#94847c] hover:bg-[#7a6c65] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
+                                        Add to Cart
+                                    </button>
+                                    <!-- Red/Coral Pill Button -->
+                                    <button type="button" onclick="removeFromWishlist('<%= product._id %>')" class="bg-[#fc6c6c] hover:bg-[#e05b5b] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+
+                        <% }) %>
+                    <% } else { %>
+                        <!-- Empty State -->
+                        <div class="flex flex-col items-center justify-center py-16 opacity-70">
+                            <i class="far fa-heart text-4xl text-gray-400 mb-4"></i>
+                            <p class="text-gray-600 font-medium">Your wishlist is currently empty.</p>
+                            <a href="/shop" class="mt-4 text-[#6b66d6] font-bold hover:underline">Continue Shopping</a>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Pagination (As shown in design) -->
+            <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                <div class="flex justify-center items-center space-x-3 mt-8 text-sm font-bold text-gray-500">
+                    <a href="?page=<%= currentPage > 1 ? currentPage - 1 : 1 %>" class="hover:text-black"><i class="fas fa-chevron-left text-[10px]"></i></a>
+                    
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <% if (i === currentPage) { %>
+                            <span class="text-black"><%= i %></span>
+                        <% } else if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) { %>
+                            <a href="?page=<%= i %>" class="hover:text-black transition"><%= i %></a>
+                        <% } else if (i === currentPage - 2 || i === currentPage + 2) { %>
+                            <span>...</span>
+                        <% } %>
+                    <% } %>
+
+                    <a href="?page=<%= currentPage < totalPages ? currentPage + 1 : totalPages %>" class="hover:text-black"><i class="fas fa-chevron-right text-[10px]"></i></a>
+                </div>
+            <% } %>
+
+        </div>
+    </div>
+</main>
+
+<!-- Client-Side Logic for Wishlist Actions -->
+<script>
+    async function removeFromWishlist(productId) {
+        try {
+            const response = await fetch('/wishlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                const row = document.getElementById(`wishlist-row-${productId}`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        // Check if container is empty to show empty state
+                        const container = document.getElementById('wishlistContainer');
+                        if (container.children.length === 0) {
+                            window.location.reload(); 
+                        }
+                    }, 300);
+                }
+                
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("Item removed from your Wishlist.", "Success", "success");
+                }
+            }
+        } catch (error) {
+            console.error("Error removing from wishlist:", error);
+        }
+    }
+
+   // For 'product' move to 'cart'
+    async function moveToCart(productId, variantId) {
+            if (!variantId || variantId === 'undefined' || variantId.trim() === '') {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("Please visit the product page to select your specific size/color before adding to cart.", "Variant Required", "warning");
+                } else {
+                    alert("Please visit the product page to select a specific size.");
+                }
+                return; 
+            }
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('productId', productId);
+                formData.append('variantId', variantId);
+                formData.append('quantity', 1);
+                formData.append('actionType', 'cart');
+                const response = await fetch('/cart/add', {  // Send the Add to Cart request
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/x-www-form-urlencoded' 
+                    },
+                    body: formData 
+                });
+                if (response.ok || response.redirected) {                
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert("Item added to cart successfully!", "Cart Updated", "success");
+                    }
+                    const row = document.getElementById('wishlist-row-' + productId);
+                    if (row) {
+                        row.style.display = 'none'; 
+                        row.remove(); 
+                        const container = document.getElementById('wishlistContainer');  // If it was the last item, wait a tiny bit then reload to show the empty screen
+                        if (container && container.children.length === 0) {
+                            setTimeout(() => {
+                                window.location.reload(); 
+                            }, 500);
+                        }
+                    }
+
+                } else {
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert("Could not add to cart. Please try again.", "Action Failed", "error");
+                    }
+                }
+
+            } catch (error) {
+                console.error("Critical Error adding to cart:", error);
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("A network error occurred. Please check your internet.", "Connection Error", "error");
+                }
+            }
+        }
+</script>

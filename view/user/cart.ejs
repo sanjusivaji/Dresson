@@ -1,9 +1,4 @@
-<!-- ============================================================================
-     SHOPPING CART STOREFRONT VIEW (Matching Figma UI + Live Stock Guards)
-============================================================================= -->
-
 <%- contentFor('body') %>
-
 <!-- Shared Alerts Partial -->
 <%- include('../partial/shared/alertSuccess') %>
 <%- include('../partial/shared/alertError') %>
@@ -24,7 +19,6 @@
 
 <main class="min-h-[75vh] bg-[#f9f9f9] py-12 px-4 sm:px-6 lg:px-8 flex items-start justify-center font-sans">
     
-    <!-- Centered Minimalist White Workspace Card (Figma Style) -->
     <div class="w-full max-w-3xl bg-white rounded-3xl shadow-sm border border-gray-200/60 p-6 sm:p-10 md:p-12">
         
         <!-- Heading -->
@@ -34,7 +28,7 @@
 
         <% if (cart && cart.items && cart.items.length > 0) { %>
             
-            <!-- Requirement: Banner Warning if Cart Contains Invalid/Sold-Out Items -->
+            <!--  Banner Warning if Cart Contains Invalid/Sold-Out Items -->
             <% if (cart.hasInvalidItems) { %>
                 <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start space-x-3 text-red-800 animate-fade-in">
                     <i class="fas fa-exclamation-triangle text-red-600 text-lg mt-0.5"></i>
@@ -45,15 +39,16 @@
                 </div>
             <% } %>
 
-            <!-- ===============================================================
-                 CART ITEMS LIST (Figma Row Structure)
-            ================================================================ -->
+        
             <div class="divide-y divide-gray-100" id="cartItemsContainer">
                 <% cart.items.forEach(item => { %>
+                    <!-- data-price and data-stock attributes for JS calculation -->
                     <div class="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group transition <%= !item.isValid ? 'bg-red-50/40 -mx-4 px-4 rounded-2xl border border-red-100 my-2' : '' %>" 
-                         id="cart-row-<%= item._id %>">
-                        
-                        <!-- Left Side: Thumbnail & Product Specifications -->
+                         id="cart-row-<%= item._id %>"
+                         data-price="<%= item.livePrice %>"
+                         data-stock="<%= item.liveStock %>">
+                       
+                        <!--  Thumbnail & Product Specifications -->
                         <div class="flex items-center space-x-4 sm:space-x-6 flex-1 min-w-0">
                             <!-- Thumbnail -->
                             <a href="/product/<%= item.product._id %>" class="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden bg-gray-100 border border-gray-200/80 shrink-0 block relative">
@@ -71,7 +66,7 @@
                                     <%= item.name %>
                                 </a>
                                 
-                                <!-- Variant Attributes Below Title (e.g., M Black Cotton) -->
+                                <!-- Variant Attributes Below Title -->
                                 <p class="text-xs text-gray-400 font-medium mt-1 uppercase tracking-wide truncate">
                                     <%= item.variantName.replace(/\//g, ' ') %>
                                 </p>
@@ -81,11 +76,9 @@
                                     <span class="text-sm sm:text-base font-extrabold text-gray-900" id="item-total-<%= item._id %>">
                                         ₹ <%= (item.livePrice * item.quantity).toLocaleString('en-IN') %>
                                     </span>
-                                    <% if (item.quantity > 1) { %>
-                                        <span class="text-[10px] font-semibold text-gray-400">
-                                            (₹ <%= item.livePrice.toLocaleString('en-IN') %> each)
-                                        </span>
-                                    <% } %>
+                                    <span class="text-[10px] font-semibold text-gray-400" id="item-each-<%= item._id %>" style="display: <%= item.quantity > 1 ? 'inline' : 'none' %>;">
+                                        (₹ <%= item.livePrice.toLocaleString('en-IN') %> each)
+                                    </span>
                                 </div>
 
                                 <!-- Dynamic Status Badges for Invalid Items -->
@@ -102,13 +95,15 @@
                         <!-- Right Side: Figma Quantity Pill (- 1 +) & Trash Icon -->
                         <div class="flex items-center justify-end space-x-4 sm:space-x-6 shrink-0 self-end sm:self-center">
                             
-                            <!-- Quantity Pill Selector (Disabled if unlisted or sold out) -->
+                            <!-- Quantity Pill Selector -->
                             <% if (item.isValid) { %>
                                 <div class="inline-flex items-center bg-transparent border border-gray-300/80 rounded-lg overflow-hidden h-8 sm:h-9 px-1">
+                                    
+                                    <!-- Button for decrease quantity -->
                                     <button type="button" 
+                                            id="btn-minus-<%= item._id %>"
                                             onclick="updateCartQty('<%= item._id %>', <%= item.quantity - 1 %>)" 
-                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity <= 1 ? 'opacity-30 cursor-not-allowed' : '' %>"
-                                            <%= item.quantity <= 1 ? 'disabled' : '' %>>
+                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity <= 1 ? 'opacity-30 cursor-not-allowed' : '' %>">
                                         -
                                     </button>
                                     
@@ -116,19 +111,19 @@
                                         <%= item.quantity %>
                                     </span>
                                     
+                                    <!-- Button for update quantity-->
                                     <button type="button" 
+                                            id="btn-plus-<%= item._id %>"
                                             onclick="updateCartQty('<%= item._id %>', <%= item.quantity + 1 %>)" 
-                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity >= Math.min(10, item.liveStock) ? 'opacity-30 cursor-not-allowed' : '' %>"
-                                            <%= item.quantity >= Math.min(10, item.liveStock) ? 'disabled' : '' %>>
+                                            class="w-7 h-full text-gray-500 hover:text-black font-bold transition flex items-center justify-center text-xs cursor-pointer <%= item.quantity >= Math.min(10, item.liveStock) ? 'opacity-30 cursor-not-allowed' : '' %>">
                                         +
                                     </button>
                                 </div>
                             <% } else { %>
-                                <!-- Placeholder space if controls disabled -->
                                 <span class="text-xs font-bold text-red-500 uppercase tracking-wider">Unavailable</span>
                             <% } %>
 
-                            <!-- Trash / Delete Icon (Figma Style) -->
+                            <!-- Trash / Delete Icon -->
                             <button type="button" 
                                     onclick="removeCartItem('<%= item._id %>', '<%= item.name.replace(/'/g, "\\'") %>')" 
                                     class="w-8 h-8 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition flex items-center justify-center text-sm cursor-pointer"
@@ -141,12 +136,8 @@
                 <% }) %>
             </div>
 
-            <!-- Horizontal Divider (Figma Style) -->
+            <!-- Horizontal Divider -->
             <hr class="my-8 border-gray-200">
-
-            <!-- ===============================================================
-                 TOTAL SUMMARY & FIGMA GREEN CHECKOUT BUTTON
-            ================================================================ -->
             <div class="flex flex-col items-center sm:items-end space-y-6">
                 
                 <!-- Total Row -->
@@ -157,8 +148,6 @@
                     </span>
                 </div>
 
-                <!-- Green Pill Checkout Button (#16a34a / Figma Style) -->
-                <!-- Strictly Disabled if hasInvalidItems is true! -->
                 <div class="w-full sm:w-64 flex flex-col items-center sm:items-end">
                     <a href="<%= !cart.hasInvalidItems ? '/checkout' : '#' %>" 
                        id="checkoutBtnCTA"
@@ -178,7 +167,7 @@
 
         <% } else { %>
             
-            <!-- EMPTY CART STATE -->
+            <!-- Empty cart -->
             <div class="py-16 text-center space-y-4">
                 <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300 border border-gray-200">
                     <i class="fas fa-shopping-bag text-2xl"></i>
@@ -197,13 +186,29 @@
     </div>
 </main>
 
-<!-- ============================================================================
-     CLIENT-SIDE CART ENGINE (AJAX Quantity Updates & Instant Deletions)
-============================================================================= -->
+
 <script>
-    // 1. AJAX QUANTITY UPDATER (- / + Buttons)
+    // Asynchronous Quantity Update WITHOUT page reload
     async function updateCartQty(itemId, newQty) {
-        if (newQty < 1) return;
+        const rowElement = document.getElementById(`cart-row-${itemId}`);
+        const maxStock = parseInt(rowElement.getAttribute('data-stock'), 10);
+        const maxAllowed = Math.min(10, maxStock); // Cap at 10 or max stock
+
+        //  Client-Side Validation before hitting server
+        if (newQty < 1) {
+            // Optional: You could show a warning here if you don't want them clicking past 1
+            return;
+        }
+        
+        // This is where your custom alert will now trigger perfectly!
+        if (newQty > maxAllowed) {
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert(`You can only purchase up to ${maxAllowed} units of this item.`, "Stock Limit Reached", "warning");
+            } else {
+                alert(`You can only purchase up to ${maxAllowed} units of this item.`);
+            }
+            return; // Stops the fetch request from happening
+        }
 
         try {
             const response = await fetch('/cart/update-quantity', {
@@ -215,8 +220,51 @@
             const data = await response.json();
 
             if (data.success) {
-                // Smoothly refresh the page to reflect accurate price totals & stock badge states
-                window.location.reload();
+                // Update Quantity Number on screen
+                document.getElementById(`qty-val-${itemId}`).innerText = newQty;
+
+                // Update Item Price Total
+                const pricePerItem = parseFloat(rowElement.getAttribute('data-price'));
+                const newItemTotal = pricePerItem * newQty;
+                document.getElementById(`item-total-${itemId}`).innerText = `₹ ${newItemTotal.toLocaleString('en-IN')}`;
+
+                // Toggle "(₹X each)" display if quantity > 1
+                const eachLabel = document.getElementById(`item-each-${itemId}`);
+                if (eachLabel) eachLabel.style.display = newQty > 1 ? 'inline' : 'none';
+
+                // Recalculate Grand Cart Total
+                let newCartTotal = 0;
+                document.querySelectorAll('[id^="cart-row-"]').forEach(row => {
+                    const rPrice = parseFloat(row.getAttribute('data-price'));
+                    const rQtyText = row.querySelector('[id^="qty-val-"]');
+                    if (rQtyText && !isNaN(rPrice)) {
+                        const rQty = parseInt(rQtyText.innerText, 10);
+                        newCartTotal += (rPrice * rQty);
+                    }
+                });
+                
+                document.getElementById('cartTotalDisplay').innerText = `₹ ${newCartTotal.toLocaleString('en-IN')}`;
+
+                // Update Plus/Minus Button UI & Disable States dynamically
+                const btnMinus = document.getElementById(`btn-minus-${itemId}`);
+                const btnPlus = document.getElementById(`btn-plus-${itemId}`);
+
+                if (newQty <= 1) {
+                    btnMinus.classList.add('opacity-30', 'cursor-not-allowed');
+                } else {
+                    btnMinus.classList.remove('opacity-30', 'cursor-not-allowed');
+                }
+
+                if (newQty >= maxAllowed) {
+                    btnPlus.classList.add('opacity-30', 'cursor-not-allowed');
+                } else {
+                    btnPlus.classList.remove('opacity-30', 'cursor-not-allowed');
+                }
+
+                // Update their next onclick targets
+                btnMinus.setAttribute('onclick', `updateCartQty('${itemId}', ${newQty - 1})`);
+                btnPlus.setAttribute('onclick', `updateCartQty('${itemId}', ${newQty + 1})`);
+
             } else {
                 if (typeof showCustomAlert === 'function') {
                     showCustomAlert(data.message || "Could not update quantity.", "Stock Restriction", "warning");
@@ -234,7 +282,7 @@
         }
     }
 
-    // 2. AJAX ITEM DELETION WITH CONFIRMATION
+    // For warning for removal
     function removeCartItem(itemId, itemName) {
         const confirmMsg = `Are you sure you want to remove "${itemName}" from your shopping cart?`;
 
@@ -248,7 +296,6 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Animate row removal before reloading
                     const rowEl = document.getElementById(`cart-row-${itemId}`);
                     if (rowEl) {
                         rowEl.style.transition = 'all 0.3s ease';
@@ -269,7 +316,6 @@
             }
         };
 
-        // Use custom UI confirmation modal if available in your theme
         if (typeof showCustomConfirm === 'function') {
             showCustomConfirm(confirmMsg, executeDelete, "Remove Item?");
         } else if (confirm(confirmMsg)) {

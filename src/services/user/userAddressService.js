@@ -17,12 +17,12 @@ export const buildAddressDashboard = async (userId, queryPage) => {
 
 // For 'make' address 'default'
 export const makeAddressDefault = async (userId, addressId) => {
-    const address = await addressRepository.findAddressById(addressId);    // Retrieve 'address' based on 'userId' in 'repository'
+    const address = await addressRepository.findAddressById(addressId);                    // Retrieve 'address' based on 'userId' in 'repository'
     if (!address || address.userId.toString() !== userId.toString()) {
         throw new Error("Address not found or unauthorized");
     }
-    await addressRepository.clearUserDefaultAddress(userId,addressId);         // Remove 'isDefault:true' status
-    return await addressRepository.setAddressAsDefault(addressId);            // Set new 'isDefault:true' address
+    await addressRepository.clearUserDefaultAddress(userId,addressId);                     // Remove 'isDefault:true' status
+    return await addressRepository.setAddressAsDefault(addressId);                         // Set new 'isDefault:true' address
 };
 
 // For 'add'/'create' a new address
@@ -57,6 +57,19 @@ export const addNewAddress = async (userId, bodyData) => {
         type: type || ADDRESS_TYPES.OTHER,
         isDefault: isDefaultBool
     };
+
+    const address = await addressRepository.findAddressesByUserId(userId);
+    if(address){
+        const checking = address.some(item => {
+            return item.addressLine.toLowerCase() === addressData.addressLine.toLowerCase() &&
+            item.city.toLocaleLowerCase() === addressData.city.toLowerCase() && 
+            item.pincode === addressData.pincode;
+        })
+        if(checking){
+            throw new Error("There are same address existing")
+        }
+    }
+
     return await addressRepository.createAddress(addressData);
 };
 
@@ -77,7 +90,7 @@ export const updateAddress = async (userId, addressId, updateData) => {
     if (!address || address.userId.toString() !== userId.toString()) { // It checks is the 'address' already in database and 'userId' of 'address' in database is same as 'updating' addresses 'userId'. 
         throw new Error("Address not found or unauthorized");
     }
-    if (updateData.isDefault === true) {                               // If 'updating' data makes as 'default' by 'user', then it clear all other 'default' address of 'user' based on 'userId'.
+    if (updateData.isDefault === true) {                                // If 'updating' data makes as 'default' by 'user', then it clear all other 'default' address of 'user' based on 'userId'.
         await addressRepository.clearUserDefaultAddress(userId);
     }
     return await addressRepository.updateAddressById(addressId, updateData); // Here 'updateAddressById()' reset(ie '{$set:updateDate' in 'repository')the 'address'.

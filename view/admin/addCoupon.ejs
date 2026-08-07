@@ -1,0 +1,85 @@
+<%- contentFor('body') %>
+
+<div class="px-6 py-8 w-full max-w-xl mx-auto bg-white min-h-screen">
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-gray-900 tracking-tight">Add Coupon</h1>
+            <p class="text-xs text-gray-500 font-medium mt-1">Create a coupon for dresson customers</p>
+        </div>
+        <a href="/admin/coupons" class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 text-xs font-bold py-2 px-4 rounded-md transition shadow-sm">
+            Back to Coupon
+        </a>
+    </div>
+
+    <% if (error) { %>
+        <div class="bg-red-50 text-red-600 text-xs font-bold p-3 rounded-md mb-6 border border-red-100">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <form action="/admin/coupons/add" method="POST" class="space-y-4">
+        
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Coupon Name</label>
+            <input type="text" name="couponName" value="<%= formData ? formData.couponName : '' %>" required class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+        
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Coupon Code</label>
+            <input type="text" name="couponCode" value="<%= formData ? formData.couponCode : '' %>" required style="text-transform:uppercase" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Discount Type</label>
+            <select name="discountType" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full bg-white">
+                <option value="percentage" <%= formData && formData.discountType === 'percentage' ? 'selected' : '' %>>Percentage</option>
+                <option value="flat" <%= formData && formData.discountType === 'flat' ? 'selected' : '' %>>Flat Amount</option>
+            </select>
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Discount Value</label>
+            <input type="number" name="discountValue" value="<%= formData ? formData.discountValue : '' %>" required min="1" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Valid from</label>
+            <input type="date" name="validFrom" value="<%= formData ? formData.validFrom : '' %>" required class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Valid Till</label>
+            <input type="date" name="validTill" value="<%= formData ? formData.validTill : '' %>" required class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Minimum Cart Amount</label>
+            <input type="number" name="minCartValue" value="<%= formData ? formData.minCartValue : '' %>" required min="0" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <div class="flex flex-col">
+            <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Maximum Discount</label>
+            <input type="number" name="maxDiscount" value="<%= formData ? formData.maxDiscount : '' %>" min="0" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full">
+        </div>
+
+        <!-- Footer Actions with Toggle -->
+        <div class="pt-6 mt-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-xs font-bold text-gray-800">Enable Disable Coupon</span>
+                <!-- Custom Toggle Switch -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="isActive" class="sr-only peer" <%= (!formData || formData.isActive) ? 'checked' : '' %>>
+                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500"></div>
+                </label>
+            </div>
+
+            <div class="flex space-x-3">
+                <a href="/admin/coupons" class="px-6 py-2 bg-black text-white text-xs font-bold rounded-md hover:bg-gray-800 transition">Cancel</a>
+                <button type="submit" class="px-6 py-2 bg-red-700 text-white text-xs font-bold rounded-md hover:bg-red-800 transition shadow-sm">
+                    Add Coupon
+                </button>
+            </div>
+        </div>
+    </form>
+</div>

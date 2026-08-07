@@ -22,48 +22,52 @@
     <!-- INVISIBLE ANCESTOR LINEAGE TRACKER: Automatically submits all 4 hierarchy level IDs! -->
     <div id="ancestorsContainer" class="hidden"></div>
 
-    <!-- SECTION 1: Product Identity & Categories -->
+    <!--  Product Identity & Categories -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="space-y-6">
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
-                <input type="text" id="baseName" name="productName" required placeholder="e.g., Premium Comfort Polo Tee" 
+                <input type="text" id="baseName" name="productName"  placeholder="e.g., Premium Comfort Polo Tee" 
                        value="<%= locals.formData && formData.productName ? formData.productName : '' %>"
                        class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition font-medium">
+                <p id="baseNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
 
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
-                <input type="text" id="brandName" name="brand" required placeholder="e.g., Levi's, Zara, Dresson Original" 
+                <input type="text" id="brandName" name="brand"  placeholder="e.g., Levi's, Zara, Dresson Original" 
                        value="<%= locals.formData && formData.brand ? formData.brand : '' %>"
                        class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
+                <p id="brandNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
         </div>
 
         <div class="space-y-6">
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
-                <select id="parentCategory" name="parentCategory" required onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                <select id="parentCategory" name="parentCategory" onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
                     <option value="" disabled selected>Select Gender Target Room</option>
                     <option value="Men" <%= locals.formData && formData.parentCategory === 'Men' ? 'selected' : '' %>>Men</option>
                     <option value="Women" <%= locals.formData && formData.parentCategory === 'Women' ? 'selected' : '' %>>Women</option>
                     <option value="Kids" <%= locals.formData && formData.parentCategory === 'Kids' ? 'selected' : '' %>>Kids</option>
                 </select>
+                <p id="parentCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
 
             <div class="flex flex-col">
                 <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Sub-Category Assignment Tree</label>
-                <!-- ADDED: onchange="handleSubCategoryChange()" to track all 4 hierarchy levels! -->
-                <select id="subCategory" name="subCategory" required disabled onchange="handleSubCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-100 shadow-sm transition cursor-not-allowed font-medium text-gray-800">
+                <select id="subCategory" name="subCategory" disabled onchange="handleSubCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-100 shadow-sm transition cursor-not-allowed font-medium text-gray-800">
                     <option value="" disabled selected>Please select a gender target first</option>
                 </select>
+                <p id="subCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
         </div>
 
         <div class="md:col-span-2 flex flex-col">
             <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
-            <textarea name="description" required rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
+            <textarea id="description" name="description" rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : '' %></textarea>
+            <p id="descriptionError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
         </div>
         
         <div class="flex flex-col">
@@ -74,6 +78,7 @@
                        class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
             </div>
+            <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront product card badge.</span>
         </div>
     </div>
@@ -103,12 +108,12 @@
         <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 empty:hidden"></div>
     </div>
 
-    <!-- SECTION 3: Upgraded Variants & Apparel Attributes Workspace -->
+    <!-- For upgraded Variants & Apparel Attributes Workspace -->
     <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div>
                 <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants & Apparel Attributes Workspace</h3>
-                <p class="text-[11px] text-gray-400 mt-0.5">Use industry-standard presets for storefront filtering consistency, or construct custom rules.</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">Use predefined quick defaults for clean data, or construct custom rules.</p>
             </div>
             
             <div class="flex items-center space-x-2">
@@ -123,44 +128,25 @@
             </div>
         </div>
 
+        <!-- For quick addition Toolbar -->
         <div class="bg-white p-3 rounded-lg border border-gray-200 mb-6 shadow-2xs flex flex-wrap items-center gap-2">
             <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
-                <i class="fas fa-bolt text-amber-500"></i> Quick Presets:
+                <i class="fas fa-bolt text-amber-500"></i> Row Shortcuts:
             </span>
             <button type="button" onclick="addNewOptionRow('Size')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Size</button>
             <button type="button" onclick="addNewOptionRow('Color')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Color</button>
             <button type="button" onclick="addNewOptionRow('Fit Type')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fit Type</button>
-            <button type="button" onclick="addNewOptionRow('Sleeve Length')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Sleeve Length</button>
             <button type="button" onclick="addNewOptionRow('Fabric / Material')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fabric</button>
-            <button type="button" onclick="addNewOptionRow('Neckline / Collar')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Neckline</button>
-            <button type="button" onclick="addNewOptionRow('Pattern / Print')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Pattern</button>
         </div>
-
         <div id="optionsContainer" class="space-y-4">
-            <div class="grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row">
-                <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                    <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer">
-                        <option value="Size" selected>Size</option>
-                        <option value="Color">Color</option>
-                        <option value="Fit Type">Fit Type</option>
-                        <option value="Sleeve Length">Sleeve Length</option>
-                        <option value="Fabric / Material">Fabric / Material</option>
-                        <option value="Neckline / Collar">Neckline / Collar</option>
-                        <option value="Pattern / Print">Pattern / Print</option>
-                        <option value="Occasion">Occasion</option>
-                    </select>
-                </div>
-                <div class="col-span-8">
-                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL, XXL (separate entries with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
-                </div>
-                <div class="col-span-1 text-center">
-                    <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button>
-                </div>
-            </div>
         </div>
     </div>
 
-    <!-- Dynamic Multi-Variant Matrix Card -->
+    <!--  Multi-Variant Matrix Card -->
+    <div id="matrixGlobalError" class="inline-error hidden px-6 py-3 mb-4 rounded-lg bg-red-50 text-red-600 text-xs font-bold border border-red-200">
+        <i class="fas fa-exclamation-circle mr-1"></i> You must configure at least one valid variant combination.
+    </div>
+
     <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm hidden" id="combinationsCard">
         <div class="bg-gray-50/80 px-6 py-4 border-b border-gray-200">
             <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation Matrix</h3>
@@ -188,7 +174,7 @@
 
 </form>
 
-<!-- MODAL 1: Custom Variant Creator -->
+<!-- Custom Variant Creator -->
 <div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-xs">
     <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
         <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -224,12 +210,22 @@
     } catch (error) {
         console.error("Critical failure parsing category datasets:", error);
     }
-
+    const defaultPresets = {                                                                       // For default Pre-defined Options Data
+        'Size': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
+        'Color': ['Black', 'White', 'Navy Blue', 'Red', 'Olive Green', 'Grey', 'Maroon', 'Multi'],
+        'Fit Type': ['Slim Fit', 'Regular Fit', 'Oversized', 'Relaxed Fit', 'Tailored'],
+        'Sleeve Length': ['Full Sleeve', 'Half Sleeve', 'Sleeveless', '3/4 Sleeve'],
+        'Fabric / Material': ['100% Cotton', 'Pure Linen', 'Denim', 'Polyester Blend', 'Silk'],
+        'Neckline / Collar': ['Crew Neck', 'V-Neck', 'Polo Collar', 'Mandarin Collar', 'Hooded'],
+        'Pattern / Print': ['Solid', 'Striped', 'Checked', 'Floral Print', 'Graphic Print']
+    };
     document.addEventListener("DOMContentLoaded", () => {
         if (document.getElementById('parentCategory').value) {
             handleParentCategoryChange();
         }
+        addNewOptionRow('Size');
     });
+
 
     function handleParentCategoryChange() {
         const activeGender = document.getElementById('parentCategory').value;
@@ -241,7 +237,6 @@
             const isNotRoot = cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined;
             return isMatchingGender && isNotRoot;
         });
-
         if (filteredMatches.length > 0) {
             subSelect.disabled = false;
             subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
@@ -272,13 +267,14 @@
             subSelect.innerHTML = `<option value="" disabled selected>No sub-categories exist for ${activeGender}</option>`;
         }
         
-        // Reset ancestors when gender changes
         document.getElementById('ancestorsContainer').innerHTML = '';
     }
+
+
     function handleSubCategoryChange() {
         const selectedId = document.getElementById('subCategory').value;
         const container = document.getElementById('ancestorsContainer');
-        container.innerHTML = ''; // Clear previous tree
+        container.innerHTML = ''; 
 
         if (!selectedId) return;
 
@@ -300,18 +296,16 @@
             input.value = id;
             container.appendChild(input);
         });
-        
-        console.log(" Indexed 4-Level Lineage Captured:", ancestors);
     }
+
+
     function addNewOptionRow(presetType = 'Size') {
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
-        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
         
-        const standardAttributes = [
-            "Size", "Color", "Fit Type", "Sleeve Length", 
-            "Fabric / Material", "Neckline / Collar", "Pattern / Print", "Occasion"
-        ];
+        const standardAttributes = Object.keys(defaultPresets);
+        standardAttributes.push("Occasion", "Custom Attribute");
 
         let optionsHtml = standardAttributes.map(attr => {
             const isSelected = attr === presetType ? 'selected' : '';
@@ -320,105 +314,162 @@
 
         row.innerHTML = `
             <div class="col-span-3">
-                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer">
+                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer mt-1">
                     ${optionsHtml}
                 </select>
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
+                
+                <!-- NEW: Default Preset Clickable Chips Container -->
+                <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
+                
             </div>
-            <div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button></div>
+            <div class="col-span-1 text-center mt-2">
+                <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button>
+            </div>
         `;
         
         container.appendChild(row);
-        const newSelect = row.querySelector('.option-type');
-        updateRowPlaceholders(newSelect);
+        updateRowPlaceholders(row.querySelector('.option-type'));
     }
+
+    
+    
+    // Function to append clicked preset chip to the input box
+    function appendPresetToInput(btn, value) {
+        const inputField = btn.closest('.col-span-8').querySelector('.option-values');
+        let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean);
+        
+        if (!currentValues.includes(value)) {
+            currentValues.push(value);
+            inputField.value = currentValues.join(', ') + ', '; // Add trailing space for ease of typing
+            generateCombinationsMatrix();
+        }
+        inputField.focus();
+    }
+
+
+    function updateRowPlaceholders(select) {
+        const parentCol = select.closest('.option-row').querySelector('.col-span-8');
+        const input = parentCol.querySelector('.option-values');
+        const presetContainer = parentCol.querySelector('.preset-container');
+        const type = select.value;
+        if (defaultPresets[type]) {
+            const chipsHtml = defaultPresets[type].map(val => 
+                `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-gray-50 border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-semibold transition-colors cursor-pointer shadow-xs">${val}</button>`
+            ).join('');
+            presetContainer.innerHTML = chipsHtml;
+        } else {
+            presetContainer.innerHTML = ''; // Clear chips for Custom Attributes
+        }
+        const placeholderMap = {
+            'Size': "Type sizes or click presets below...",
+            'Color': "Type colors or click presets below...",
+            'Fit Type': "Type fits or click presets below...",
+        };        
+        input.placeholder = placeholderMap[type] || `Enter discrete variables for ${type} (separate with commas)`;
+        generateCombinationsMatrix();
+    }
+
 
     function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
     function closeCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', false); }
 
+    
     function submitCustomVariantRow() {
         const inputName = document.getElementById('customVariantInputName').value.trim();
-        if(!inputName) {
-            if (typeof showCustomAlert === 'function') {
-                return showCustomAlert("Please clarify a variant identifier parameter tag.", "Missing Input", "error");
-            } else {
-                return alert("Please clarify a variant identifier parameter tag.");
-            }
-        }
-        
+        if(!inputName) return alert("Please clarify a variant identifier parameter tag.");
         const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
         const container = document.getElementById('optionsContainer');
-        const row = document.createElement('div');
-        
-        row.className = "grid grid-cols-12 gap-4 items-center bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
-        row.innerHTML = '<div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2"><span>' + cleanKeyLabel + '</span><input type="hidden" class="option-type" value="' + cleanKeyLabel + '"></div><div class="col-span-8"><input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ' + cleanKeyLabel + ' (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium"></div><div class="col-span-1 text-center"><button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button></div>';
+        const row = document.createElement('div');        
+        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        row.innerHTML = `
+            <div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2 mt-2">
+                <span>${cleanKeyLabel}</span>
+                <input type="hidden" class="option-type" value="${cleanKeyLabel}">
+            </div>
+            <div class="col-span-8">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ${cleanKeyLabel} (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
+            </div>
+            <div class="col-span-1 text-center mt-2">
+                <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button>
+            </div>`;
         
         container.appendChild(row);
         closeCustomVariantModal();
         document.getElementById('customVariantInputName').value = '';
     }
 
+
     function removeOptionRow(btn) {
         btn.closest('.option-row').remove();
         generateCombinationsMatrix();
     }
 
-    function updateRowPlaceholders(select) {
-        const input = select.closest('.option-row').querySelector('.option-values');
-        const type = select.value;
-
-        const placeholderMap = {
-            'Size': "e.g., S, M, L, XL, XXL or 30, 32, 34 (separate with commas)",
-            'Color': "e.g., Navy Blue, Olive Green, Maroon, Classic Black (separate with commas)",
-            'Fit Type': "e.g., Slim Fit, Oversized, Regular Fit, Relaxed, Tailored (separate with commas)",
-            'Sleeve Length': "e.g., Full Sleeve, Half Sleeve, Sleeveless, 3/4 Sleeve (separate with commas)",
-            'Fabric / Material': "e.g., 100% Cotton, Pure Linen, Denim, Poly-Blend, Silk (separate with commas)",
-            'Neckline / Collar': "e.g., Crew Neck, V-Neck, Polo Collar, Mandarin Collar, Hooded (separate with commas)",
-            'Pattern / Print': "e.g., Solid, Striped, Checked, Floral Print, Graphic Print (separate with commas)",
-            'Occasion': "e.g., Casual Wear, Formal, Party Wear, Athletic / Sports (separate with commas)"
-        };
-        input.placeholder = placeholderMap[type] || `Enter discrete variables for ${type} (separate with commas)`;
-        generateCombinationsMatrix();
-    }
 
     function generateCombinationsMatrix() {
         const rows = document.getElementsByClassName('option-row');
         const baseName = document.getElementById('baseName').value.trim() || "PROD";
-        const brandName = document.getElementById('brandName').value.trim() || "DRSN";
-        let arraysToCombine = [];
-        
+        const brandName = document.getElementById('brandName').value.trim() || "DRSN";        
+        let optionKeys = []; 
+        let arraysToCombine = [];        
         for (let row of rows) {
+            const type = row.querySelector('.option-type').value;
             const rawValue = row.querySelector('.option-values').value;
-            const cleanValues = rawValue.split(',').map(v => v.trim()).filter(v => v !== '');
-            if(cleanValues.length > 0) arraysToCombine.push(cleanValues);
+            const cleanValues = [...new Set(rawValue.split(',').map(v => v.trim()).filter(v => v !== ''))];            
+            if(cleanValues.length > 0) {
+                optionKeys.push(type); 
+                arraysToCombine.push(cleanValues);
+            }
         }
-
         const matrixCard = document.getElementById('combinationsCard');
         const tableBody = document.getElementById('matrixTableBody');
         tableBody.innerHTML = '';
-
         if(arraysToCombine.length === 0 || rows.length !== arraysToCombine.length) {
             return matrixCard.classList.add('hidden');
         }
-
         let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
         if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]);
-
         matrixCard.classList.remove('hidden');
-
         combinations.forEach((combo, index) => {
             const comboString = combo.join(' / ');
-            const generatedSkuSafe = brandName.substring(0,3).toUpperCase() + '-' + baseName.substring(0,3).toUpperCase() + '-' + combo.join('-').replace(/\s+/g, '').toUpperCase();
-            
+            const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const generatedSkuSafe = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`;
+            let sizeValue = 'Standard';
+            let colorValue = 'Standard';            
+            combo.forEach((val, i) => {
+                if (optionKeys[i] === 'Size') sizeValue = val;
+                if (optionKeys[i] === 'Color') colorValue = val;
+            });
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-50/50 transition";
-            tr.innerHTML = '<td class="py-4 px-6 font-bold text-gray-900"><span>' + comboString + '</span><input type="hidden" name="variants[' + index + '][name]" value="' + comboString + '"></td><td class="py-4 px-6"><input type="text" name="variants[' + index + '][sku]" value="' + generatedSkuSafe + '" class="w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500"></td><td class="py-4 px-6 text-right"><div class="relative inline-block w-full"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input type="number" name="variants[' + index + '][price]" required min="0" placeholder="0" class="w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500"></div></td><td class="py-4 px-6 text-center"><input type="number" name="variants[' + index + '][stock]" required min="0" placeholder="0" value="0" class="w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500"></td>';
-            
+            tr.innerHTML = `
+                <td class="py-4 px-6 font-bold text-gray-900">
+                    <span class="text-xs">${comboString}</span>
+                    <input type="hidden" name="variants[${index}][name]" value="${comboString}">
+                    <!-- EXPLICIT DATA TO BYPASS BACKEND REGEX HACKS -->
+                    <input type="hidden" name="variants[${index}][size]" value="${sizeValue}">
+                    <input type="hidden" name="variants[${index}][color]" value="${colorValue}">
+                </td>
+                <td class="py-4 px-6">
+                    <input type="text" name="variants[${index}][sku]" value="${generatedSkuSafe}" class="matrix-variant-sku w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                </td>
+                <td class="py-4 px-6 text-right">
+                    <div class="relative inline-block w-full">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                        <input type="number" name="variants[${index}][price]" min="0" placeholder="0" class="matrix-variant-price w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                    </div>
+                </td>
+                <td class="py-4 px-6 text-center">
+                    <input type="number" name="variants[${index}][stock]" min="0" placeholder="0" value="0" class="matrix-variant-stock w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                </td>
+            `;        
             tableBody.appendChild(tr);
         });
     }
+
+
 
     function toggleModalVisibility(modalId, contentId, shouldShow) {
         const modal = document.getElementById(modalId);
@@ -431,18 +482,16 @@
             setTimeout(() => { modal.classList.add('hidden'); }, 200);
         }
     }
-
     document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
     document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
-
-    //  IMAGE GALLERY MANAGEMENT
     const processedFilesArray = []; 
     const dataTransfer = new DataTransfer(); 
+
+
 
     function handleFileSelect(event) {
         const files = Array.from(event.target.files);
         if (!files.length) return;
-
         files.forEach(file => {
             if (file.type.startsWith('image/')) {
                 processedFilesArray.push(file);
@@ -454,6 +503,7 @@
         event.target.value = ''; 
     }
 
+
     function updateFormFileInput() {
         dataTransfer.items.clear();
         processedFilesArray.forEach(file => dataTransfer.items.add(file));
@@ -463,6 +513,7 @@
             document.getElementById('imageCountError').classList.add('hidden');
         }
     }
+
 
     function renderPreviews() {
         const grid = document.getElementById('imagePreviewGrid');
@@ -487,6 +538,7 @@
         });
     }
 
+
     function removeImage(index) {
         processedFilesArray.splice(index, 1);
         updateFormFileInput();
@@ -509,17 +561,81 @@
             }
         });
     }
-
-    // FORM SUBMISSION INTERCEPTOR
     document.getElementById('productForm').addEventListener('submit', function(event) {
-        if (processedFilesArray.length < 3) {
-            event.preventDefault();
+        let isValid = true;
+        document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500', 'bg-red-50'));
+        function fireError(elementId, errorText) {
+            const inputField = document.getElementById(elementId);
+            const errorElement = document.getElementById(elementId + 'Error');
+            if (inputField && errorElement) {
+                inputField.classList.add('border-red-500');
+                errorElement.innerText = errorText;
+                errorElement.classList.remove('hidden');
+                isValid = false;
+            }
+        }
+        const baseName = document.getElementById('baseName').value.trim();
+        if (!baseName) fireError('baseName', 'Product name is mandatory.');
+        const brandName = document.getElementById('brandName').value.trim();
+        if (!brandName) fireError('brandName', 'Brand name is mandatory.');
+        const discount = document.getElementById('discountPercent').value;
+        if (discount === '' || discount < 0 || discount > 99) {
+            fireError('discountPercent', 'Discount must be a valid number between 0 and 99.');
+        }
+        const parentCat = document.getElementById('parentCategory').value;
+        if (!parentCat) fireError('parentCategory', 'Please select a Target Gender.');
+        const subCat = document.getElementById('subCategory').value;
+        if (!subCat) fireError('subCategory', 'Please assign a Sub-Category.');
+        const desc = document.getElementById('description').value.trim();
+        if (!desc) fireError('description', 'Rich description is mandatory.');
+        if (typeof processedFilesArray !== 'undefined' && processedFilesArray.length < 3) {
             const errorBox = document.getElementById('imageCountError');
-            errorBox.classList.remove('hidden');
-            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });            
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert("A minimum of 3 cropped gallery images is required to publish this product.", "Gallery Error", "error");
+            if (errorBox) errorBox.classList.remove('hidden');
+            isValid = false;
+        }
+        const matrixBody = document.getElementById('matrixTableBody');
+        const rows = matrixBody ? matrixBody.querySelectorAll('tr') : [];
+        const matrixGlobalErr = document.getElementById('matrixGlobalError');        
+        if (rows.length === 0) {
+            if (matrixGlobalErr) {
+                matrixGlobalErr.innerText = "Validation Error: At least one variant (Size, Color, etc.) must be created.";
+                matrixGlobalErr.classList.remove('hidden');
+            }
+            isValid = false;
+        } else {
+            rows.forEach(tr => {
+                const priceInput = tr.querySelector('.matrix-variant-price');
+                const stockInput = tr.querySelector('.matrix-variant-stock');
+                const skuInput = tr.querySelector('.matrix-variant-sku');
+
+                if (!skuInput || !skuInput.value.trim()) {
+                    if (skuInput) skuInput.classList.add('border-red-500', 'bg-red-50');
+                    isValid = false;
+                }
+                if (!priceInput || priceInput.value === '' || parseFloat(priceInput.value) < 0) {
+                    if (priceInput) priceInput.classList.add('border-red-500', 'bg-red-50');
+                    isValid = false;
+                }
+                if (!stockInput || stockInput.value === '' || parseInt(stockInput.value) < 0) {
+                    if (stockInput) stockInput.classList.add('border-red-500', 'bg-red-50');
+                    isValid = false;
+                }
+            });
+
+            if (!isValid && matrixGlobalErr) {
+                matrixGlobalErr.innerText = "Validation Error: Please fill in valid SKUs, prices, and stock for all variants.";
+                matrixGlobalErr.classList.remove('hidden');
+            }
+        }
+
+        if (!isValid) {
+            event.preventDefault(); 
+            const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
     });
+
 </script>

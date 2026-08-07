@@ -1,6 +1,6 @@
 <div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full px-4 py-8">
     
-    <!--  LEFT SIDEBAR (Locked Width & Protected from Shrinking) -->
+    <!--  For sidebar -->
     <aside class="w-full md:w-64 shrink-0">
         <%- include('../partial/user/shopSidebar', { 
             categories: typeof categories !== 'undefined' ? categories : [], 
@@ -9,10 +9,10 @@
         }) %>
     </aside>
 
-    <!-- RIGHT CONTENT AREA (Promotions, Grid & Pagination) -->
+    <!-- For Promotions, Grid & Pagination -->
     <section class="flex-grow space-y-6 min-w-0">
         
-        <!-- Promotional Banner Matching Figma -->
+        <!-- For  Banner -->
         <div class="bg-[#f2e9e9] rounded-xl h-44 relative flex items-center px-8 border border-gray-200/60 shadow-xs overflow-hidden">
             <div class="z-10 max-w-md">
                 <p class="text-[11px] font-extrabold text-gray-600 uppercase tracking-widest mb-1">Limited Time Offer</p>
@@ -64,3 +64,53 @@
 <%- include('../partial/shared/alertSuccess') %>
 <%- include('../partial/shared/alertError') %>
 <%- include('../partial/shared/warning') %>
+
+<script>
+    async function toggleWishlist(productId, btnElement) {
+        try {
+            // Find the <i> tag inside the clicked button so we can change its color
+            const icon = btnElement.querySelector('i');
+            
+            const response = await fetch('/wishlist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId })
+            });
+            
+            // If the user isn't logged in, the server might send back a 401 Unauthorized status
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=/shop';
+                return;
+            }
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                if (data.action === 'added') {
+                    // Change to solid red heart
+                    icon.classList.remove('far', 'text-gray-400');
+                    icon.classList.add('fas', 'text-red-500');
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert("Item saved to your Wishlist!", "Wishlist Updated", "success");
+                    }
+                } else {
+                    // Change back to hollow outline heart
+                    icon.classList.remove('fas', 'text-red-500');
+                    icon.classList.add('far', 'text-gray-400');
+                    if (typeof showCustomAlert === 'function') {
+                        showCustomAlert("Item removed from Wishlist.", "Wishlist Updated", "warning");
+                    }
+                }
+            } else {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(data.message || "Could not update wishlist.", "Error", "error");
+                }
+            }
+        } catch (error) {
+            console.error("Wishlist sync error:", error);
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("A network error occurred. Please try again.", "Connection Error", "error");
+            }
+        }
+    }
+</script>

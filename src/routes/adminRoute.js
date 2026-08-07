@@ -7,9 +7,12 @@ import * as categoryController from '../controller/adminController/adminCategory
 import upload from '../config/multer.js';
 import { isAdmin } from '../middleware/adminAuth.js';
 import { uploadProduct } from '../middleware/uploadMiddleware.js';
+import * as couponController from '../controller/adminController/couponController.js';
 
 
 const router = express.Router();
+
+
 
 // Route for 'admin login'
 router.route('/login')
@@ -23,10 +26,9 @@ router.get('/dashboard', isAdmin, adminController.loadDashboard);
 router.get('/users', isAdmin, userController.getUsersList);
 router.get('/users/:id', isAdmin, userController.getUserDetails);
 
-// router.route('/users/:id/edit')
-//       .get(isAdmin, userController.loadEditUser)
-//       .post(isAdmin, upload.single('image'), userController.updateUserDetails);
 
+
+// Route for 'display' user 'balance' in 'admin' and its 'process'
 router.route('/users/:id/balance')
       .get(isAdmin, userController.loadEditBalance)
       .post(isAdmin, userController.updateBalance);
@@ -35,36 +37,57 @@ router.get('/users/:id/transactions', isAdmin, userController.getUserTransaction
 router.get('/users/:id/orders', isAdmin, userController.getUserOrders);
 router.post('/users/:id/toggle-block', isAdmin, userController.toggleBlockStatus);
 
-
+// Route for 'display' admin 'product' page
 router.get('/products', isAdmin, productController.getProductsList);
 
+// Router chaining for 'display' admin 'product add' page and its 'process'
 router.route('/products/add')
       .get(isAdmin, productController.getAddProduct)
-      .post(isAdmin, uploadProduct.array('productImages', 4), productController.postAddProduct);
+      .post(isAdmin, uploadProduct.array('productImages', 4), productController.postAddProduct);      // Here 'uploadProduct' is the 'multer' middleware and it handle upload images, video etc into 'cloudinary'.
 
-
+// Router chaining for 'display' admin 'product edit' page and its 'process'
 router.route('/products/edit/:id')
       .get(isAdmin, productController.getEditProduct)
-        .post(isAdmin, uploadProduct.array('productImages', 4), productController.postEditProduct);
+      .post(isAdmin, uploadProduct.array('productImages', 4), productController.postEditProduct);
 
 router.post('/products/toggle-list/:id', isAdmin, productController.toggleProductList);
 
+// Routes for 'display' category list
 router.get('/categories', isAdmin, categoryController.getCategoriesList);
 
+// Routes for 'toggle' category list
+router.post('/category/toggle/:id', categoryController.toggleCategoryStatus);
+
+// Route for 'admin category' 'add'
 router.route('/category/add')
       .get(isAdmin, categoryController.getAddCategory)
       .post(isAdmin, categoryController.postAddCategory);
 
+// Route for 'admin category' 'edit'.
 router.route('/category/edit/:id')
       .get(isAdmin, categoryController.getEditCategory)
       .post(isAdmin, categoryController.postEditCategory);
 
 
-router.post('/category/toggle-list/:id', isAdmin, categoryController.toggleCategoryList);
+// router.post('/category/toggle-list/:id', isAdmin, categoryController.toggleCategoryList);
 router.post('/category/delete/:id', isAdmin, categoryController.deleteCategory);
 
-
+// Route for 'logout' admin
 router.get('/logout', adminController.logout);
+
+// Route for admin 'coupon' page display
+router.get('/coupons', isAdmin, couponController.loadCouponsPage);
+
+// Router chaining for 'display' admin 'add coupon' page and its 'process'
+router.route('/coupons/add')
+    .get(isAdmin, couponController.loadAddCouponPage)
+    .post(isAdmin, couponController.createCoupon);
+
+// Router chaining for 'display' admin 'edit coupon' page and its 'process'
+router.route('/coupons/edit/:id')
+    .get(isAdmin, couponController.loadEditCouponPage)
+    .post(isAdmin, couponController.updateCoupon);
+
 
 export default router;
 

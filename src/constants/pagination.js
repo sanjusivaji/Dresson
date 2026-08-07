@@ -1,0 +1,4 @@
+export const PAGINATION = {
+    ADMIN_TABLE_LIMIT: 5,
+    USER_SHOP_LIMIT: 12
+};

@@ -59,7 +59,7 @@ export const processAddAddress = async (req, res) => {
         res.redirect('/profile/address'); 
     } catch (error) {
         logger.error("Error saving new address:", error);
-        res.render('user/addAddress', {                  // This part for 'processing' 'add Product' page and we 'rendering' the 'profile/address' page in 'catch' block because 'catch' the 'errors' occurs in 'addNewAddress()', and we use 'res.render()' to 'prevent' the user from having to type things 'twice' ie we put 'req.body' inside the object of 'res.render()'(but if we use 'res.redirect()' it goes to that page, but 'not' dispaly the previous data ) and it has all previous data that user input in the form 
+        res.render('user/addAddress', {                                                    // This part for 'processing' 'add Product' page and we 'rendering' the 'profile/address' page in 'catch' block because 'catch' the 'errors' occurs in 'addNewAddress()', and we use 'res.render()' to 'prevent' the user from having to type things 'twice' ie we put 'req.body' inside the object of 'res.render()'(but if we use 'res.redirect()' it goes to that page, but 'not' dispaly the previous data ) and it has all previous data that user input in the form 
             layout: 'layout/user',
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
@@ -144,7 +144,7 @@ export const checkNameEmail = async (req, res) => {
         const user = await User.findOne({ email: clearEmail });        
         if (user) {
             return res.status(409).json({
-                success: false, // Changed to false because it's a conflict!
+                success: false, 
                 message: "User already exist"
             });
         }        

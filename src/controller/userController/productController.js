@@ -1,5 +1,8 @@
 import * as userProductService from '../../services/user/userProductServices.js';
+import Product from '../../model/productModel.js'
 
+
+// For display 'home' page
 export const getShopPage = async (req, res) => {
     try {
         const catalogData = await userProductService.compileShopCatalog(req.query); //  'compileShopCatalog()' done all 'searching' , filtering etc
@@ -15,6 +18,9 @@ export const getShopPage = async (req, res) => {
     }
 };
 
+
+
+// For 'display' 'product details'
 export const getProductDetails = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -25,14 +31,20 @@ export const getProductDetails = async (req, res) => {
                 pageTitle: "Product Not Found - Dresson",
                 message: "This apparel unit is no longer available in our active catalog."
             });
-        }
+        }        
+        const relatedProducts = await Product.find({                                        // Find products in the same subcategory, but exclude the current product being viewed
+            subCategory: product.subCategory._id,
+            _id: { $ne: product._id }, 
+            isListed: true
+        })
+        .limit(4).lean();
         res.render('user/productDetails', {
-            product, // Pass the product to the EJS template
+            product, 
             layout: 'layout/user',
-            pageTitle: `${product.name} - Dresson`, // Use product.name directly
-            activePage: 'shop'
+            pageTitle: `${product.name} - Dresson`, 
+            activePage: 'shop',
+            relatedProducts
         });
-
     } catch (error) {
         console.error("Critical failure executing storefront product details rendering:", error);
         if (error.message === 'Product not found or is unlisted') {

@@ -7,6 +7,8 @@ import uploadCloud from '../middleware/uploadMiddleware.js';
 import { requireActiveUser } from '../middleware/userAuth.js';
 import * as productController from '../controller/userController/productController.js';
 import * as cartController from '../controller/userController/cartController.js';
+import * as wishlistController from '../controller/userController/wishlistController.js';
+import * as checkoutController from '../controller/userController/checkoutController.js';
 
 
 const router = express.Router();
@@ -81,7 +83,7 @@ router.post('/profile/change-email-verify', userProfileController.changeEmailVer
 // Route for 'change password' in profile
 router.post('/profile/update-password', userProfileController.changePassword);
 
-// Route for 'change profile image' in profile
+// Route for 'change profile image' in profile by using 'uploadCloud' middleware
 router.post('/profile/update-avatar', uploadCloud.single('profileImage'), userProfileController.updateAvatar);
 
 // Route for 'display' the 'address' page of 'user'
@@ -109,5 +111,16 @@ router.post('/cart/add', requireActiveUser, cartController.postAddToCart);
 router.patch('/cart/update-quantity', requireActiveUser, cartController.patchUpdateQuantity);
 router.delete('/cart/remove/:itemId', requireActiveUser, cartController.deleteRemoveItem);
 
+// Route for display 'wishlist' 
+router.get('/wishlist', requireActiveUser, wishlistController.getWishlistPage);
+
+// Route for 'wishlist' toggle
+router.post('/wishlist/toggle', requireActiveUser, wishlistController.toggleWishlistItem);
+
+// Route for 'checkout' page
+router.get('/checkout', requireActiveUser, checkoutController.getCheckoutPage);
+
+// This will handle the final "Place Order" button on the checkout page
+router.post('/checkout/place-order', requireActiveUser, checkoutController.placeOrder);
 
 export default router;

@@ -1,7 +1,6 @@
 
 <div class="bg-[#fcfcfc] rounded-xl border border-gray-200/80 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group">
     
-    <!-- 1 IMAGE & CIRCULAR DISCOUNT BADGE -->
     <div class="relative aspect-3/4 bg-gray-100 overflow-hidden">
         
         <!-- Safe Image Extraction -->
@@ -26,8 +25,10 @@
             <span class="text-[9px] mt-0.5">Off</span>
         </div>
 
-        <!-- Optional Wishlist Heart (Top Left) -->
-        <button type="button" class="absolute top-2.5 left-2.5 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition shadow-2xs">
+       <!-- Wishlist Heart (Top Left) -->
+        <button type="button" 
+                onclick="toggleWishlist('<%= product._id %>', this)" 
+                class="absolute top-2.5 left-2.5 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition shadow-2xs z-10 cursor-pointer">
             <i class="far fa-heart text-xs"></i>
         </button>
     </div>
@@ -35,7 +36,7 @@
     <!-- PRODUCT DETAILS & PRICING -->
     <div class="p-4 flex flex-col flex-grow justify-between space-y-3 bg-[#faf9f9]">
         <div>
-            <!-- Brand Name (Figma Red Style) -->
+   
             <p class="text-[11px] font-bold text-red-700 uppercase tracking-wide truncate"><%= product.brand || 'DRESSON' %></p>
             
             <!-- Product Title -->
@@ -43,7 +44,7 @@
                 <%= product.name %>
             </a>
 
-            <!-- 3. RATINGS & REVIEW COUNT -->
+       
             <% 
                 const ratingValue = product.rating || 4; 
                 const reviewCount = product.numReviews || product.reviews?.length || 3; 
@@ -58,7 +59,7 @@
                 <span class="text-gray-400 font-normal ml-1">(<%= reviewCount %>)</span>
             </div>
 
-            <!-- 4. SELLING PRICE, STRIKETHROUGH MRP & DISCOUNT TEXT -->
+          
             <div class="mt-2 flex flex-col">
                 <span class="text-base font-black text-gray-900">₹<%= Number(displayPrice).toLocaleString('en-IN') %></span>
                 <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
@@ -86,7 +87,7 @@
             </div>
         </div>
 
-        <!-- 6. FORM CONNECTED TO BACKEND: QUANTITY & ACTION BUTTONS -->
+     
         <div class="pt-2 border-t border-gray-200/80">
             <% if (isStockAvailable) { %>
                 <!-- Active Form for In-Stock Items -->

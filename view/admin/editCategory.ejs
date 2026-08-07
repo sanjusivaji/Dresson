@@ -121,7 +121,7 @@
         filterParentOptions(this.value);
     });
 
-    // 2. Realtime URL Slug Compiling Synchronizer Engine
+    // Realtime URL Slug Compiling Synchronizer Engine
     categoryNameInput.addEventListener('input', function() {
         const compiledSlug = this.value
             .toLowerCase()
@@ -130,7 +130,7 @@
         slugInput.value = compiledSlug;
     });
 
-    // 3. Custom Client-Side Form Validation using your Universal Modal!
+    //Custom Client-Side Form Validation using your Universal Modal!
     document.getElementById('editCategoryForm').addEventListener('submit', function(e) {
         const name = categoryNameInput.value.trim();
         const desc = document.getElementById('categoryDescription').value.trim();

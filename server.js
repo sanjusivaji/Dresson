@@ -51,14 +51,6 @@ app.use(passport.session());
 app.use('/', userRoute);
 app.use('/admin', adminRoutes);
 
-app.use(flash());
-
-// 3. OPTIONAL BUT RECOMMENDED: Make flash messages globally available to all EJS files!
-app.use((req, res, next) => {
-    res.locals.errorMessage = req.flash('error');
-    res.locals.successMessage = req.flash('success');
-    next();
-});
 
 // Global error middleware 
 app.use(globalErrorHandler);
@@ -68,7 +60,7 @@ const PORT = process.env.PORT || 3000;
 connectDB().then(() => {                                                       // 'connectDb' is 'asynchronous' operation and return 'Promise' object, so we use 'then()'
     app.listen(PORT, () => {
         logger.info(` Dresson Server is running on http://localhost:${PORT}`);
-    });
+    }); 
 });
 
 
