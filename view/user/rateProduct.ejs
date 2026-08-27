@@ -1,0 +1,230 @@
+<%- contentFor('body') %>
+
+<style>
+    footer, .footer, #footer {
+        display: none !important;
+    }
+</style>
+
+<!-- Shared Alerts -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+
+<main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    
+    <!-- Title -->
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-10 text-center">Rate Your Product</h1>
+
+
+    <!-- Success Banner -->
+        <% if (typeof successMsg !== 'undefined' && successMsg) { %>
+            <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-8 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    <span class="font-bold text-sm"><%= successMsg %></span>
+                </div>
+                <!-- <a href="/profile/orders" class="text-xs font-bold text-green-700 hover:text-green-900 underline transition">
+                    Back to Orders
+                </a> -->
+            </div>
+        <% } %>
+
+        <!-- Rating Form -->
+        <form action="/product/rate/<%= typeof item !== 'undefined' ? item.productId : '' %>" method="POST" enctype="multipart/form-data">
+
+    <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-100">
+        
+        <!-- Top Section: Product Details & Back Button -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 pb-6 border-b border-gray-100 gap-4">
+            
+            <!-- Product Info -->
+            <div class="flex items-center space-x-4">
+                <!-- Assuming 'item' is passed from your controller with product details -->
+                <img src="<%= typeof item !== 'undefined' && item.image ? item.image : '/images/default-dress.jpg' %>" 
+                     alt="Product Image" 
+                     class="w-16 h-20 object-cover rounded-md border border-gray-200">
+                
+                <div class="text-sm text-gray-700">
+                    <p class="font-bold text-gray-900"><%= typeof item !== 'undefined' ? item.name : 'Biba half sleeve' %></p>
+                    <p>Quantity: <%= typeof item !== 'undefined' ? item.quantity : '1' %></p>
+                    <p class="text-gray-500"><%= typeof item !== 'undefined' ? item.attributes : 'M Red Cotton' %></p>
+                </div>
+            </div>
+
+            <!-- Back to Order Button -->
+            <!-- Update the href to point to your specific order details route -->
+            <a href="/profile/orders" class="px-6 py-2 border border-gray-300 rounded-full text-sm font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+                Back to Order
+            </a>
+        </div>
+
+       <!-- Rating Form -->
+<form action="/product/rate/<%= typeof item !== 'undefined' ? item.productId : '' %>" method="POST" enctype="multipart/form-data">
+    
+    <!-- Star Rating Section -->
+    <div class="flex flex-col items-center mb-10">
+        <p class="text-sm font-bold text-gray-800 mb-3">Rate Your Product</p>
+        
+        <!-- Updated: Light gray background, slightly larger stars -->
+        <div class="flex space-x-3 cursor-pointer bg-gray-50 border border-gray-200 px-6 py-3 rounded-full shadow-inner" id="starRatingContainer">
+            <input type="hidden" name="rating" id="ratingValue" value="0" required>
+            
+            <!-- Updated: Default text-gray-300 for unselected stars -->
+            <i class="fas fa-star text-gray-300 text-lg star-icon transition duration-200" data-value="1"></i>
+            <i class="fas fa-star text-gray-300 text-lg star-icon transition duration-200" data-value="2"></i>
+            <i class="fas fa-star text-gray-300 text-lg star-icon transition duration-200" data-value="3"></i>
+            <i class="fas fa-star text-gray-300 text-lg star-icon transition duration-200" data-value="4"></i>
+            <i class="fas fa-star text-gray-300 text-lg star-icon transition duration-200" data-value="5"></i>
+        </div>
+        <p id="ratingError" class="text-red-500 text-xs font-bold mt-2 hidden">Please select a rating.</p>
+    </div>
+
+    <!-- Message & Image Upload Section -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-8">
+        
+        <!-- Textarea for Message -->
+        <div class="md:col-span-8 flex flex-col">
+            <label for="message" class="text-sm font-bold text-gray-800 mb-2">Message <span class="text-red-500">*</span></label>
+            <textarea id="message" name="message" rows="5" 
+                      class="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-gray-400 transition resize-none shadow-sm"
+                      placeholder="Write your review here..."></textarea>
+            <p id="messageError" class="text-red-500 text-xs font-bold mt-2 hidden">Please write a review message before submitting.</p>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="md:col-span-4 flex flex-col items-center justify-start">
+            <p class="text-sm font-bold text-gray-800 mb-2">Upload Image</p>
+            
+            <label for="imageUpload" class="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition relative overflow-hidden group shadow-sm">
+                
+                <div id="uploadPlaceholder" class="flex flex-col items-center">
+                    <span class="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wide">Click Here</span>
+                    <i class="fas fa-camera text-2xl text-gray-400"></i>
+                </div>
+
+                <!-- Image Preview Element -->
+                <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden" alt="Preview">
+                
+                <!-- Overlay for changing image -->
+                <div class="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-white text-xs font-bold opacity-0 transition-opacity" id="changeOverlay">
+                    Change Image
+                </div>
+            </label>
+           <input type="file" id="imageUpload" name="reviewImage" accept="image/*" class="hidden" onchange="previewImage(event)"> 
+        </div>
+    </div>
+
+    <!-- Updated Action Buttons -->
+    <div class="flex justify-end space-x-4">
+        <!-- Elegant Brown Submit Button -->
+        <button type="submit" onclick="return validateRating()" class="px-8 py-2.5 bg-[#94847c] hover:bg-[#7a6c65] text-white text-xs font-bold rounded-full transition shadow-sm tracking-wide uppercase">
+            Submit
+        </button>
+        <!-- Clean Gray Cancel Button -->
+        <a href="/profile/orders" class="px-8 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-full transition shadow-sm tracking-wide uppercase flex items-center">
+            Cancel
+        </a>
+    </div>
+
+</form>
+
+
+
+<script>
+    // --- Star Rating Logic ---
+    const stars = document.querySelectorAll('.star-icon');
+    const ratingInput = document.getElementById('ratingValue');
+    const ratingError = document.getElementById('ratingError');
+
+    stars.forEach(star => {
+        star.addEventListener('mouseover', function() {
+            const value = this.getAttribute('data-value');
+            highlightStars(value);
+        });
+
+        star.addEventListener('click', function() {
+            const value = this.getAttribute('data-value');
+            ratingInput.value = value;
+            ratingError.classList.add('hidden'); 
+        });
+    });
+
+    document.getElementById('starRatingContainer').addEventListener('mouseleave', function() {
+        highlightStars(ratingInput.value);
+    });
+
+    function highlightStars(value) {
+        stars.forEach(star => {
+            if (star.getAttribute('data-value') <= value) {
+                star.classList.remove('text-gray-300');
+                star.classList.add('text-yellow-400'); // Gold for selected
+            } else {
+                star.classList.remove('text-yellow-400');
+                star.classList.add('text-gray-300'); // Gray for unselected
+            }
+        });
+    }
+
+    function validateRating() {
+        if (ratingInput.value === "0" || ratingInput.value === "") {
+            ratingError.classList.remove('hidden');
+            return false;
+        }
+        return true;
+    }
+
+    // --- Image Preview Logic ---
+    function previewImage(event) {
+        const input = event.target;
+        const preview = document.getElementById('imagePreview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const overlay = document.getElementById('changeOverlay');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                overlay.classList.replace('opacity-0', 'opacity-100');
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = "";
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            overlay.classList.replace('opacity-100', 'opacity-0');
+        }
+    }
+
+    function validateRating() {
+        let isValid = true;
+        
+        // 1. Check if Star Rating is selected
+        const ratingError = document.getElementById('ratingError');
+        if (ratingInput.value === "0" || ratingInput.value === "") {
+            ratingError.classList.remove('hidden');
+            isValid = false;
+        } else {
+            ratingError.classList.add('hidden');
+        }
+
+        // 2. Check if Message is written (Mandatory)
+        const messageInput = document.getElementById('message');
+        const messageError = document.getElementById('messageError');
+        
+        if (messageInput.value.trim() === "") {
+            messageError.classList.remove('hidden');
+            messageInput.classList.add('border-red-500', 'ring-1', 'ring-red-500'); // Highlight the box in red
+            isValid = false;
+        } else {
+            messageError.classList.add('hidden');
+            messageInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+        }
+
+        // Only submits if both the stars AND the message are filled out
+        return isValid; 
+    }
+</script>

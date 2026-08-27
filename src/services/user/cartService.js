@@ -81,6 +81,7 @@ export const addItemToCart = async (userId, productId, variantId, requestedQty =
         }        
         cart.items[existingItemIndex].quantity = newQty;
         cart.items[existingItemIndex].price = finalPrice;
+        cart.items[existingItemIndex].taxRate = product.taxRate || 0;
     } else {
         if (qtyToAdd > variant.stock || qtyToAdd > CART_CONFIG.MAX_QTY_PER_ITEM) {
             throw new Error(`Quantity exceeds available stock or maximum order limits.`);
@@ -94,6 +95,7 @@ export const addItemToCart = async (userId, productId, variantId, requestedQty =
             variantName: constructedVariantName,
             sku: variant.sku,
             price: finalPrice,
+            taxRate: product.taxRate || 0,
             image: displayImage,
             quantity: qtyToAdd
         });

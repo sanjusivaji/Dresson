@@ -32,13 +32,13 @@ export const createProduct = async (payload) => {
 //  For 'retrieve' document based on 'product Name'
 export const findProductByName = async (productName) => {
     return await Product.findOne({ 
-        name: { $regex: new RegExp(`^${productName}$`, 'i') }   // It return 'first' matching 'document' from 'Product' category based on 'productName' without 'case sensitive' and '`^${productName}$` ensures 'start'(ie '^') 'exact' name and it put in 'template literals'.
+        name: { $regex: new RegExp(`^${productName}$`, 'i') }              // It return 'first' matching 'document' from 'Product' category based on 'productName' without 'case sensitive' and '`^${productName}$` ensures 'start'(ie '^') 'exact' name and it put in 'template literals'.
     });
 };
 
 
 // For return product document based on 'id'
-export const findProductById = async (id) => {                // It returns only 'one' 'document' from the 'Product' model that matches the given '_id'.
+export const findProductById = async (id) => {                             // It returns only 'one' 'document' from the 'Product' model that matches the given '_id'.
     return await Product.findById(id);
 };
 

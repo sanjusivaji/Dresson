@@ -7,6 +7,7 @@ export const loadAddressPage = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');   // Checks 'user' loggedIn or not
         const dashboardData = await userAddressService.buildAddressDashboard(req.session.user, req.query.page); // For 'pagination' purpose of each user's addresses
+        //console.log(dashboardData)
         res.render('user/address', {                            // When 'rendering' time we 'donot' need '/user' because it know 'user/address' is inside 'view' but when 'redirecting' time we should write the 'path'(Eg, '/profile/address'). 
             ...dashboardData,                                   // In 'dashboardData' contains 'addresses' array 'totalPage', 'currentPage' etc  and without 'spread' operator,  without spread, we should write all data inside 'dashboardData' explicitly(ie 'address', 'currentPage' etc) and we should iterate like 'dashboardData.addresses.forEach(item =>{})' instead 'addresses.forEach(item => {})' in 'address.ejs'.
             layout: 'layout/user',                              // For 'layout' 
@@ -39,7 +40,7 @@ export const loadAddAddressPage = async (req, res) => {
         const errorMessage = req.query.error;
         res.render('user/addAddress', {
             layout: 'layout/user',
-            error: errorMessage,                  // It display when 'error' available through 'query parameter'.
+            error: errorMessage,                               // It display when 'error' available through 'query parameter'.
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
             error: null,

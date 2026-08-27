@@ -5,7 +5,8 @@ const reviewSchema = new mongoose.Schema({            // Here create a 'schema'(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     name: { type: String, required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, required: true, trim: true }
+    comment: { type: String, required: true, trim: true },
+    image: { type: String, required: false }
 }, { timestamps: true });
 
 // For 'variant' schema(later we include it in 'product' schema)
@@ -54,6 +55,7 @@ const productSchema = new mongoose.Schema({
     rating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
     totalStock: { type: Number, required: true, default: 0 },
+    taxRate: {type: Number,required: true, default: 0},
     isListed: { type: Boolean, default: true }
 }, { timestamps: true });
 

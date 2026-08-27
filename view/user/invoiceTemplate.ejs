@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <!-- Use Tailwind CDN for the PDF generation -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Force background colors to print */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    </style>
+</head>
+<body class="bg-white text-gray-900 font-sans p-8">
+
+    <!-- Header -->
+    <div class="flex justify-between items-start mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-red-900">Dress<span class="text-gray-900">On</span></h1>
+        </div>
+        <div class="text-right text-xs text-gray-600">
+            <p class="font-bold text-gray-900">DressOn Pvt Ltd</p>
+            <p>123 Fashion Avenue, Mumbai 4000001, India</p>
+            <p>GSTIN: 27AABBC1234F33</p>
+            <p>dresson.com</p>
+        </div>
+    </div>
+
+    <!-- Title Banner -->
+    <div class="bg-gray-200 text-center py-2 mb-8 font-bold text-xl tracking-widest text-gray-800 uppercase">
+        Tax Invoice
+    </div>
+
+    <!-- Meta Details -->
+    <div class="flex justify-between text-xs mb-8">
+        <div>
+            <p class="font-bold mb-1">SHIP TO :</p>
+            <p><%= order.shippingAddress.fullName %></p>
+            <p><%= order.shippingAddress.addressLine %></p>
+            <p><%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %></p>
+            <p>Mobile : <%= order.shippingAddress.phone %></p>
+        </div>
+        <div class="text-right">
+            <p class="font-bold mb-1 uppercase">Invoice Details :</p>
+            <table class="ml-auto text-left border-separate border-spacing-x-2">
+                <tr><td class="text-gray-500">Invoice No:</td><td>DRE_INV_<%= order.orderId.substring(order.orderId.length - 8) %></td></tr>
+                <tr><td class="text-gray-500">Invoice Date:</td><td><%= invoiceDate %></td></tr>
+                <tr><td class="text-gray-500">Order ID:</td><td><%= order.orderId %></td></tr>
+                <tr><td class="text-gray-500">Order Date:</td><td><%= orderDate %></td></tr>
+                <tr><td class="text-gray-500">Payment Method:</td><td><%= order.paymentMethod %></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <table class="w-full text-xs text-center border border-gray-300 mb-6">
+        <thead class="border-b border-gray-300">
+            <tr>
+                <th class="py-3 px-2 text-left w-2/5">Description</th>
+                <th class="py-3 px-2">Qty</th>
+                <th class="py-3 px-2">Unit Price (₹)</th>
+                <th class="py-3 px-2">TAX Rate (%)</th>
+                <th class="py-3 px-2">TAX Amount (₹)</th>
+                <th class="py-3 px-2 text-right">Amount (₹)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% items.forEach(item => { %>
+                <tr class="border-b border-gray-200">
+                    <td class="py-4 px-2 text-left">
+                        <p class="font-bold text-gray-800"><%= item.product.productName || item.product.name %></p>
+                        <p class="text-[10px] text-gray-500"><%= item.variantName || '' %></p>
+                    </td>
+                    <td class="py-4 px-2"><%= item.quantity %></td>
+                    <td class="py-4 px-2"><%= item.price.toFixed(2) %></td>
+                    <td class="py-4 px-2"><%= item.taxRate %></td>
+                    <td class="py-4 px-2"><%= item.taxAmount.toFixed(2) %></td>
+                    <td class="py-4 px-2 text-right"><%= item.amount.toFixed(2) %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="flex justify-end text-xs mb-8">
+        <div class="w-1/2">
+            <div class="flex justify-between py-1 border-b border-gray-200">
+                <span class="text-gray-600 font-semibold text-right w-2/3">Sub Total :</span>
+                <span class="text-right w-1/3 text-gray-800">₹<%= subTotal.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-gray-200">
+                <span class="text-gray-600 font-semibold text-right w-2/3">Shipping :</span>
+                <span class="text-right w-1/3 text-gray-800">₹<%= shipping.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-gray-200">
+                <span class="text-gray-600 font-semibold text-right w-2/3">TAX(GST @ 12%) :</span>
+                <span class="text-right w-1/3 text-gray-800">₹<%= taxTotal.toFixed(2) %></span>
+            </div>
+            <% if (discount > 0) { %>
+            <div class="flex justify-between py-1 border-b border-gray-200">
+                <span class="text-gray-600 font-semibold text-right w-2/3">Discount :</span>
+                <span class="text-right w-1/3 text-gray-800">-₹<%= discount.toFixed(2) %></span>
+            </div>
+            <% } %>
+            <div class="flex justify-between py-2 border-b border-gray-800 mt-1">
+                <span class="font-bold text-gray-900 text-right w-2/3">Grand Total :</span>
+                <span class="font-bold text-gray-900 text-right w-1/3">₹<%= grandTotal.toFixed(2) %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Notes -->
+    <div class="text-[10px] text-gray-500 mt-12 space-y-1">
+        <p>* Terms & Conditions Apply | Return Policy www.dresson.com</p>
+        <p>* Cancelled Orders receive refunds</p>
+        <p>This is a computer generated invoice and does not require a signature.</p>
+    </div>
+
+</body>
+</html>

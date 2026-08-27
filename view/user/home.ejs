@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
 <div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto w-full px-4 py-8">
     
     <!--  For sidebar -->
@@ -13,13 +14,33 @@
     <section class="flex-grow space-y-6 min-w-0">
         
         <!-- For  Banner -->
-        <div class="bg-[#f2e9e9] rounded-xl h-44 relative flex items-center px-8 border border-gray-200/60 shadow-xs overflow-hidden">
-            <div class="z-10 max-w-md">
-                <p class="text-[11px] font-extrabold text-gray-600 uppercase tracking-widest mb-1">Limited Time Offer</p>
-                <h2 class="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-none">UP TO <span class="text-red-600">50% OFF</span></h2>
-                <p class="text-xs text-gray-600 font-semibold mt-2">On all premium apparel and seasonal collections.</p>
+        <!-- Dynamic Banner Slider -->
+        <% if (typeof heroBanners !== 'undefined' && heroBanners.length > 0) { %>
+            <div class="swiper myHeroSwiper rounded-xl h-44 sm:h-64 mb-6 shadow-xs overflow-hidden w-full group">
+                <div class="swiper-wrapper">
+                    <% heroBanners.forEach(banner => { %>
+                        <div class="swiper-slide relative w-full h-full">
+                            <!-- Make the banner clickable if a target URL exists -->
+                            <% if (banner.targetUrl) { %>
+                                <a href="<%= banner.targetUrl %>" class="block w-full h-full">
+                            <% } %>
+                                
+                            <img src="<%= banner.imageUrl %>" alt="<%= banner.title %>" class="w-full h-full object-cover">
+                            
+                            <% if (banner.targetUrl) { %>
+                                </a>
+                            <% } %>
+                        </div>
+                    <% }) %>
+                </div>
+                
+                <!-- Swiper Controls -->
+                <div class="swiper-pagination"></div>
+                <!-- Hidden by default, appears on hover using Tailwind 'group-hover' -->
+                <div class="swiper-button-next text-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="swiper-button-prev text-white opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </div>
-        </div>
+        <% } %>
 
         <!-- Results Counter -->
         <div class="flex justify-between items-center px-1">
@@ -65,41 +86,31 @@
 <%- include('../partial/shared/alertError') %>
 <%- include('../partial/shared/warning') %>
 
+
+<!-- For swipe the banner -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+
 <script>
-    async function toggleWishlist(productId, btnElement) {
+   async function toggleWishlist(productId, btnElement) {
         try {
-            // Find the <i> tag inside the clicked button so we can change its color
-            const icon = btnElement.querySelector('i');
-            
+            const icon = btnElement.querySelector('i');             // Find the <i> tag inside the clicked button so we can change its color        
             const response = await fetch('/wishlist/toggle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ productId })
             });
-            
-            // If the user isn't logged in, the server might send back a 401 Unauthorized status
             if (response.status === 401) {
                 window.location.href = '/login?redirect=/shop';
                 return;
             }
-
-            const data = await response.json();
-            
+            const data = await response.json();            
             if (response.ok && data.success) {
                 if (data.action === 'added') {
-                    // Change to solid red heart
-                    icon.classList.remove('far', 'text-gray-400');
+                    icon.classList.remove('far', 'text-gray-400');  // For 'remove' the 'red' color when click 'love' button for 'wishlist'
                     icon.classList.add('fas', 'text-red-500');
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert("Item saved to your Wishlist!", "Wishlist Updated", "success");
-                    }
                 } else {
-                    // Change back to hollow outline heart
                     icon.classList.remove('fas', 'text-red-500');
                     icon.classList.add('far', 'text-gray-400');
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert("Item removed from Wishlist.", "Wishlist Updated", "warning");
-                    }
                 }
             } else {
                 if (typeof showCustomAlert === 'function') {
@@ -113,4 +124,60 @@
             }
         }
     }
+
+// AJAX Add to Cart function
+    async function addToCart(formElement) {
+        try {
+            const formData = new FormData(formElement);
+            const payload = Object.fromEntries(formData.entries());
+            const response = await fetch('/cart/add', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json' // <-- This triggers your backend JSON logic!
+                },
+                body: JSON.stringify(payload)
+            });
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=/shop';
+                return;
+            }
+            const data = await response.json();
+            if (response.ok && data.success) {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("Item successfully added to your cart!", "Cart Updated", "success");
+                }
+            } else {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(data.message || "Could not add item to cart.", "Notice", "warning");
+                }
+            }
+        } catch (error) {
+            console.error("Add to cart error:", error);
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert("A network error occurred. Please try again.", "Connection Error", "error");
+            }
+        }
+    }
+
+
+      document.addEventListener('DOMContentLoaded', function () {
+        const swiper = new Swiper('.myHeroSwiper', {
+            loop: true, // Slides infinitely
+            autoplay: {
+                delay: 3500, // Changes slide every 3.5 seconds
+                disableOnInteraction: false, // Keeps autoplaying after user clicks
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            effect: 'fade', // Optional: changes the slide effect to a smooth fade
+        });
+    });
+
 </script>

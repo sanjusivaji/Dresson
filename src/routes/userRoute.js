@@ -3,12 +3,19 @@ import passport from '../config/passport.js';
 import * as authController from '../controller/userController/authController.js';
 import * as userProfileController from '../controller/userController/userProfileController.js'; 
 import * as userAddressController from '../controller/userController/userAddressController.js';
-import uploadCloud from '../middleware/uploadMiddleware.js';
+import uploadCloud from '../middleware/uploadMiddleware.js';                                     // For 'upload' the 'dresson_user_avatar'(ie 'image' of profile) folder in 'cloudinary'
+import { uploadReview } from '../middleware/uploadMiddleware.js';                                // For 'upload' the 'dresson_user_avatar'(ie image of 'review' photo by user) folder in 'cloudinary'
 import { requireActiveUser } from '../middleware/userAuth.js';
 import * as productController from '../controller/userController/productController.js';
 import * as cartController from '../controller/userController/cartController.js';
 import * as wishlistController from '../controller/userController/wishlistController.js';
 import * as checkoutController from '../controller/userController/checkoutController.js';
+import * as orderController from '../controller/userController/userOrderController.js.js'
+import * as walletController from '../controller/userController/walletController.js';
+
+
+
+
 
 
 const router = express.Router();
@@ -105,6 +112,12 @@ router.route('/profile/address/edit/:id')
 // Route for 'delete' address
 router.post('/profile/address/delete/:id', userAddressController.deleteAddress);
 
+// Route for 'wallet'
+router.get('/profile/wallet', requireActiveUser, walletController.getWalletPage);
+
+// Route for 'orders' in user side
+router.get('/profile/orders/:id', requireActiveUser, orderController.getOrderDetailsPage);
+
 // Route for 'cart' operations
 router.get('/cart', requireActiveUser, cartController.getCartPage);
 router.post('/cart/add', requireActiveUser, cartController.postAddToCart);
@@ -117,10 +130,47 @@ router.get('/wishlist', requireActiveUser, wishlistController.getWishlistPage);
 // Route for 'wishlist' toggle
 router.post('/wishlist/toggle', requireActiveUser, wishlistController.toggleWishlistItem);
 
-// Route for 'checkout' page
+// Route for display 'checkout' page
 router.get('/checkout', requireActiveUser, checkoutController.getCheckoutPage);
 
 // This will handle the final "Place Order" button on the checkout page
 router.post('/checkout/place-order', requireActiveUser, checkoutController.placeOrder);
+
+// Route for 'apply coupon' in 'checkout'
+router.post('/checkout/apply-coupon',  requireActiveUser, checkoutController.applyCoupon);
+
+// Route for 'display' 'order success'
+router.get('/order-success',requireActiveUser, checkoutController.getOrderSuccessPage);
+
+// Route for 'verify payment'
+router.post('/checkout/verify-payment', requireActiveUser, checkoutController.verifyPayment);
+
+// Route for 'display' orders
+router.get('/profile/orders', requireActiveUser, orderController.getUserOrdersPage);
+
+// Route for 'cancel order' in user side
+router.post('/profile/orders/:id/cancel', requireActiveUser, orderController.cancelOrder);
+
+// Route for 'display' and 'download' invoice
+router.get('/profile/orders/:id/invoice', requireActiveUser, orderController.downloadInvoice);
+
+// Router chaining for 'display' 'return' orders page and 'return process', only after 'delivered'
+router.route('/profile/orders/:id/return')
+      .get( requireActiveUser, orderController.getReturnDetailsPage)
+      .post(requireActiveUser, orderController.processReturnRequest );
+
+
+// Route for 'send' 'payment details' like 'razor pay key', 'razor pay id' , 'currency', 'created date' etc and also send 'status' 'success'   
+router.post('/wallet/add-money/create-order', requireActiveUser, walletController.createWalletOrder);
+
+// For 'verify payment' and 'update' 'walletTransaction' collection(ie through 'verifyAndRechargeWallet()')and 'send' 'success' message
+router.post('/wallet/add-money/verify', requireActiveUser, walletController.verifyWalletPayment);
+
+
+
+// Router chaining for 'display' product rate and its 'process'
+router.route('/product/rate/:id')
+      .get( requireActiveUser, productController.getRateProductPage)
+      .post(requireActiveUser, uploadReview.single('reviewImage'), productController.submitProductRating );
 
 export default router;

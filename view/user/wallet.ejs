@@ -1,0 +1,265 @@
+<%- contentFor('body') %>
+
+<!-- Shared Alerts -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
+<!-- Main Wrapper (Flex layout matching address.ejs) -->
+<div class="w-full max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8"> 
+    
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0">
+         <%- include('../partial/user/userSidebar') %>       
+    </aside>
+
+    <!-- Wallet Content -->
+    <main class="w-full flex-1">
+        
+        <!-- Top Section: Title & Balance -->
+        <div class="flex flex-col md:flex-row justify-between items-center bg-[#fdf5f5] p-8 rounded-2xl mb-8 border border-red-50">
+            <h1 class="text-3xl font-black text-gray-900 tracking-tight">My Wallet</h1>
+            
+            <div class="flex flex-col items-center mt-6 md:mt-0">
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-wider">Available Balance</p>
+                <p class="text-4xl font-black text-gray-800 my-2">₹<%= balance.toLocaleString('en-IN') %></p>
+               <button type="button" onclick="openAddMoneyModal()" class="mt-2 px-6 py-2 bg-[#d1c8c4] hover:bg-[#bbaea9] text-gray-900 text-xs font-bold rounded-full shadow-sm transition flex items-center space-x-1">
+                <span>Add Money</span>
+                <i class="fas fa-plus text-[10px]"></i>
+            </button>
+            </div>
+        </div>
+
+       <!-- Transaction History Header & Filters -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-extrabold text-gray-900">Transaction History</h2>
+            
+            <div class="flex space-x-2 bg-gray-100 p-1 rounded-full">
+                <a href="?type=All" class="px-5 py-1.5 <%= currentType === 'All' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                    All
+                </a>
+                <a href="?type=Credit" class="px-5 py-1.5 <%= currentType === 'Credit' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                    Credit
+                </a>
+                <a href="?type=Debit" class="px-5 py-1.5 <%= currentType === 'Debit' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                    Debit
+                </a>
+            </div>
+        </div>
+
+        <!-- Transaction Table -->
+        <div class="bg-[#fcfafa] border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50/50">
+                        <tr>
+                            <th class="py-4 px-6 text-xs font-bold text-gray-900 uppercase">Date</th>
+                            <th class="py-4 px-6 text-xs font-bold text-gray-900 uppercase">Transaction ID</th>
+                            <th class="py-4 px-6 text-xs font-bold text-gray-900 uppercase">Description</th>
+                            <th class="py-4 px-6 text-xs font-bold text-gray-900 uppercase">Amount</th>
+                            <th class="py-4 px-6 text-xs font-bold text-gray-900 uppercase">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <% if (transactions && transactions.length > 0) { %>
+                            <% transactions.forEach(txn => { %>
+                                <tr class="hover:bg-white transition-colors duration-150">
+                                    
+                                    <!-- Date Column -->
+                                    <td class="py-4 px-6 text-[11px] font-semibold text-gray-500">
+                                        <%= new Date(txn.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') %>
+                                    </td>
+                                    
+                                    <!-- Transaction ID Column -->
+                                    <td class="py-4 px-6 text-[11px] font-bold text-gray-800 font-mono tracking-wider">
+                                        <%= txn.transactionId %>
+                                    </td>
+                                    
+                                    <!-- Description (Reason) Column -->
+                                    <td class="py-4 px-6 text-[12px] font-medium text-gray-700">
+                                        <%= txn.reason %>
+                                    </td>
+                                    
+                                    <!-- Amount Column (Green for Credit/Refund, Default for Debit) -->
+                                    <td class="py-4 px-6 text-[13px] font-black <%= txn.type === 'Credit' || txn.type === 'Refund' ? 'text-green-600' : 'text-gray-900' %>">
+                                        <%= txn.type === 'Credit' || txn.type === 'Refund' ? '+' : '-' %>₹<%= txn.amount.toLocaleString('en-IN') %>
+                                    </td>
+                                    
+                                    <!-- Status Column -->
+                                    <td class="py-4 px-6">
+                                        <% if (txn.status === 'Success') { %>
+                                            <span class="text-[11px] font-bold text-green-500">Success</span>
+                                        <% } else if (txn.status === 'Pending') { %>
+                                            <span class="text-[11px] font-bold text-amber-500">Pending</span>
+                                        <% } else { %>
+                                            <span class="text-[11px] font-bold text-red-500"><%= txn.status %></span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="py-10 text-center text-sm font-semibold text-gray-400">
+                                    No transactions found.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8 flex justify-center">
+            <%- include('../partial/admin/pagination', { 
+                currentPage: currentPage, 
+                totalPages: totalPages,
+                baseUrl: ''
+            }) %>
+        </div>
+
+    </main>
+</div>
+
+
+<!-- Add Money Modal (Hidden by default) -->
+<div id="addMoneyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Add Money to Wallet</h3>
+            <button type="button" onclick="closeAddMoneyModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <p class="text-xs text-gray-500 mb-4">Enter the amount you wish to add to your wallet.</p>
+        
+        <div class="mb-5 relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-600">₹</span>
+            <input type="number" id="rechargeAmount" min="1" max="100000" placeholder="0.00" class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 font-semibold">
+        </div>
+        
+        <div class="flex gap-3">
+            <button type="button" onclick="closeAddMoneyModal()" class="w-1/2 py-2.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                Cancel
+            </button>
+            <button type="button" onclick="initiateWalletRecharge()" id="rechargeBtn" class="w-1/2 py-2.5 text-xs font-bold text-white bg-[#e1d5d5] hover:bg-[#d4c5c5] text-gray-900 rounded-lg transition shadow-sm">
+                Proceed to Pay
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Essential Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+
+<script>
+    function openAddMoneyModal() {
+        document.getElementById('addMoneyModal').classList.remove('hidden');
+    }
+
+    function closeAddMoneyModal() {
+        document.getElementById('addMoneyModal').classList.add('hidden');
+        document.getElementById('rechargeAmount').value = '';
+    }
+
+    async function initiateWalletRecharge() {
+        const amount = document.getElementById('rechargeAmount').value;
+        const btn = document.getElementById('rechargeBtn');
+
+        if (!amount || amount <= 0) {
+            // Replaced native alert with custom warning
+            if(typeof showCustomAlert === 'function') {
+                showCustomAlert("Please enter a valid amount.", "Invalid Amount", "warning");
+            }
+            return;
+        }
+
+        btn.innerText = 'Processing...';
+        btn.disabled = true;
+
+        try {
+            // 1. Request Order ID from our backend
+            const orderRes = await fetch('/wallet/add-money/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+            const orderData = await orderRes.json();
+
+            if (!orderData.success) throw new Error(orderData.message);
+
+            // 2. Open Razorpay Interface
+            const options = {
+                "key": "<%= razorpayKeyId %>",
+                "amount": orderData.order.amount,
+                "currency": "INR",
+                "name": "Dresson",
+                "description": "Wallet Top-up",
+                "order_id": orderData.order.id,
+                "handler": async function (response) {
+                    
+                    // 3. Send successful payment details to backend
+                    const verifyRes = await fetch('/wallet/add-money/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount: amount
+                        })
+                    });
+                    
+                    const verifyData = await verifyRes.json();
+                    
+                    if (verifyData.success) {
+                        closeAddMoneyModal();
+                        
+                        // Show Custom Success Alert
+                        if (typeof showCustomAlert === 'function') {
+                            showCustomAlert("Money added successfully!", "Success", "success");
+                            
+                            // Delay the page reload by 2 seconds so the user can read the alert!
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            window.location.reload(); // Fallback
+                        }
+                    } else {
+                        // Custom Error Alert
+                        if (typeof showCustomAlert === 'function') {
+                            showCustomAlert("Payment verification failed.", "Error", "error");
+                        }
+                    }
+                },
+                "theme": {
+                    "color": "#a35e6c" 
+                }
+            };
+            
+            const rzp = new Razorpay(options);
+            
+            // Custom Error Alert for Razorpay failure
+            rzp.on('payment.failed', function (response){
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(response.error.description, "Payment Failed", "error");
+                }
+            });
+            
+            rzp.open();
+
+        } catch (error) {
+            console.error(error);
+            // Custom Error Alert for general catch block
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert(error.message || "Something went wrong. Please try again.", "Error", "error");
+            }
+        } finally {
+            btn.innerText = 'Proceed to Pay';
+            btn.disabled = false;
+        }
+    }
+</script>

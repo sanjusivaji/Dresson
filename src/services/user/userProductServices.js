@@ -4,6 +4,9 @@ import Category from '../../model/categoryModel.js';
 import paginate from '../../utilities/paginationHelper.js'; 
 import { SHOP_CONSTANTS } from '../../constants/shopConstants.js'; 
 import * as  productRepository from '../../repository/user/userProductRepository.js'
+import { PRODUCT_CONSTANTS } from '../../constants/userProductConstants.js';
+import Banner from '../../model/bannerModel.js';
+import logger from '../../utilities/logger.js'; 
 
 
 // For return 'products' , 'categories' , variants etc
@@ -59,8 +62,7 @@ export const compileShopCatalog = async (queryParams) => {
             queryFilter._id = null;
         }
     }    
-    if (brandFilter) queryFilter.brand = brandFilter;                            // 'queryFilter' is the 'object' that created just above and here we add a 'property' 'brand' and its value 'brandFilter'(ie it captured at top).
-    
+    if (brandFilter) queryFilter.brand = brandFilter;                            // 'queryFilter' is the 'object' that created just above and here we add a 'property' 'brand' and its value 'brandFilter'(ie it captured at top).    
     if (searchQuery) {
         const regex = new RegExp(searchQuery, 'i');                             //  Value of 'searchQuery' capture from 'search' bar.
         andConditions.push({
@@ -79,28 +81,26 @@ export const compileShopCatalog = async (queryParams) => {
     andConditions.push({ 'variants.0.price': priceRule });                                                     // Here '0' represents the 'index' ie 'frst' product/ item and we 'sorting' price range based on first item in 'home' page.                    
     if (andConditions.length > 0) {
         queryFilter.$and = andConditions;                                                                      // Here 'queryFilter' is 'object' and 'andConditions' is the 'array of object'(ie 'object' means different conditions like '{"variants.color": {"$regex":"^Blue$","$options":"i"}}' etc) so here we add each 'objects' inside array after '$and:' operator(ie '{"isListed": true, "$and": [{ "variants.color": { "$regex": "^Blue$", "$options": "i" } },.....]}') ie '$and' means 'consider' these condition also.
-    }
-    
+    }    
     let sortConfig = { createdAt: -1 };                                                                        // It is for 'default' date in 'descending order'(ie 'newest' date first) and it is for 'defult' display purpose ie if the user visits the 'home' page 'without' clicking any specific sorting buttons, the database will automatically show them the 'newest arrivals' first.
     if (sortOption === 'price_asc') sortConfig = { 'variants.0.price': 1 };                                    // Here 'sortOption' data will get from 'req.query.sort' and 'sortConfig' is the 'object' is sort product based on 'descending' order based on created date and 'price_asc' is the 'custom keyword', we send from 'home' page and if it is same(ie 'sortOption === 'alpha_asc')'variants.0.price': value sorted in 'ascending' order(ie ''variants.0.price': 1') otherwise(ie 'price_desc') it will sorted in 'descending' order(ie ''variants.0.price': -1')
     if (sortOption === 'price_desc') sortConfig = { 'variants.0.price': -1};
     if (sortOption === 'alpha_asc') sortConfig = { name: 1 };                                                  // Sorts 'name' based on custom word 'alpha_asc'
     if (sortOption === 'alpha_desc') sortConfig = { name: -1 };
-
-    const [paginatedData, availableBrands] = await Promise.all([                                              // Here we destructuring the array return by 'Promise.all()' resolved value and 'Promise.all()' only works with 'Promise' objects and almost every 'mongoose' methods(ie  '.find()', '.findOne()', '.countDocuments()', '.save()', '.updateOne()' etc)create a 'Promise' object.
+    const [paginatedData, availableBrands,heroBanners] = await Promise.all([                                              // Here we destructuring the array return by 'Promise.all()' resolved value and 'Promise.all()' only works with 'Promise' objects and almost every 'mongoose' methods(ie  '.find()', '.findOne()', '.countDocuments()', '.save()', '.updateOne()' etc)create a 'Promise' object.
         paginate(Product, queryFilter, {                                                                      // 'paginate' is the 'custom' function created in 'src/utilities/paginationHelper.js' and used for return value as 'chunks' instead return all data, and we pass '3' arguments in it , 'model'(ie 'Product'), 'query'(ie 'queryFilter')and 'options'(ie query options like 'skip', 'sort', 'limit', 'populate' etc )
             page,
             limit,
             sort: sortConfig,
-            populate: { path: 'subCategory', select: 'categoryName gender slug' }                              // Here 'populate' is the 'argument' and it passes to 'paginate()' function, that is in 'src/utilities/paginateHelper.js' and we call it like 'Model.populate(options.populate)' from 'paginateHelper.js' and 'path' is 'built-in' mongoose keyword and it tells the 'id' of 'subCategory' and find it where is it, and fetch the full 'document' for it and 'select()' retrieve only the given mentioned data, ie it acts like a 'filter')) 
+            populate: { path: 'subCategory', select: 'categoryName gender slug' },                              // Here 'populate' is the 'argument' and it passes to 'paginate()' function, that is in 'src/utilities/paginateHelper.js' and we call it like 'Model.populate(options.populate)' from 'paginateHelper.js' and 'path' is 'built-in' mongoose keyword and it tells the 'id' of 'subCategory' and find it where is it, and fetch the full 'document' for it and 'select()' retrieve only the given mentioned data, ie it acts like a 'filter')) 
+        
         }),
-        Product.distinct('brand', { isListed: true, ...(genderFilter && { parentCategory: new RegExp(`^${genderFilter}$`, 'i') }) })  // Here 'distinct()' is the 'built-in' mongoose method used for retrieve 'unique' values and here we retrieve 'unique' 'brand' names and these brand should be 'isListed: true' and if they pass 'genderFilter' value and 'parentCategory' value for 'filtering' we should retrieve 'brand' name, after filtering.
+        Product.distinct('brand', { isListed: true, ...(genderFilter && { parentCategory: new RegExp(`^${genderFilter}$`, 'i') }) }),  // Here 'distinct()' is the 'built-in' mongoose method used for retrieve 'unique' values and here we retrieve 'unique' 'brand' names and these brand should be 'isListed: true' and if they pass 'genderFilter' value and 'parentCategory' value for 'filtering' we should retrieve 'brand' name, after filtering.
+        Banner.find({ placement: 'Home Hero', isActive: true }).sort({ order: 1 }).lean()
     ]);
     const availableColors = ['Black', 'Blue', 'Red', 'White', 'Green', 'Yellow', 'Pink', 'Grey'];       // Keeping  hardcoded UI options (This is perfectly fine for maintaining a consistent UI sidebar)
     const availableSizes = ['S', 'M', 'L', 'XL', 'XXL'];
     const availableFabrics = ['Cotton', 'Denim', 'Linen', 'Polyester', 'Silk', 'Wool'];
- 
-    
     return {
         products: paginatedData.results,
         categories: activeCategories,
@@ -108,6 +108,7 @@ export const compileShopCatalog = async (queryParams) => {
         availableColors,
         availableSizes,
         availableFabrics,
+        heroBanners,
         totalProducts: paginatedData.totalDocuments,
         totalPages: paginatedData.totalPages,
         currentPage: paginatedData.currentPage,
@@ -131,7 +132,7 @@ export const fetchProductDetails = async (productId) => {
     }
     const product = await productRepository.findProduct(productId);                                     // It retrieve product based on 'productId'
     if (product && !product.isListed) {
-         console.log("4. Product exists but isListed is false!");
+         logger.warn("4. Product exists but isListed is false!");
     }
     const finalProduct = await productRepository.findProductCategory(productId);                       // It retrieve 'product' based on 'productId' and 'populates' its subCategory.
     if (!finalProduct) {
@@ -141,4 +142,50 @@ export const fetchProductDetails = async (productId) => {
 };
 
 
+// For retrieve 'Product' data based on 'subCategoryId', 'excludeProductId', 'isListed: true' etc
+export const getRelatedProducts = async (subCategoryId, currentProductId) => {
+    return await productRepository.findRelatedProducts(subCategoryId, currentProductId); // Retrieve 'Product' data based on 'subCategoryId', 'excludeProductId', 'isListed: true' etc
+};
+
+// For return 'data' about product for 'rating' 
+export const prepareProductForRating = async (productId) => {
+    if (!mongoose.isValidObjectId(productId)) {                                         // 'Without' this if condition, if anyone type like 'http://localhost:3000/product/rate/hello123'(ie here 'productId' as string ie 'hello123')make 'crash' the application, so here it prevents.
+        throw new Error("INVALID_ID");
+    }
+    const product = await productRepository.findProductByIdLean(productId);             // Retrieve all 'Product' data based on 'prodctId' and 'leaning' for 'display'
+    if (!product) {
+        throw new Error("NOT_FOUND");
+    }
+    return {
+        productId: product._id,
+        name: product.name,
+        image: product.images && product.images.length > 0 
+            ? product.images[0].url 
+            : PRODUCT_CONSTANTS.DEFAULTS.IMAGE,
+        quantity: 1, 
+    };
+};
+
+
+// For process the data for save 'review' data
+export const processAndSaveReview = async (productId, userId, ratingData) => {
+    const { rating, message, imageUrl } = ratingData;
+    const product = await productRepository.findProductByIdDoc(productId);                // Retrieve all 'Product' data based on 'prodctId'
+    if (!product) throw new Error("NOT_FOUND");
+    const user = await productRepository.findUserByIdLean(userId);                        // Retrieve 'user' data based on 'userId' and 'leaning'
+    const reviewerName = user?.fullName || user?.name || user?.firstName || user?.username || PRODUCT_CONSTANTS.DEFAULTS.REVIEWER_NAME;
+    const newReview = {
+        user: userId,
+        name: reviewerName, 
+        rating: Number(rating),
+        comment: message,
+        image: imageUrl     
+    };
+    product.reviews.push(newReview);
+    product.numReviews = product.reviews.length;
+    const totalRating = product.reviews.reduce((acc, item) => item.rating + acc, 0);
+    product.rating = totalRating / product.reviews.length;
+    await product.save();
+    return true;
+};
 

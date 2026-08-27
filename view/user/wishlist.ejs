@@ -1,91 +1,97 @@
 <%- contentFor('body') %>
 
-<!-- Shared Alerts -->
-<%- include('../partial/shared/alertSuccess') %>
-<%- include('../partial/shared/alertError') %>
-
-
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+<div class="w-full max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8"> 
     
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <aside class="lg:col-span-3">
-            <%- include('../partial/user/userSidebar') %>
-        </aside>
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 flex-shrink-0 lg:col-span-3">
+        <%- include('../partial/user/userSidebar') %>
+    </aside>
 
-        <!-- Wish list content -->
-        <div class="lg:col-span-9">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-8 text-center md:text-left">My Wishlist</h1>
+    <!-- Wishlist Content -->
+    <main class="w-full flex-1">
+        
+        <!-- Shared Alerts -->
+        <%- include('../partial/shared/alertSuccess') %>
+        <%- include('../partial/shared/alertError') %>
+        <%- include('../partial/shared/warning') %>
 
-            <!-- Styled Rounded Beige Container -->
-            <div class="bg-[#f5eeeb] rounded-[2.5rem] p-6 sm:p-10 shadow-sm border border-gray-100 min-h-[400px]">
-                
-                <!-- Table Headers -->
-                <div class="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-gray-300 text-sm font-extrabold text-gray-900 tracking-wide px-4">
-                    <div class="col-span-5">Product</div>
-                    <div class="col-span-3">Price</div>
-                    <div class="col-span-4 text-right"></div> <!-- Actions -->
-                </div>
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-8 text-center md:text-left">My Wishlist</h1>
 
-                <!-- Wishlist Items List -->
-                <div id="wishlistContainer" class="flex flex-col">
-                    <% if (typeof wishlist !== 'undefined' && wishlist.products && wishlist.products.length > 0) { %>
-                        <% wishlist.products.forEach((item) => { %>                            
-                            <% 
-                                const product = item.productId || item; 
-                                let displayPrice = product.price || 0;
-                                let defaultVariantId = '';                                 
-                                if (product.variants && product.variants.length > 0) {
-                                    displayPrice = product.variants[0].price;
-                                    defaultVariantId = product.variants[0]._id; // FIX: Extract the variant ID
-                                }
-                                const imageUrl = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
-                            %>
-
-                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center py-5 border-b border-gray-200/70 last:border-0 px-2 sm:px-4 transition hover:bg-white/40 rounded-xl" id="wishlist-row-<%= product._id %>">
-                                
-                                <!-- Product Image & Name -->
-                                <div class="col-span-5 flex items-center space-x-4">
-                                    <a href="/product/<%= product._id %>" class="shrink-0">
-                                        <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-12 h-16 object-cover rounded-md shadow-sm border border-gray-200">
-                                    </a>
-                                    <a href="/product/<%= product._id %>" class="text-sm font-bold text-gray-800 hover:text-black transition truncate">
-                                        <%= product.name %>
-                                    </a>
-                                </div>
-
-                                <!-- Price -->
-                                <div class="col-span-3 font-extrabold text-gray-900 text-sm">
-                                    ₹ <%= displayPrice.toLocaleString('en-IN') %>
-                                </div>
-
-                                <!-- Actions (Add to Cart & Remove) -->
-                                <div class="col-span-4 flex items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
-                                 <!-- Brown Pill Button -->
-                                    <button type="button" onclick="moveToCart('<%= product._id %>', '<%= defaultVariantId || '' %>')" class="bg-[#94847c] hover:bg-[#7a6c65] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
-                                        Add to Cart
-                                    </button>
-                                    <!-- Red/Coral Pill Button -->
-                                    <button type="button" onclick="removeFromWishlist('<%= product._id %>')" class="bg-[#fc6c6c] hover:bg-[#e05b5b] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-
-                        <% }) %>
-                    <% } else { %>
-                        <!-- Empty State -->
-                        <div class="flex flex-col items-center justify-center py-16 opacity-70">
-                            <i class="far fa-heart text-4xl text-gray-400 mb-4"></i>
-                            <p class="text-gray-600 font-medium">Your wishlist is currently empty.</p>
-                            <a href="/shop" class="mt-4 text-[#6b66d6] font-bold hover:underline">Continue Shopping</a>
-                        </div>
-                    <% } %>
-                </div>
+        <!-- For wishlist 'container'-->
+        <div class="bg-[#f5eeeb] rounded-[2.5rem] p-6 sm:p-10 shadow-sm border border-gray-100 min-h-[400px]">
+            
+            <!-- Table Headers -->
+            <div class="hidden md:grid grid-cols-12 gap-4 pb-4 border-b border-gray-300 text-sm font-extrabold text-gray-900 tracking-wide px-4">
+                <div class="col-span-5">Product</div>
+                <div class="col-span-3">Price</div>
+                <div class="col-span-4 text-right"></div> 
             </div>
 
-            <!-- Pagination (As shown in design) -->
+            <!-- Wishlist Items List -->
+            <div id="wishlistContainer" class="flex flex-col">
+                <% if (typeof wishlist !== 'undefined' && wishlist.products && wishlist.products.length > 0) { %>
+                    <% wishlist.products.forEach((item) => { %>                            
+                        <% 
+                            const product = item.productId || item; 
+                            let displayPrice = product.price || 0;
+                            if (product.variants && product.variants.length > 0) {
+                                displayPrice = product.variants[0].price;
+                            }
+                            const imageUrl = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
+                        %>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center py-5 border-b border-gray-200/70 last:border-0 px-2 sm:px-4 transition hover:bg-white/40 rounded-xl" id="wishlist-row-<%= product._id %>">
+                            
+                            <!-- Product Image & Name -->
+                            <div class="col-span-5 flex items-center space-x-4">
+                                <a href="/product/<%= product._id %>" class="shrink-0">
+                                    <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-12 h-16 object-cover rounded-md shadow-sm border border-gray-200">
+                                </a>
+                                <a href="/product/<%= product._id %>" class="text-sm font-bold text-gray-800 hover:text-black transition truncate">
+                                    <%= product.name %>
+                                </a>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="col-span-3 font-extrabold text-gray-900 text-sm">
+                                ₹ <%= displayPrice.toLocaleString('en-IN') %>
+                            </div>
+
+                            <!-- Actions (Add to Cart & Remove) -->
+                            <div class="col-span-4 flex items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
+                                
+                                <!-- Button passes variant data to the modal. Here we passes data through 'data' attributes(ie 'data-product-id=....) through '<button>' element(ie 'this') and retrieve in 'promptVariantSelection()' function-->
+                                <button type="button" 
+                                        data-product-id="<%= product._id %>"
+                                        data-product-name="<%= product.name %>"
+                                        data-variants="<%= JSON.stringify(product.variants || []) %>"
+                                        onclick="promptVariantSelection(this)" 
+                                        class="bg-[#94847c] hover:bg-[#7a6c65] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
+                                    Add to Cart
+                                </button>
+                                
+                                <!-- Red/Coral Pill Button -->
+                                <button type="button" onclick="removeFromWishlist('<%= product._id %>')" class="bg-[#fc6c6c] hover:bg-[#e05b5b] text-white text-[11px] font-bold px-5 py-2 rounded-full shadow-sm transition tracking-wider uppercase cursor-pointer">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+
+                    <% }) %>
+                <% } else { %>
+                    <!-- Empty State -->
+                    <div class="flex flex-col items-center justify-center py-16 opacity-70">
+                        <i class="far fa-heart text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 font-medium">Your wishlist is currently empty.</p>
+                        <a href="/shop" class="mt-4 text-[#6b66d6] font-bold hover:underline">Continue Shopping</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8 flex justify-center">
             <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
-                <div class="flex justify-center items-center space-x-3 mt-8 text-sm font-bold text-gray-500">
+                <div class="flex justify-center items-center space-x-3 text-sm font-bold text-gray-500">
                     <a href="?page=<%= currentPage > 1 ? currentPage - 1 : 1 %>" class="hover:text-black"><i class="fas fa-chevron-left text-[10px]"></i></a>
                     
                     <% for(let i = 1; i <= totalPages; i++) { %>
@@ -101,98 +107,152 @@
                     <a href="?page=<%= currentPage < totalPages ? currentPage + 1 : totalPages %>" class="hover:text-black"><i class="fas fa-chevron-right text-[10px]"></i></a>
                 </div>
             <% } %>
-
         </div>
-    </div>
-</main>
 
-<!-- Client-Side Logic for Wishlist Actions -->
+    </main>
+</div>
+
+<!--  Model popup for 'variant selection' -->
+<div id="variantModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex justify-center items-center px-4 transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300" id="variantModalContent">
+        
+        <!-- Header -->
+        <div class="mb-5 border-b border-gray-100 pb-4">
+            <h3 class="text-lg font-bold text-gray-900 tracking-tight" id="modalProductName">Product Name</h3>
+            <p class="text-xs text-gray-500 mt-1">Please select an option before adding to cart.</p>
+        </div>
+        
+        <!-- Dynamic Dropdown -->
+        <div class="mb-6">
+            <label for="variantSelect" class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                Select Variant <span class="text-red-500">*</span>
+            </label>
+            <select id="variantSelect" class="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#94847c] bg-gray-50 cursor-pointer">
+                <!-- 'Variant options' will be injected here -->
+            </select>
+            <p id="variantErrorMsg" class="text-red-500 text-xs font-bold mt-2 hidden">Please select a variant to continue.</p>
+        </div>
+        
+        <!-- Model buttons -->
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeVariantModal()" class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-full transition uppercase tracking-wide">
+                Cancel
+            </button>
+            <button id="modalAddToCartBtn" class="px-6 py-2.5 bg-[#94847c] hover:bg-[#7a6c65] text-white text-xs font-bold rounded-full transition shadow-sm uppercase tracking-wide">
+                Confirm & Add
+            </button>
+        </div>
+        
+    </div>
+</div>
+
+
 <script>
+    // For 'remove' from wishlist
     async function removeFromWishlist(productId) {
         try {
-            const response = await fetch('/wishlist/toggle', {
+            const response = await fetch('/wishlist/toggle', {                            // Here we create the '/wishlist/toggle' path and send this data through 'fetch()' and 'body' contains 'productId' that get from 'remove' button(ie '<button type="button" onclick="removeFromWishlist('< %= product._id %>')" ')and this route actually from 'userRoute.js'(ie actually it goes to 'server.js' and route become 'user/whishlist/toggle') in backend and from there calls the 'controller' function and it connect with 'mongodb' and then after retrieve necessary data, the backend send response(ie 'success' message through 'json')
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ productId })
             });
-            
-            const data = await response.json();
-            
+            const data = await response.json();                                          // It is the 'response' get from 'backend'
             if (data.success) {
                 const row = document.getElementById(`wishlist-row-${productId}`);
                 if (row) {
-                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.transition = 'all 0.3s ease';                              // Here 'style' is th built-in 'css' property give 'style'(ie 'transition', 'color' etc)and 'transition' also 'css' property for 'transition' and 'all' for 'animate' all 'visual'(ie 'opacity', '') last '.3' seconds and 'ease' is 'animation' behaviour.
                     row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';                            // 'translate' is 'built-in' 'css' property and it means 'move' in 'X'(ie 'horizontally')direction '20px'.
                     setTimeout(() => {
                         row.remove();
-                        // Check if container is empty to show empty state
                         const container = document.getElementById('wishlistContainer');
-                        if (container.children.length === 0) {
-                            window.location.reload(); 
-                        }
+                        if (container.children.length === 0) window.location.reload();  // This is the case of 'container' element has 'no' children(ie 'row' element)and 'ejs' only display when it get data from 'backend' here 'data'  only get when we 'reload' the 'page'(ie otherwise ie at least one 'row' element, data will get 'fetch()' response)
                     }, 300);
                 }
-                
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert("Item removed from your Wishlist.", "Success", "success");
-                }
+                if (typeof showCustomAlert === 'function') showCustomAlert("Item removed from your Wishlist.", "Success", "success");
             }
         } catch (error) {
             console.error("Error removing from wishlist:", error);
         }
     }
 
-   // For 'product' move to 'cart'
-    async function moveToCart(productId, variantId) {
-            if (!variantId || variantId === 'undefined' || variantId.trim() === '') {
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert("Please visit the product page to select your specific size/color before adding to cart.", "Variant Required", "warning");
-                } else {
-                    alert("Please visit the product page to select a specific size.");
-                }
-                return; 
-            }
+    // For 'model popup' and 'drop down'
+    function promptVariantSelection(buttonElement) {                                // Here 'buttonElement' means '<button>'(ie pass as 'this')contains data as 'custom data attribute'
+        const productId = buttonElement.getAttribute('data-product-id');
+        const productName = buttonElement.getAttribute('data-product-name');
+        const variants = JSON.parse(buttonElement.getAttribute('data-variants'));   // In 'html'(ie 'ejs')data stored only as 'string' and here we convert data into 'array of object' by using 'json.Parse()'.
+        document.getElementById('modalProductName').textContent = productName;      // For 'display' 'product name' as 'title' of the 'modal'
+        document.getElementById('variantErrorMsg').classList.add('hidden');         // Here we make 'hidden' the 'old' error message and if a user previously clicked "Confirm & Add" 'without' choosing a 'size', this error message would be visible
+        const selectElement = document.getElementById('variantSelect');             // For empty '<select>' 'dropdown' menu from 'modal' so that you can inject the different sizes/colors into it in the next few lines.
+        selectElement.innerHTML = '<option value="" disabled selected>Choose a size/color...</option>';  // It 'removes' all 'old' variant values(ie 'value="" disabled selected')and we put a 'placeholder'(ie 'Choose a size/color...')and 'innerHtml' adds all '<option>' and its 'attributes' into 'html' element.
+        variants.forEach(item => {                                                  // This 'forEach()' loop 'dynamically' builds the 'dropdown' list
+            const isOutOfStock = item.stock <= 0;
+            const stockText = isOutOfStock ? ' (Out of Stock)' : ` - ₹${item.price}`;            
+            const option = document.createElement('option');                        // Create a '<option>' element for 'appending'(ie 'appendChild()')into 'selectElement'(ie '<select>' element created in 'ejs').
+            option.value = item._id;                                                // Send 'item._id' as 'value' to 'backend'.
+            option.textContent = `${item.name}${stockText}`;                        // Put inside 'template literals' and value of 'stockText' is 'Out of Stock' or 'item.price'. 
+            if (isOutOfStock) option.disabled = true;           
+            selectElement.appendChild(option);
+        });
+        const confirmBtn = document.getElementById('modalAddToCartBtn');
+        confirmBtn.onclick = () => submitToCart(productId);                         // 'submitToCart()' defined below and when '<button>' click it call the function.
+        const modal = document.getElementById('variantModal');
+        const modalContent = document.getElementById('variantModalContent');
+        modal.classList.remove('hidden');                                           // 'modal' has defaultly classes like 'hidden', opacity-0 and scale-95 and here we remove all these classes for display it
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }, 10);
+    }
 
-            try {
-                const formData = new URLSearchParams();
-                formData.append('productId', productId);
-                formData.append('variantId', variantId);
-                formData.append('quantity', 1);
-                formData.append('actionType', 'cart');
-                const response = await fetch('/cart/add', {  // Send the Add to Cart request
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/x-www-form-urlencoded' 
-                    },
-                    body: formData 
-                });
-                if (response.ok || response.redirected) {                
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert("Item added to cart successfully!", "Cart Updated", "success");
-                    }
-                    const row = document.getElementById('wishlist-row-' + productId);
-                    if (row) {
-                        row.style.display = 'none'; 
-                        row.remove(); 
-                        const container = document.getElementById('wishlistContainer');  // If it was the last item, wait a tiny bit then reload to show the empty screen
-                        if (container && container.children.length === 0) {
-                            setTimeout(() => {
-                                window.location.reload(); 
-                            }, 500);
-                        }
-                    }
-
-                } else {
-                    if (typeof showCustomAlert === 'function') {
-                        showCustomAlert("Could not add to cart. Please try again.", "Action Failed", "error");
-                    }
-                }
-
-            } catch (error) {
-                console.error("Critical Error adding to cart:", error);
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert("A network error occurred. Please check your internet.", "Connection Error", "error");
-                }
-            }
+    // For 'submit variant' to cart
+    async function submitToCart(productId) {
+        const selectElement = document.getElementById('variantSelect');
+        const variantId = selectElement.value;
+        const errorMsg = document.getElementById('variantErrorMsg');
+        if (!variantId) {
+            errorMsg.classList.remove('hidden');                                    // If 'no variantId' display the 'error message'
+            return;
         }
+        errorMsg.classList.add('hidden');
+        try {
+            const formData = new URLSearchParams();                                 // 'URLSearchParams()' is the 'built-in' 'js' method and it used for 'make' string parameter(ie especially messy parameters that have no proper '&&' etc and we get '"color=red&size=M&error=failed" type of parameter) into 'js' object(ie 'color: red', 'size: M' like that)so we can use 'get()', 'set()', 'delete()' like methods with it.
+            formData.append('productId', productId);
+            formData.append('variantId', variantId);
+            formData.append('quantity', 1);
+            formData.append('actionType', 'cart');
+            const response = await fetch('/cart/add', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData 
+            });
+            if (response.ok || response.redirected) {                
+                closeVariantModal();                                                // Function created below.
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert("Item added to cart successfully!", "Cart Updated", "success");
+                }
+                const row = document.getElementById('wishlist-row-' + productId);
+                if (row) {
+                    row.remove(); 
+                    const container = document.getElementById('wishlistContainer');
+                    if (container && container.children.length === 0) setTimeout(() => window.location.reload(), 500);
+                }
+            } else {
+                if (typeof showCustomAlert === 'function') showCustomAlert("Could not add to cart. Please try again.", "Action Failed", "error");
+            }
+        } catch (error) {
+            console.error("Critical Error adding to cart:", error);
+            if (typeof showCustomAlert === 'function') showCustomAlert("A network error occurred.", "Connection Error", "error");
+        }
+    }
+
+
+     // For 'close'(ie 'X' symbol)model
+    function closeVariantModal() {
+        const modal = document.getElementById('variantModal');
+        const modalContent = document.getElementById('variantModalContent');
+        modal.classList.add('opacity-0');
+        modalContent.classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
 </script>

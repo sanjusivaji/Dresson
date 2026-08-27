@@ -1,0 +1,162 @@
+<%- contentFor('body') %>
+
+<main class="flex-1 bg-white p-8">
+    
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Order Returns</h1>
+        <p class="text-xs text-gray-500 mt-1 font-medium">Manage Returning Order</p>
+    </div>
+
+  <!-- Search & Filter Controls -->
+    <form action="/admin/returns" method="GET" class="flex flex-col md:flex-row gap-4 mb-8 w-full max-w-5xl items-center">
+        
+        <!-- 1. Search Box with Embedded Icons (Using focus-within trick) -->
+        <div class="flex items-center w-full md:w-[400px] bg-white border border-gray-300 rounded-md focus-within:ring-1 focus-within:ring-[#8a7aee] focus-within:border-[#8a7aee] shadow-sm overflow-hidden transition-all">
+            
+            <!-- The actual input is transparent and has no borders -->
+            <input 
+                type="text" 
+                name="search"
+                value="<%= locals.searchQuery || '' %>"
+                placeholder="Search Returns By ID or Customer name" 
+                class="flex-1 w-full pl-4 py-2.5 text-sm bg-transparent outline-none border-none focus:ring-0"
+            >
+            
+            <!-- Icon Container (Always pinned to the right inside the box) -->
+            <div class="flex items-center pr-2 shrink-0">
+                
+                <!-- Clear Search 'X' (Only displays if there is an active search) -->
+                <% if (locals.searchQuery) { %>
+                    <a href="/admin/returns?status=<%= locals.filterStatus || '' %>" class="p-1.5 text-red-400 hover:text-red-600 transition" title="Clear Search">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
+                <% } %>
+
+                <!-- Submit Search Button (Magnifying Glass Icon) -->
+                <button type="submit" class="p-1.5 text-gray-400 hover:text-[#8a7aee] transition" title="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </button>
+
+            </div>
+        </div>
+        
+        <!-- 2. Filter Dropdown & Apply Button (Unchanged) -->
+        <div class="flex items-center gap-2 w-full md:w-auto">
+            <select name="status" class="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-[13px] font-semibold rounded-md shadow-sm outline-none cursor-pointer focus:ring-1 focus:ring-[#d6c4c5] transition">
+                <option value="">All Statuses</option>
+                <option value="Pending" <%= locals.filterStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Approved" <%= locals.filterStatus === 'Approved' ? 'selected' : '' %>>Approved</option>
+                <option value="Refunded" <%= locals.filterStatus === 'Refunded' ? 'selected' : '' %>>Refunded</option>
+                <option value="Rejected" <%= locals.filterStatus === 'Rejected' ? 'selected' : '' %>>Rejected</option>
+            </select>
+
+            <button type="submit" class="px-6 py-2.5 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[13px] font-bold rounded-md shadow-sm transition whitespace-nowrap">
+                Filter
+            </button>
+
+            <!-- Clear Filter 'X' -->
+            <% if (locals.filterStatus) { %>
+                <a href="/admin/returns?search=<%= locals.searchQuery || '' %>" title="Clear Filter" class="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-md shadow-sm transition flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </a>
+            <% } %>
+        </div>
+
+    </form>
+
+    <!-- Table Container -->
+    <div class="border border-gray-200 rounded-lg overflow-hidden bg-white mb-6">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-200 bg-white">
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Return ID</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Customer</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Product</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Refund Amount</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Reason</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Return Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600">Requested Date</th>
+                    <th class="px-6 py-4 w-24"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <% if (returns && returns.length > 0) { %>
+                    <% returns.forEach(order => { %>
+                        <tr class="hover:bg-gray-50/50 transition">
+                            
+                            <!-- Return ID -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-600">
+                                <%= order.returnId %>
+                            </td>
+                            
+                            <!-- Customer -->
+                            <td class="px-6 py-5 text-[13px]">
+                                <div class="font-medium text-gray-800"><%= order.shippingAddress.fullName %></div>
+                                <div class="text-[11px] text-gray-500 font-medium mt-0.5"><%= order.user ? order.user.email : 'N/A' %></div>
+                            </td>
+                            
+                            <!-- Product Summary -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-600">
+                                <%= order.productSummary %>
+                            </td>
+                            
+                            <!-- Refund Amount -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
+                                ₹<%= order.totalAmount.toLocaleString('en-IN') %>
+                            </td>
+
+                            <!-- Reason -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
+                                <%= order.returnRequest.reason || 'N/A' %>
+                            </td>
+                            
+                            <!-- Return Status -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
+                                <%= order.returnRequest.status %>
+                            </td>
+                            
+                            <!-- Requested Date -->
+                            <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
+                                <%= order.requestedDate %>
+                            </td>
+                            
+                            <!-- Action Button -->
+                            <td class="px-6 py-5">
+                                <!-- Will point to the specific return details page -->
+                                <a href="/admin/returns/<%= order._id %>" class="px-5 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-white text-[11px] font-bold rounded shadow-sm transition">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-sm font-medium text-gray-500">
+                            No return requests found.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="mt-8 flex justify-center">
+        <% const additionalQueries = `&search=${locals.searchQuery || ''}&status=${locals.filterStatus || ''}`; %>
+        
+        <%- include('../partial/admin/pagination', { 
+            baseUrl: '/admin/returns', 
+            currentPage: currentPage, 
+            totalPages: totalPages,
+            extraQuery: additionalQueries
+        }) %>
+    </div>
+
+</main>

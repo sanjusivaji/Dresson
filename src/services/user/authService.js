@@ -97,6 +97,9 @@ export const authenticateLocalUser = async (email, password) => {
             logger.warn(`Auth failed: Incorrect password for email: ${email}`);
             throw new Error("Invalid email or password.");
         }
+        authRepository.updateLastLogin(user._id).catch(err =>                             // For 'adding' 'lastLogin' field into 'user' collection   
+            logger.error(`Failed to update last login for ${user._id}: ${err.message}`)
+        );
         logger.info(`Authentication successful for user ID: ${user._id || email}`);
         return user;
     } catch (error) {

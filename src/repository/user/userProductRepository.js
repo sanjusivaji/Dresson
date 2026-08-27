@@ -1,6 +1,7 @@
 import Product from '../../model/productModel.js';
 import Category from '../../model/categoryModel.js';
 
+
 // For retrieve 'ObjectId' of 'category'
 export const findCategory = async (searchTerm) => {
     return await Category.findOne({
@@ -24,16 +25,18 @@ export const findProductCategory = async(productId) => {
         }).populate('subCategory').lean();
 }
 
+// For retrieve 'category' collection data, based on 'isListed: true' and only return '_id', 'gender', 'categoryName'
 export const findActiveCategories = async () => {
     return await Category.find({ isListed: true }).select('_id gender categoryName').lean();
 };
 
-
+// Counting 'Product' documents based on 'filterQuery'
 export const countFilteredProducts = async (filterQuery) => {
     return await Product.countDocuments(filterQuery);
 };
 
 
+// For retrieve 'Product' data based on 'filterQuery' and 'populating' 'subCategory', 'categoryName'(both are from 'category' collection) and 'gender'(from 'User' collection)
 export const findPaginatedProducts = async (filterQuery, sortConfig, skip, limit) => {
     return await Product.find(filterQuery)
         .populate('subCategory', 'categoryName gender')
@@ -41,4 +44,31 @@ export const findPaginatedProducts = async (filterQuery, sortConfig, skip, limit
         .skip(skip)
         .limit(limit)
         .lean();
+};
+
+
+// Retrieve 'Product' data based on 'subCategoryId', 'excludeProductId', 'isListed: true' etc
+export const findRelatedProducts = async (subCategoryId, excludeProductId, limit = 4) => {
+    return await Product.find({
+        subCategory: subCategoryId,
+        _id: { $ne: excludeProductId },
+        isListed: true
+    })
+    .limit(limit)
+    .lean();
+};
+
+// Retrieve all 'Product' data based on 'prodctId'
+export const findProductByIdDoc = async (productId) => {
+    return await Product.findById(productId); 
+};
+
+// Retrieve all 'Product' data based on 'prodctId' and 'leaning' for 'display'
+export const findProductByIdLean = async (productId) => {
+    return await Product.findById(productId).lean(); 
+};
+
+// Retrieve 'user' data based on 'userId' and 'leaning'
+export const findUserByIdLean = async (userId) => {
+    return await User.findById(userId).lean();
 };

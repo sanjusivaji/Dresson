@@ -1,0 +1,126 @@
+<div class="flex justify-center items-start w-full min-h-screen p-4">
+    <div class="bg-white w-full max-w-5xl p-8 rounded-xl shadow-sm border border-gray-200 mt-6">
+        
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-black">Edit Banner</h1>
+                <p class="text-gray-500 text-sm mt-1">Update promotional asset details or replace the image</p>
+            </div>
+            <a href="/admin/banner" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-md text-sm font-semibold transition flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Banners
+            </a>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-10">
+            
+            <!-- Left Side: Current Image Preview -->
+            <div class="w-full md:w-5/12 flex flex-col">
+                <label class="block text-sm font-bold text-gray-800 mb-3">Current Banner Image</label>
+                <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                    <!-- Displays the exact image currently hosted on AWS S3 -->
+                    <img src="<%= banner.imageUrl %>" alt="<%= banner.title %>" class="w-full h-auto object-cover">
+                </div>
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <p class="text-xs text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i> 
+                        <strong>Note:</strong> If you upload a new image, the current one will be deleted from AWS S3 automatically. Leave the file upload blank to keep this image.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Side: Edit Form -->
+            <div class="w-full md:w-7/12">
+                <!-- Added id="editBannerForm" for JS targeting -->
+                <form id="editBannerForm" action="/admin/banner/edit/<%= banner._id %>" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Banner Title</label>
+                        <input type="text" name="title" value="<%= banner.title %>" required class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Placement Location</label>
+                        <select name="placement" required class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+                            <option value="Home Hero" <%= banner.placement === 'Home Hero' ? 'selected' : '' %>>Home Page - Top Hero</option>
+                            <option value="Home Mid" <%= banner.placement === 'Home Mid' ? 'selected' : '' %>>Home Page - Middle Section</option>
+                            <option value="Thank You Page" <%= banner.placement === 'Thank You Page' ? 'selected' : '' %>>Order Thank You Page</option>
+                            <option value="Kids Category" <%= banner.placement === 'Kids Category' ? 'selected' : '' %>>Kids Category Page</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Target URL (Optional)</label>
+                        <input type="text" name="targetUrl" value="<%= banner.targetUrl %>" class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Replace Image (Optional, Max 5MB)</label>
+                        <!-- Added id="editBannerImageInput" to connect with our cropper script -->
+                        <input type="file" id="editBannerImageInput" name="bannerImage" accept="image/*" class="w-full border border-gray-300 rounded-md px-4 py-2 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-black hover:file:bg-gray-200 cursor-pointer">
+                    </div>
+
+                    <div class="flex items-center mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
+                        <input type="checkbox" name="isActive" id="isActive" <%= banner.isActive ? 'checked' : '' %> class="w-4 h-4 text-black border-gray-300 rounded focus:ring-black cursor-pointer">
+                        <label for="isActive" class="ml-2 text-sm font-medium text-gray-800 cursor-pointer">Banner is active and visible on the storefront</label>
+                    </div>
+
+                    <div class="pt-4 flex justify-end space-x-3 border-t border-gray-100 mt-6">
+                        <a href="/admin/banner" class="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-md transition">Cancel</a>
+                        <button type="submit" class="px-5 py-2.5 text-sm font-semibold bg-black text-white rounded-md hover:bg-gray-800 transition shadow-sm">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- 1. Include the Shared Cropper Script -->
+<script src="/js/shared/imageCropper.js"></script>
+
+<!-- 2. Single Image Cropper Initialization -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const bannerInput = document.getElementById('editBannerImageInput');
+        const submitBtn = document.querySelector('#editBannerForm button[type="submit"]');
+
+        bannerInput.addEventListener('change', function(e) {
+            if (this.files.length === 0) return;
+
+            const file = this.files[0];
+            
+            // Get the selected placement to determine aspect ratio (keeps UI consistent)
+            const placement = document.querySelector('select[name="placement"]').value;
+            const dynamicRatio = (placement === 'Home Hero' || placement === 'Home Mid') ? 16 / 9 : NaN;
+
+            // Disable submit button while cropping is in progress
+            submitBtn.disabled = true; 
+            submitBtn.innerText = 'Cropping...';
+
+            window.ImageCropper.openCropper({
+                file: file,
+                aspectRatio: dynamicRatio, 
+                onCrop: (blob) => {
+                    // Create a DataTransfer object to hold the new cropped file
+                    const dataTransfer = new DataTransfer();
+                    
+                    // Convert the Blob back to a File
+                    const croppedFile = new File([blob], file.name, { 
+                        type: 'image/jpeg', 
+                        lastModified: Date.now() 
+                    });
+                    
+                    dataTransfer.items.add(croppedFile);
+                    
+                    // Replace the original uncropped file in the input with the cropped one
+                    bannerInput.files = dataTransfer.files;
+                    
+                    // Re-enable the submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Save Changes';
+                }
+            });
+        });
+    });
+</script>

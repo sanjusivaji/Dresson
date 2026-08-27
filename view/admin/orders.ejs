@@ -1,0 +1,161 @@
+<%- contentFor('body') %>
+
+<main class="flex-1 bg-gray-50/50 p-8 min-h-screen">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Order Management</h1>
+        <p class="text-xs text-gray-500 mt-1 font-medium">View, Filter and Manage customer orders</p>
+    </div>
+
+    <!-- Filter Form Container -->
+    <form action="/admin/orders" method="GET" id="filterForm">
+        
+        <!-- Search Bar -->
+        <div class="mb-6 w-full max-w-2xl flex gap-3">
+            <input 
+                type="text" 
+                name="search"
+                value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+                placeholder="Search by Order ID or Customer Name..." 
+                class="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-800 placeholder-gray-400 bg-white"
+            >
+            <button type="submit" class="px-6 py-2.5 bg-gray-800 hover:bg-gray-900 text-white text-sm font-bold rounded-md shadow-sm transition">
+                Search
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-4 mb-8 items-center">
+            
+            <!-- Order Status -->
+            <select name="status" onchange="document.getElementById('filterForm').submit()" class="px-4 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[13px] font-bold rounded shadow-sm focus:outline-none cursor-pointer transition">
+                <option value="" class="bg-white">Status: All</option>
+                <option value="Pending" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Pending' ? 'selected' : '' %>>Pending</option>
+                <option value="Processing" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Processing' ? 'selected' : '' %>>Processing</option>
+                <option value="Shipped" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Delivered" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Cancelled" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="Returned" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Returned' ? 'selected' : '' %>>Returned</option>
+            </select>
+
+            <!-- Payment Method -->
+            <select name="payment" onchange="document.getElementById('filterForm').submit()" class="px-4 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[13px] font-bold rounded shadow-sm focus:outline-none cursor-pointer transition">
+                <option value="" class="bg-white">Payment: All</option>
+                <option value="COD" class="bg-white" <%= typeof paymentFilter !== 'undefined' && paymentFilter === 'COD' ? 'selected' : '' %>>Cash on Delivery</option>
+                <option value="Razorpay" class="bg-white" <%= typeof paymentFilter !== 'undefined' && paymentFilter === 'Razorpay' ? 'selected' : '' %>>Razorpay</option>
+                <option value="Wallet" class="bg-white" <%= typeof paymentFilter !== 'undefined' && paymentFilter === 'Wallet' ? 'selected' : '' %>>Wallet</option>
+            </select>
+
+            <!-- Date Range -->
+            <select name="date" onchange="document.getElementById('filterForm').submit()" class="px-4 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[13px] font-bold rounded shadow-sm focus:outline-none cursor-pointer transition">
+                <option value="" class="bg-white">Date: All Time</option>
+                <option value="today" class="bg-white" <%= typeof dateFilter !== 'undefined' && dateFilter === 'today' ? 'selected' : '' %>>Today</option>
+                <option value="week" class="bg-white" <%= typeof dateFilter !== 'undefined' && dateFilter === 'week' ? 'selected' : '' %>>Last 7 Days</option>
+                <option value="month" class="bg-white" <%= typeof dateFilter !== 'undefined' && dateFilter === 'month' ? 'selected' : '' %>>Last 30 Days</option>
+            </select>
+
+            <!-- Clear Filters Button -->
+            <% if ((typeof searchQuery !== 'undefined' && searchQuery) || (typeof statusFilter !== 'undefined' && statusFilter) || (typeof paymentFilter !== 'undefined' && paymentFilter) || (typeof dateFilter !== 'undefined' && dateFilter)) { %>
+                <a href="/admin/orders" class="px-4 py-2 text-red-600 hover:text-red-800 text-[13px] font-bold underline transition">
+                    Clear Filters
+                </a>
+            <% } %>
+        </div>
+    </form>
+
+    <!-- Table Container -->
+    <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b border-gray-200 bg-gray-50/50">
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-24 uppercase tracking-wider">Order ID</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-28 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-32 uppercase tracking-wider">Date</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-28 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-36 uppercase tracking-wider">Payment</th>
+                    <th class="px-6 py-4 w-20"></th> 
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                <% if (orders && orders.length > 0) { %>
+                    <% orders.forEach(order => { %>
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <!-- Order ID -->
+                            <td class="px-6 py-4 text-[13px] font-bold text-gray-800 font-mono">
+                                #<%= order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000' %>
+                            </td>
+                            
+                            <!-- Customer Info -->
+                            <td class="px-6 py-4 text-[13px]">
+                                <div class="font-bold text-gray-800"><%= order.shippingAddress.fullName %></div>
+                                <div class="text-[11px] text-gray-500 font-semibold mt-0.5"><%= order.user ? order.user.email : 'N/A' %></div>
+                            </td>
+                            
+                            <!-- Amount -->
+                            <td class="px-6 py-4 text-[13px] font-black text-gray-900">
+                                ₹<%= order.totalAmount.toLocaleString('en-IN') %>
+                            </td>
+                            
+                            <!-- Date -->
+                            <td class="px-6 py-4 text-[13px] font-semibold text-gray-600">
+                                <%= order.formattedDate %>
+                            </td>
+                            
+                            <!-- Status -->
+                            <td class="px-6 py-4 text-[12px] font-bold uppercase tracking-wider">
+                                <% if (order.deliveryStatus === 'Delivered') { %>
+                                    <span class="text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">Delivered</span>
+                                <% } else if (order.deliveryStatus === 'Cancelled') { %>
+                                    <span class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">Cancelled</span>
+                                <% } else if (order.deliveryStatus === 'Pending' || order.deliveryStatus === 'Processing') { %>
+                                    <span class="text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100"><%= order.deliveryStatus %></span>
+                                <% } else if (order.deliveryStatus === 'Shipped' || order.deliveryStatus === 'Out for Delivery') { %>
+                                    <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100"><%= order.deliveryStatus %></span>
+                                <% } else if (order.deliveryStatus === 'Returned') { %>
+                                    <span class="text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">Returned</span>
+                                <% } else { %>
+                                    <span class="text-gray-600 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-200"><%= order.deliveryStatus %></span>
+                                <% } %>
+                            </td>
+                            
+                            <!-- Payment Method -->
+                            <td class="px-6 py-4 text-[13px] font-bold text-gray-700">
+                                <%= order.paymentMethod %>
+                            </td>
+                            
+                            <!-- Action Button -->
+                            <td class="px-6 py-4 text-right">
+                                <a href="/admin/orders/<%= order._id %>" class="inline-block px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-[11px] font-extrabold rounded shadow-sm transition uppercase tracking-wide">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <i class="fas fa-box-open text-3xl text-gray-300 mb-3 block"></i>
+                            <span class="text-sm font-bold text-gray-500">No orders found matching your criteria.</span>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <% 
+        // Build the query object dynamically so the pagination partial knows which filters to keep
+        const activeQuery = {};
+        if (typeof searchQuery !== 'undefined' && searchQuery) activeQuery.search = searchQuery;
+        if (typeof statusFilter !== 'undefined' && statusFilter) activeQuery.status = statusFilter;
+        if (typeof paymentFilter !== 'undefined' && paymentFilter) activeQuery.payment = paymentFilter;
+        if (typeof dateFilter !== 'undefined' && dateFilter) activeQuery.date = dateFilter;
+    %>
+    <%- include('../partial/shared/pagination', { 
+        baseUrl: '/admin/orders', 
+        query: activeQuery 
+    }) %>
+
+</main>

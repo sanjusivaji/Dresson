@@ -19,10 +19,10 @@ export const fetchAddCategoryOptions = async () => {
 
 // For retrieve data of 'categories'
 export const buildCategoriesListDashboard = async (query) => {
-    const page = parseInt(query.page) || 1;     //  Here 'query' is the 'object' will send from 'controller'(ie we capture 'page' data from 'req.query.page' in 'controller' and we send this 'page' data from 'controller' to 'service' through 'query' object and in 'service' we do 'not' use 'req' object ie we do 'not' directly contact with 'browser' api)
+    const page = parseInt(query.page) || 1;                //  Here 'query' is the 'object' will send from 'controller'(ie we capture 'page' data from 'req.query.page' in 'controller' and we send this 'page' data from 'controller' to 'service' through 'query' object and in 'service' we do 'not' use 'req' object ie we do 'not' directly contact with 'browser' api)
     const limit = CATEGORY_PAGINATION.LIMIT;
     const skip = (page - 1) * limit;
-    const searchQuery = query.search || '';    // 'search' is the 'name' attribute in '<input>'(ie '<input type="text" name="search">')and it retrieve in 'controller' and send it from 'controller' to 'service' through 'query' object. 
+    const searchQuery = query.search || '';                // 'search' is the 'name' attribute in '<input>'(ie '<input type="text" name="search">')and it retrieve in 'controller' and send it from 'controller' to 'service' through 'query' object. 
     const error_msg = query.error || null;
     let filterQuery = {};
     if (searchQuery) {
@@ -47,12 +47,12 @@ export const buildCategoriesListDashboard = async (query) => {
 
 // For 'toggling' ie 'list' and 'unlisting' category
 export const toggleCategoryListing = async (categoryId) => {
-    const category = await categoryRepository.findCategoryById(categoryId);     // Retrieve only one 'category' based on 'id'     
+    const category = await categoryRepository.findCategoryById(categoryId);                        // Retrieve only one 'category' based on 'id'     
     if (!category) {
         throw new Error("Category not found inside registry logs.");
     }
-    if (category.isListed === true) {                                         // Here it checks 'category' contains 'isListed:true' and then if we want to turn 'isListed: false' we should check the category contains other 'subcaterories' or 'products' is it, we 'cannot' turn into 'isListed:false' also send an 'error' message to display in 'front end'. 
-        const hasActiveSubcategories = await Category.exists({                // Here 'exists()' is 'built-in' 'mongoose' method and it used for check whether ‘document’ is ‘exists’ or ‘not’ ie if ‘document’ exists it return ‘id’ and other wise return ‘null’   and if we use 'Category.findOne()’(ie ‘Category’ is ‘collection’/‘model’ name) it return entire 'document' but 'exists()' return only 'true' or 'false’.   
+    if (category.isListed === true) {                                                              // Here it checks 'category' contains 'isListed:true' and then if we want to turn 'isListed: false' we should check the category contains other 'subcaterories' or 'products' is it, we 'cannot' turn into 'isListed:false' also send an 'error' message to display in 'front end'. 
+        const hasActiveSubcategories = await Category.exists({                                     // Here 'exists()' is 'built-in' 'mongoose' method and it used for check whether ‘document’ is ‘exists’ or ‘not’ ie if ‘document’ exists it return ‘id’ and other wise return ‘null’   and if we use 'Category.findOne()’(ie ‘Category’ is ‘collection’/‘model’ name) it return entire 'document' but 'exists()' return only 'true' or 'false’.   
             parentCategory: categoryId,
             isListed: true
         });        
@@ -67,7 +67,7 @@ export const toggleCategoryListing = async (categoryId) => {
             throw new Error("Action Blocked: Please unlist all attached products before unlisting this category.");
         }
     }
-    category.isListed = !category.isListed;                                // For 'toggling' and after it, we 'save' the 'toggle' status of 'category' in model(ie 'category.save()').             
+    category.isListed = !category.isListed;                                                       // For 'toggling' and after it, we 'save' the 'toggle' status of 'category' in model(ie 'category.save()').             
     await category.save();    
     return category;
 };

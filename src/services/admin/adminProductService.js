@@ -10,15 +10,15 @@ import { v2 as cloudinary } from 'cloudinary';
 
 // For return 'current products', 'categories', total pages etc
 export const buildProductsListDashboard = async (query = {}) => {
-   const page = Math.max(1, parseInt(query.page) || 1);          // In 'url' all value passes as 'string' so we should convert it into 'number' by using 'parseInt' and 'Math.max()' avoid the possibility crash when pass -ve value.
+   const page = Math.max(1, parseInt(query.page) || 1);                     // In 'url' all value passes as 'string' so we should convert it into 'number' by using 'parseInt' and 'Math.max()' avoid the possibility crash when pass -ve value.
     const limit = parseInt(query.limit) || 4;
-    const skip = (page - 1) * limit;                              // If 'page = 1' then '(page - 1) * limit' ie '1-1 * 4' = 0' ie in 'page 1' 'no' skip.
+    const skip = (page - 1) * limit;                                       // If 'page = 1' then '(page - 1) * limit' ie '1-1 * 4' = 0' ie in 'page 1' 'no' skip.
     const obj = {};    
     const andConditions = []; 
-    if (query.search && query.search.trim() !== '') {             //  Here 'search' is '<input name="search">' value and 'query.search.trim()' checks after 'trimming' string has any value or not.
-        const regex = new RegExp(query.search.trim(), 'i');       //  Here 'search' value is 'shirt' then it match 'SHirt', 't-shirt' etc because of 'i'.
+    if (query.search && query.search.trim() !== '') {                      //  Here 'search' is '<input name="search">' value and 'query.search.trim()' checks after 'trimming' string has any value or not.
+        const regex = new RegExp(query.search.trim(), 'i');                //  Here 'search' value is 'shirt' then it match 'SHirt', 't-shirt' etc because of 'i'.
         andConditions.push({
-            $or: [                                                // '$or' 'mongodb' function can write in 'js' and should use in mongodb structure and it put inside '{ }' and its value put inside '[ ]' and it can be match any value inside it.
+            $or: [                                                         // '$or' 'mongodb' function can write in 'js' and should use in mongodb structure and it put inside '{ }' and its value put inside '[ ]' and it can be match any value inside it.
                 { name: regex }, 
                 { productName: regex }, 
                 { brand: regex }
@@ -67,6 +67,7 @@ export const executeProductCreate = async (bodyData, files) => {
         categoryAncestors, 
         description, 
         variants, 
+        taxRate
     } = bodyData;
     const cleanProductName = (productName || '').trim();
     const existingProduct = await productRepository.findProductByName(cleanProductName);        // It return 'first' matching 'document' from 'Product' category based on 'productName' without 'case sensitive' and '`^${productName}$` ensures 'start'(ie '^') 'exact' name and it put in 'template literals'.
@@ -92,6 +93,8 @@ export const executeProductCreate = async (bodyData, files) => {
     });
     const parsedVariants = variants ? Object.values(variants) : [];
     const totalCalculatedStock = parsedVariants.reduce((acc,item) => acc + (parseInt(item.stock) || 0), 0); // It calculates the 'totalStock'
+    const parsedTaxRate = parseInt(taxRate, 10);
+    const finalTaxRate = isNaN(parsedTaxRate) ? 0 : parsedTaxRate;
     let normalizedAncestors = [];    
     if (categoryAncestors) {                                                    // Here 'categoryAncestors' get from '<input>'(ie passes through 'bodydata' ie 'req.body' from 'controller')and  if an admin selects two categories ie the current category is 'level' '2 or more' ancestor still can be select one, but data base expect array, ie create an 'array'  is the 'first' step of creating 'ancestor tree', and it done 'another' function. 
         normalizedAncestors = Array.isArray(categoryAncestors) ? categoryAncestors : [categoryAncestors];
@@ -106,6 +109,7 @@ export const executeProductCreate = async (bodyData, files) => {
         subCategory: subCategory,
         categoryAncestors: normalizedAncestors, 
         discount: finalDiscount,
+        taxRate: finalTaxRate,
         description: (description || '').trim(),
         images: imageDetails, 
         variants: parsedVariants,
@@ -118,7 +122,7 @@ export const executeProductCreate = async (bodyData, files) => {
 
 // For 'join' those have 'parentCategories', with 'categories'.
 export const fetchProductFormOptions = async () => {
-    const categories = await productRepository.findActiveCategoriesWithParents();
+    const categories = await productRepository.findActiveCategoriesWithParents(); // For retrieve all 'categories' details and place data/document of 'parent category' if 'category' have 'parentCategory' 'id'.
     return { categories };
 };
 
@@ -133,7 +137,7 @@ export const fetchEditProductData = async (productId) => {
 
 // For 'edit' process(ie make perfect values like 'discount', 'productName' etc and extract 'variants' name and ensure is it there and find 'totalStock', 'price' etc and delete the 'existing' images from 'cloudinary' and add image 'routes' to 'database')
 export const executeProductUpdate = async (productId, bodyData, files) => {
-    const { productName, brand, discount, parentCategory, subCategory, description, variants } = bodyData;
+    const { productName, brand, discount,taxRate, parentCategory, subCategory, description, variants } = bodyData;
     const cleanProductName = (productName || '').trim();
     const existingProduct = await productRepository.productNameCheck(productId,cleanProductName);            // For check and return same 'name' of product 'exist'
     if (existingProduct) {
@@ -141,10 +145,13 @@ export const executeProductUpdate = async (productId, bodyData, files) => {
     }
     const parsedDiscount = parseInt(discount, 10);
     const finalDiscount = isNaN(parsedDiscount) ? 0 : Math.min(Math.max(parsedDiscount, 0), 99);            // 'isNaN(parsedDiscount)' preventing 'not numbers' and 'Math.max()' 'prevents' '-ve values'(ie 'minimum' value of 'pareseDiscount' is '0') and 'Math.min()' keeps minimum value as '99'.
+    const parsedTaxRate = parseInt(taxRate, 10);
+    const finalTaxRate = isNaN(parsedTaxRate) ? 0 : parsedTaxRate;
     const updatePayload = {
         name: (productName || '').trim(), 
         brand: (brand || '').trim(),
         discount: finalDiscount,
+        taxRate: finalTaxRate,
         parentCategory: parentCategory,
         subCategory: subCategory,
         description: (description || '').trim(),
@@ -217,3 +224,5 @@ export const toggleProductStatus = async (productId) => {
     await product.save();
     return product;
 };
+
+

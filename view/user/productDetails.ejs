@@ -1,4 +1,3 @@
-
 <%- contentFor('body') %>
 
 <!-- For create a navigation bar with '<a>' link and '<i>' for '>>' on top of the page -->
@@ -82,7 +81,8 @@
                         <i class="fas fa-star text-amber-400 ml-1 text-[10px]"></i>
                     </div>
                     <span class="text-gray-300">|</span>
-                    <a href="#reviewsSection" class="text-xs font-semibold text-gray-500 hover:text-black transition">
+                    <!-- Updated to scroll to the #reviews section! -->
+                    <a href="#reviews" class="text-xs font-semibold text-gray-500 hover:text-black hover:underline transition">
                         <%= product.numReviews || 100 %> verified reviews
                     </a>
                 </div>
@@ -226,6 +226,63 @@
 
         </div>
     </div>
+
+    <!-- REVIEWS SECTION -->
+    <section id="reviews" class="mt-16 pt-12 border-t border-gray-200">
+        <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-8">Customer Reviews</h2>
+
+        <% if (product.reviews && product.reviews.length > 0) { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <% product.reviews.forEach(review => { %>
+                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                        
+                        <!-- Reviewer Profile Header -->
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm">
+                                <%= review.name ? review.name.charAt(0).toUpperCase() : 'U' %>
+                            </div>
+                            <span class="font-bold text-sm text-gray-900"><%= review.name || 'Unknown User' %></span>
+                        </div>
+
+                        <!-- Stars & Date -->
+                        <div class="flex items-center space-x-2 mb-3">
+                            <div class="text-amber-400 text-[11px]">
+                                <% for(let i=1; i<=5; i++) { %>
+                                    <% if (i <= review.rating) { %>
+                                        <i class="fas fa-star"></i>
+                                    <% } else { %>
+                                        <i class="far fa-star text-gray-300"></i>
+                                    <% } %>
+                                <% } %>
+                            </div>
+                            <span class="text-xs text-gray-500 font-medium">
+                                Reviewed on <%= new Date(review.createdAt || new Date()).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                            </span>
+                        </div>
+
+                        <!-- Review Comment -->
+                        <p class="text-sm text-gray-700 leading-relaxed font-medium">
+                            <%= review.comment %>
+                        </p>
+
+                        <!-- Customer Uploaded Image -->
+                        <% if (review.image) { %>
+                            <div class="mt-4">
+                                <img src="<%= review.image %>" alt="Customer uploaded image" class="w-24 h-24 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-90 transition">
+                            </div>
+                        <% } %>
+
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <!-- Empty State -->
+            <div class="bg-gray-50 rounded-xl p-8 text-center border border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800">No reviews yet</h3>
+                <p class="text-sm text-gray-500 mt-1">Be the first to share your thoughts on this product!</p>
+            </div>
+        <% } %>
+    </section>
 
     <!--  For 'related products' -->
     <% if (typeof relatedProducts !== 'undefined' && relatedProducts.length > 0) { %>

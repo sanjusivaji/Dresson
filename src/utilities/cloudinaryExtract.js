@@ -1,3 +1,4 @@
+// For 'delete' the 'cloudinary' images, when we delete the 'product'
 export const extractCloudinaryId = (secureUrl) => {
     try {
         const urlParts = secureUrl.split('/');

@@ -1,31 +1,28 @@
 
-<div class="bg-[#fcfcfc] rounded-xl border border-gray-200/80 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group">
+<!-- This ejs code for display only 'product card'('not' entire home page) -->
+<div class="bg-[#fcfcfc] rounded-xl border border-gray-200/80 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group h-full">
     
-    <div class="relative aspect-3/4 bg-gray-100 overflow-hidden">
-        
-        <!-- Safe Image Extraction -->
+    <!--  Ensures every card is the exact same shape/size -->
+    <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden">        
         <% const imageUrl = (product.images && product.images.length > 0) 
                 ? (product.images[0].url || product.images[0]) 
-                : '/images/default-dress.jpg'; %>
-        
-        <a href="/product/<%= product._id %>">
+                : '/images/default-dress.jpg'; %>        
+        <a href="/product/<%= product._id %>" class="block w-full h-full">
             <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
         </a>
 
-        <!-- Smart Discount & MRP Calculation -->
+        <!-- Discount Badge -->
         <% 
             const displayPrice = product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 1499);
             const mrp = product.mrp || product.originalPrice || Math.round(displayPrice * 1.08);
             const discountPercent = product.discount || Math.max(5, Math.round(((mrp - displayPrice) / mrp) * 100));
         %>
-
-        <!-- Circular Figma '% Off' Badge (Top Right) -->
         <div class="absolute top-2.5 right-2.5 w-11 h-11 bg-red-600 text-white rounded-full flex flex-col items-center justify-center text-[10px] font-black leading-none shadow-md z-10">
             <span><%= discountPercent %>%</span>
             <span class="text-[9px] mt-0.5">Off</span>
         </div>
 
-       <!-- Wishlist Heart (Top Left) -->
+        <!-- Wishlist Button -->
         <button type="button" 
                 onclick="toggleWishlist('<%= product._id %>', this)" 
                 class="absolute top-2.5 left-2.5 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition shadow-2xs z-10 cursor-pointer">
@@ -33,33 +30,28 @@
         </button>
     </div>
 
-    <!-- PRODUCT DETAILS & PRICING -->
+    <!-- Product Details-->
     <div class="p-4 flex flex-col flex-grow justify-between space-y-3 bg-[#faf9f9]">
         <div>
-   
-            <p class="text-[11px] font-bold text-red-700 uppercase tracking-wide truncate"><%= product.brand || 'DRESSON' %></p>
-            
-            <!-- Product Title -->
+            <p class="text-[11px] font-bold text-red-700 uppercase tracking-wide truncate"><%= product.brand || 'DRESSON' %></p>        
             <a href="/product/<%= product._id %>" class="block text-xs font-bold text-gray-800 hover:text-red-600 transition truncate mt-0.5" title="<%= product.name %>">
                 <%= product.name %>
             </a>
-
-       
-            <% 
-                const ratingValue = product.rating || 4; 
-                const reviewCount = product.numReviews || product.reviews?.length || 3; 
-            %>
-            <div class="flex items-center space-x-1 text-amber-400 text-[10px] mt-1 font-extrabold">
-                <span class="text-gray-700 mr-0.5"><%= ratingValue %></span>
+            <!-- Rating -->
+            <a href="/product/<%= product._id %>#reviews" class="flex items-center space-x-1 text-amber-400 text-[10px] mt-1 font-extrabold cursor-pointer hover:opacity-80 group/rating" title="Read Customer Reviews">
+                <span class="text-gray-700 mr-0.5"><%= product.rating || 4 %></span>
                 <i class="fas fa-star"></i>
                 <i class="fas fa-star"></i>
                 <i class="fas fa-star"></i>
                 <i class="fas fa-star"></i>
                 <i class="far fa-star text-gray-300"></i>
-                <span class="text-gray-400 font-normal ml-1">(<%= reviewCount %>)</span>
-            </div>
+                <!-- Hover underline on the numbers, just like Amazon! -->
+                <span class="text-gray-400 font-normal ml-1 group-hover/rating:text-blue-600 group-hover/rating:underline transition">
+                    (<%= product.numReviews || 3 %>)
+                </span>
+            </a>
 
-          
+            <!-- Pricing -->
             <div class="mt-2 flex flex-col">
                 <span class="text-base font-black text-gray-900">₹<%= Number(displayPrice).toLocaleString('en-IN') %></span>
                 <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
@@ -68,12 +60,8 @@
                 </div>
             </div>
 
-            <!-- 5. STOCK STATUS & VARIANT RESOLUTION -->
-            <% 
-                const isStockAvailable = (product.totalStock !== undefined ? product.totalStock : 10) > 0;
-                // Grabs the first variant ID by default so the backend knows which item to add
-                const defaultVariantId = (product.variants && product.variants.length > 0) ? product.variants[0]._id : '';
-            %>
+            <!-- Stock Status -->
+            <% const isStockAvailable = (product.totalStock !== undefined ? product.totalStock : 10) > 0; %>
             <div class="mt-1.5 text-xs font-extrabold">
                 <% if (isStockAvailable) { %>
                     <span class="text-green-600 flex items-center gap-1">
@@ -87,54 +75,34 @@
             </div>
         </div>
 
-     
+        <!-- Add to Cart, Quantity and Buy Now -->
         <div class="pt-2 border-t border-gray-200/80">
             <% if (isStockAvailable) { %>
-                <!-- Active Form for In-Stock Items -->
-                <form action="/cart/add" method="POST" class="space-y-2 m-0">
-                    <!-- Hidden inputs required by your postAddToCart controller -->
+                <form onsubmit="event.preventDefault(); addToCart(this);" class="space-y-2 m-0">
                     <input type="hidden" name="productId" value="<%= product._id %>">
-                    <input type="hidden" name="variantId" value="<%= defaultVariantId %>">
+                    <input type="hidden" name="variantId" value="<%= (product.variants && product.variants.length > 0) ? product.variants[0]._id : '' %>">
                     <input type="hidden" name="actionType" value="cart">
 
-                    <!-- Quantity Select Dropdown (Value sent directly to backend) -->
                     <div class="w-full">
                         <select name="quantity" class="w-full border border-gray-300 rounded-md px-2.5 py-1 text-xs bg-white text-gray-700 font-semibold focus:outline-none focus:border-gray-500 cursor-pointer shadow-2xs">
                             <option value="1">Quantity: 1</option>
                             <option value="2">Quantity: 2</option>
                             <option value="3">Quantity: 3</option>
-                            <option value="4">Quantity: 4</option>
-                            <option value="5">Quantity: 5</option>
                         </select>
                     </div>
 
-                    <!-- Figma Yellow Add To Cart Button (Changed to type="submit") -->
                     <button type="submit" class="w-full py-2 bg-[#facc15] hover:bg-[#eab308] active:scale-[0.99] text-gray-900 text-xs font-black rounded-md shadow-2xs transition cursor-pointer flex items-center justify-center space-x-1.5">
                         <i class="fas fa-shopping-bag text-[11px]"></i>
                         <span>Add to Cart</span>
                     </button>
-                    
-                    <!-- Buy Now Button (Redirects to Details Page to pick Size/Color) -->
-                    <a href="/product/<%= product._id %>" class="block w-full text-center py-2 bg-[#f97316] hover:bg-[#ea580c] active:scale-[0.99] text-white text-xs font-black rounded-md shadow-2xs transition">
-                        Buy Now
-                    </a>
                 </form>
             <% } else { %>
-                <!-- Disabled State for Sold-Out Items -->
                 <div class="space-y-2">
-                    <select disabled class="w-full border border-gray-200 rounded-md px-2.5 py-1 text-xs bg-gray-100 text-gray-400 font-semibold cursor-not-allowed">
-                        <option>Quantity: N/A</option>
-                    </select>
-                    <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed flex items-center justify-center space-x-1">
-                        <i class="fas fa-ban text-[11px]"></i>
-                        <span>Sold Out</span>
-                    </button>
                     <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed">
-                        Unavailable
+                        Sold Out
                     </button>
                 </div>
             <% } %>
         </div>
-
     </div>
 </div>

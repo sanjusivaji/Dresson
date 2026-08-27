@@ -39,19 +39,6 @@
                        class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
                 <p id="brandNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
-
-            <!-- Discount Offer (% Off) Field -->
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
-                <div class="relative">
-                    <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
-                           value="<%= locals.formData && formData.discount !== undefined ? formData.discount : (typeof product !== 'undefined' && product.discount !== undefined ? product.discount : '0') %>"
-                           class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
-                </div>
-                <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-                <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront circular badge.</span>
-            </div>
         </div>
         
         <div class="space-y-6">
@@ -73,6 +60,34 @@
                     <option value="" disabled>Select Subcategory</option>
                 </select>
                 <p id="subCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+            </div>
+        </div>
+
+        <!-- NEW: Discount and TaxRate Section (Side-by-Side) -->
+        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
+                <div class="relative">
+                    <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
+                           value="<%= locals.formData && formData.discount !== undefined ? formData.discount : (typeof product !== 'undefined' && product.discount !== undefined ? product.discount : '0') %>"
+                           class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
+                </div>
+                <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront circular badge.</span>
+            </div>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Tax Rate (%)</label>
+                <% const currentTax = locals.formData && formData.taxRate !== undefined ? formData.taxRate : (typeof product !== 'undefined' && product.taxRate !== undefined ? product.taxRate : '0'); %>
+                <select id="taxRate" name="taxRate" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                    <option value="0" <%= currentTax == '0' ? 'selected' : '' %>>0% (Tax Exempt)</option>
+                    <option value="5" <%= currentTax == '5' ? 'selected' : '' %>>5% (Apparel below ₹1000)</option>
+                    <option value="12" <%= currentTax == '12' ? 'selected' : '' %>>12% (Apparel above ₹1000)</option>
+                    <option value="18" <%= currentTax == '18' ? 'selected' : '' %>>18% (Standard GST)</option>
+                </select>
+                <p id="taxRateError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                <span class="text-[10px] text-gray-400 mt-1">Select the applicable GST slab for this apparel.</span>
             </div>
         </div>
 

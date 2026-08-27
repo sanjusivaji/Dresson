@@ -1,0 +1,161 @@
+<%- contentFor('body') %>
+
+<div class="w-full max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8"> 
+    
+    <!-- Shared User Sidebar -->
+    <aside class="lg:col-span-3">
+        <%- include('../partial/user/userSidebar') %>
+    </aside>
+
+    <main class="w-full flex-1">
+        
+        <!-- Shared Alerts -->
+        <%- include('../partial/shared/alertSuccess') %>
+        <%- include('../partial/shared/alertError') %>
+        <%- include('../partial/shared/warning') %>
+
+        <!-- Soft pink container matching the address page -->
+        <div class="bg-red-50 rounded-3xl p-6 md:p-8 shadow-sm border border-red-100">            
+            
+            <!-- Search & Filter Controls -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 border-b border-red-200/60 pb-6">
+                <h2 class="text-xl font-black text-gray-900">Order History</h2>
+                
+                <form action="/profile/orders" method="GET" class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+                    <!-- Search Box -->
+                    <div class="relative w-full sm:w-64">
+                        <input 
+                            type="text" 
+                            name="search" 
+                            placeholder="Search for product name..." 
+                            value="<%= locals.searchQuery || '' %>" 
+                            class="w-full pl-4 pr-10 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 shadow-sm transition"
+                        >
+                        <i class="fas fa-search absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    </div>
+
+                    <!-- Filter Dropdown -->
+                    <select name="status" class="w-full sm:w-auto px-4 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 bg-white shadow-sm transition font-medium text-gray-700 cursor-pointer">
+                        <option value="">All Statuses</option>
+                        <option value="Pending" <%= locals.filterStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="Processing" <%= locals.filterStatus === 'Processing' ? 'selected' : '' %>>Processing</option>
+                        <option value="Shipped" <%= locals.filterStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                        <option value="Delivered" <%= locals.filterStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                        <option value="Cancelled" <%= locals.filterStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        <option value="Returned" <%= locals.filterStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
+                    </select>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white text-xs font-bold px-6 py-2.5 rounded-full transition shadow-sm">
+                        Filter
+                    </button>
+                    
+                    <!-- Clear Filters (Optional: shows only if a filter/search is active) -->
+                    <% if (locals.searchQuery || locals.filterStatus) { %>
+                        <a href="/profile/orders" class="text-xs font-bold text-red-600 hover:text-red-800 transition whitespace-nowrap">
+                            Clear
+                        </a>
+                    <% } %>
+                </form>
+            </div>
+
+            <% if (orders && orders.length > 0) { %>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center text-sm text-gray-800">                    
+                        <thead>
+                            <tr class="border-b border-gray-300">
+                                <th class="pb-4 font-bold text-left pl-4 w-[15%]">Order ID</th>
+                                <th class="pb-4 font-bold text-left w-[35%]">Product</th>
+                                <th class="pb-4 font-bold w-[15%]">Price</th>
+                                <th class="pb-4 font-bold w-[20%]">Status</th>
+                                <th class="pb-4 font-bold text-center w-[15%]">Actions</th>
+                            </tr>
+                        </thead>                       
+                        <tbody>
+                            <% orders.forEach(order => { %>
+                                <% 
+                                    // Handle Product Summary string
+                                    let productSummary = 'Unknown Product';
+                                    if (order.items && order.items.length > 0 && order.items[0].product) {
+                                        productSummary = order.items[0].product.productName || order.items[0].product.name || 'Dresson Product';
+                                        if (order.items.length > 1) {
+                                            productSummary += ` (+${order.items.length - 1} more)`;
+                                        }
+                                    }
+                                    
+                                    // Handle Dynamic Colors
+                                    let statusColor = 'text-gray-800'; 
+                                    switch(order.deliveryStatus) {
+                                        case 'Delivered':
+                                            statusColor = 'text-green-600';
+                                            break;
+                                        case 'Cancelled':
+                                            statusColor = 'text-red-600';
+                                            break;
+                                        case 'Pending':
+                                        case 'Processing':
+                                            statusColor = 'text-amber-500';
+                                            break;
+                                        case 'Shipped':
+                                            statusColor = 'text-blue-500';
+                                            break;
+                                        case 'Returned':
+                                            statusColor = 'text-gray-500';
+                                            break;
+                                    }
+                                %>
+                                <tr class="border-b border-gray-200 hover:bg-red-100 transition">                                    
+                                    <td class="py-5 pl-4 align-middle text-left font-medium text-gray-600">
+                                        <%= order.orderId ? order.orderId.substring(order.orderId.length - 5) : 'N/A' %>
+                                    </td>
+                                    
+                                    <td class="py-5 pr-4 align-middle text-left font-medium text-gray-700 max-w-[200px] truncate">
+                                        <%= productSummary %>
+                                    </td>
+                                    
+                                    <td class="py-5 pr-4 align-middle font-semibold text-gray-700">
+                                        ₹<%= Math.round(order.totalAmount) %>
+                                    </td>
+                                    
+                                    <!-- Dynamic Color Applied Here -->
+                                    <td class="py-5 pr-4 align-middle font-black tracking-wide <%= statusColor %>">
+                                        <%= order.deliveryStatus === 'Delivered' ? 'RECEIVED' : order.deliveryStatus.toUpperCase() %>
+                                    </td>
+                                    
+                                    <td class="py-5 align-middle">
+                                        <div class="flex items-center justify-center">
+                                            <!-- Details Button matching the pill style of the address actions -->
+                                            <a href="/profile/orders/<%= order._id %>" class="bg-gray-400 hover:bg-gray-500 text-white text-[10px] font-bold px-5 py-1.5 rounded-full transition shadow-sm">
+                                                Details
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Shared Pagination Component -->
+                <div class="mt-8 flex justify-center">
+                    <%- include('../partial/admin/pagination', { 
+                        currentPage: currentPage, 
+                        totalPages: totalPages,
+                        baseUrl: ''
+                    }) %>
+                </div>
+
+            <% } else { %>
+                <div class="py-12 text-center text-gray-500 font-medium">
+                    <p>You haven't placed any orders yet.</p>
+                    <div class="mt-6 flex justify-center">
+                        <a href="/shop" class="bg-red-900 text-white hover:text-white hover:bg-red-950 font-bold py-2.5 px-8 rounded-full transition text-sm shadow-md inline-block">
+                            Start Shopping
+                        </a>
+                    </div>
+                </div>
+            <% } %>
+            
+        </div>
+    </main>
+</div>

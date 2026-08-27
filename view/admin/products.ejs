@@ -51,7 +51,7 @@
                 <th class="py-4 px-6">Product Details</th>
                 <th class="py-4 px-6">Subcategory Classification</th>
                 <th class="py-4 px-6 text-right">Retail Base Price</th>
-                <th class="py-4 px-6 text-center">Available Volume</th>
+                <th class="py-4 px-6 text-center min-w-[180px]">Available Volume</th>
                 <th class="py-4 px-6 text-center">Status</th>
                 <th class="py-4 px-6 w-24"></th>
             </tr>
@@ -61,26 +61,26 @@
                 <% products.forEach(product => { %>
                     <tr class="hover:bg-gray-50/30 transition">
                         
-                        <!-- Media Thumbnail (Fixed: Uses product.images) -->
+                        <!-- Media Thumbnail -->
                         <td class="py-4 px-6">
                             <div class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shadow-xs flex items-center justify-center">
                                 <% const displayImages = product.images || product.productImages || []; %>
                                 <% if (displayImages.length > 0) { %>
-                                    <img src="<%= displayImages[0].url %>" alt="Product thumbnail" class="w-full h-full object-cover">
-                                    <!-- <img src="<%= displayImages[0] %>" alt="Product thumbnail" class="w-full h-full object-cover"> -->
+                                    <% const imgSource = (typeof displayImages[0] === 'object' && displayImages[0].url) ? displayImages[0].url : displayImages[0]; %>
+                                    <img src="<%= imgSource %>" alt="Product thumbnail" class="w-full h-full object-cover">
                                 <% } else { %>
                                     <i class="fas fa-tshirt text-gray-300 text-lg"></i>
                                 <% } %>
                             </div>
                         </td>
 
-                        <!-- Product Details (Fixed: Uses product.name) -->
+                        <!-- Product Details -->
                         <td class="py-4 px-6">
                             <span class="font-bold text-gray-900 block text-sm"><%= product.name || product.productName %></span>
                             <span class="text-[11px] text-gray-400 block font-medium mt-0.5"><i class="fas fa-tag text-[9px] text-gray-300 mr-1"></i><%= product.brand || 'Dresson Original' %></span>
                         </td>
 
-                        <!-- Subcategory Classification (Fixed: Resilient Object vs String ID handling) -->
+                        <!-- Subcategory Classification -->
                         <td class="py-4 px-6 text-gray-600 font-medium">
                             <% if (product.subCategory && typeof product.subCategory === 'object' && product.subCategory.categoryName) { %>
                                 <div class="flex flex-col">
@@ -108,24 +108,44 @@
                             ₹<%= typeof displayPrice === 'number' ? displayPrice.toLocaleString('en-IN') : displayPrice %>
                         </td>
 
-                        <!-- Available Volume (Fixed: Cleaned totalStock & variants calculation) -->
+                        <!-- Available Volume (Variant-Specific Stock Breakdown) -->
                         <td class="py-4 px-6 text-center">
                             <% 
-                                let currentStock = product.totalStock;
-                                if (currentStock === undefined || currentStock === null) {
-                                    if (product.variants && product.variants.length > 0) {
-                                        currentStock = product.variants.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0);
-                                    } else {
-                                        currentStock = product.stock || 0;
-                                    }
+                                let totalCalculatedStock = 0;
+                                if (product.variants && product.variants.length > 0) {
+                                    totalCalculatedStock = product.variants.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0);
+                                } else {
+                                    totalCalculatedStock = product.totalStock ?? product.stock ?? 0;
                                 }
                             %>
-                            <% if (currentStock === 0) { %>
-                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-red-50 text-red-600 border border-red-100">Out of stock</span>
-                            <% } else if (currentStock <= 10) { %>
-                                <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">Low Stock (<%= currentStock %>)</span>
+
+                            <!-- Total Stock Summary Badge -->
+                            <div class="mb-2">
+                                <% if (totalCalculatedStock === 0) { %>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-red-50 text-red-600 border border-red-100">Out of stock</span>
+                                <% } else if (totalCalculatedStock <= 10) { %>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-50 text-amber-700 border border-amber-100 animate-pulse">Low Stock (<%= totalCalculatedStock %> Total)</span>
+                                <% } else { %>
+                                    <span class="text-xs font-bold text-gray-800"><%= totalCalculatedStock %> <span class="text-[10px] text-gray-400 font-normal uppercase">Total Units</span></span>
+                                <% } %>
+                            </div>
+
+                            <!-- Individual Variant Badges -->
+                            <% if (product.variants && product.variants.length > 0) { %>
+                                <div class="flex flex-wrap gap-1 justify-center max-w-[220px] mx-auto">
+                                    <% product.variants.forEach(variant => { %>
+                                        <% 
+                                            const vStock = parseInt(variant.stock) || 0;
+                                            const label = [variant.size, variant.color].filter(Boolean).join('/') || variant.variantSku || 'Unit';
+                                        %>
+                                        <span class="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-medium border <%= vStock === 0 ? 'bg-gray-50 border-gray-200 text-gray-400 line-through' : (vStock <= 3 ? 'bg-amber-50 border-amber-200 text-amber-800 font-bold' : 'bg-gray-100/80 border-gray-200 text-gray-700') %>">
+                                            <span><%= label %>:</span>
+                                            <span class="<%= vStock === 0 ? 'text-red-500 font-bold' : (vStock <= 3 ? 'text-amber-700' : 'text-gray-900 font-bold') %>"><%= vStock %></span>
+                                        </span>
+                                    <% }) %>
+                                </div>
                             <% } else { %>
-                                <span class="text-xs text-gray-600 font-bold"><%= currentStock %> <span class="text-gray-400 font-normal">units</span></span>
+                                <span class="text-[11px] text-gray-400 italic">No variants configured</span>
                             <% } %>
                         </td>
 
@@ -147,7 +167,6 @@
                                         <%= product.isListed ? 'Unlist' : 'List' %>
                                     </button>
                                 </form>
-
                             </div>
                         </td>
                     </tr>
@@ -167,7 +186,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    //  Category Dropdown Filter (Preserves active search queries)
+    // Category Dropdown Filter (Preserves active search queries)
     function applyCategoryFilter(categoryId) {
         const urlParams = new URLSearchParams(window.location.search);
         if (categoryId) {
@@ -179,7 +198,7 @@
         window.location.search = urlParams.toString();
     }
 
-    //  Clear Search Button (Preserves active category filter)
+    // Clear Search Button (Preserves active category filter)
     function clearSearchFilter() {
         const urlParams = new URLSearchParams(window.location.search);
         urlParams.delete('search');
@@ -187,14 +206,14 @@
         window.location.search = urlParams.toString();
     }
 
-    //  Search Form Interceptor: Ensure search submissions reset to Page 1
+    // Search Form Interceptor: Ensure search submissions reset to Page 1
     document.getElementById('searchForm').addEventListener('submit', function(e) {     
         const urlParams = new URLSearchParams(window.location.search);
     });
 
     function confirmToggleStatus(productId, isListed) {
         const actionText = isListed ? 'unlist' : 'list';
-        const confirmColor = isListed ? '#d33' : '#16a34a'; // Red for unlist, Green for list
+        const confirmColor = isListed ? '#d33' : '#16a34a';
 
         Swal.fire({
             title: 'Are you sure?',
@@ -206,7 +225,6 @@
             confirmButtonText: `Yes, ${actionText} it!`
         }).then((result) => {
             if (result.isConfirmed) {
-                // Submit the specific hidden form if confirmed
                 document.getElementById(`toggleForm-${productId}`).submit();
             }
         });

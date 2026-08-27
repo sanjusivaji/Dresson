@@ -1,5 +1,4 @@
 
-
 export const ADDRESS_TYPES = {
     HOME: 'HOME',
     WORK: 'WORK',
@@ -9,8 +8,6 @@ export const ADDRESS_TYPES = {
 export const ADDRESS_CONFIG = {
     PAGINATION_LIMIT: 3
 };
-
-
 
 export const ADDRESS_MESSAGES = {
     AUTH_REQUIRED: "Please log in to continue.",

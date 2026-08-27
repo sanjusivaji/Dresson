@@ -11,8 +11,6 @@ const getUserId = (req) => {
         return req.session.userId;
     }
     if (req.user) {                                                                                // Here 'req.user' means whole user data stores in 'req' object and it mostly happens when we use 'JWT' or 'passport' etc and it also retrieve 3 type of user data 
-
-
         return req.user._id || req.user.id || req.user;
     }
     return null;
@@ -96,7 +94,7 @@ export const patchUpdateQuantity = async (req, res) => {
             return res.status(401).json({ success: false, message: CART_MESSAGES.UNAUTHORIZED_MODIFY });
         }
         const { itemId, quantity } = req.body;
-        const updatedCart = await cartService.updateItemQuantity(userId, itemId, quantity);                  // / For 'update' item quantity(ie '+' and '-' button)             
+        const updatedCart = await cartService.updateItemQuantity(userId, itemId, quantity);                  //  For 'update' item quantity(ie '+' and '-' button)             
         res.status(200).json({
             success: true,
             message: CART_MESSAGES.QTY_UPDATED,

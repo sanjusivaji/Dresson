@@ -1,5 +1,5 @@
 export const COUPON_CONFIG = {
-    PAGINATION_LIMIT: 5 // Matching the pagination style in your design
+    PAGINATION_LIMIT: 5 
 };
 
 export const COUPON_TYPES = {

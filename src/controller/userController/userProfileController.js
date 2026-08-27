@@ -3,6 +3,7 @@ import * as userProfileService from '../../services/user/userProfileService.js';
 import { v2 as cloudinary } from 'cloudinary';
 import * as userService from '../../services/user/userProfileService.js';
 
+
 // For 'display' user profile (when route '/profile')
 export const loadProfile = async (req, res) => {
     try {
@@ -103,14 +104,13 @@ export const updateAvatar = async (req, res) => {
 };
 
 
-
+// For update 'profile image'
 export const updateProfileImage = async (req, res) => {
     try {
         const userId = req.session.user._id;
         const newImagePath = req.file.path;
         await userService.processProfileImageUpdate(userId, newImagePath);
         res.redirect('/profile');
-
     } catch (error) {
         console.error("Profile image update failed:", error);
         res.status(500).send("Error updating profile");

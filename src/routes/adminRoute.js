@@ -4,10 +4,12 @@ import * as adminController from '../controller/adminController/adminController.
 import * as userController from '../controller/adminController/adminUserController.js';
 import * as productController from '../controller/adminController/adminProductController.js';
 import * as categoryController from '../controller/adminController/adminCategoryController.js';
-import upload from '../config/multer.js';
 import { isAdmin } from '../middleware/adminAuth.js';
 import { uploadProduct } from '../middleware/uploadMiddleware.js';
 import * as couponController from '../controller/adminController/couponController.js';
+import * as adminOrderController from '../controller/adminController/adminOrderController.js'
+import { uploadBanner } from '../middleware/uploadMiddleware.js';
+import * as bannerController from '../controller/adminController/bannerController.js';
 
 
 const router = express.Router();
@@ -34,7 +36,8 @@ router.route('/users/:id/balance')
       .post(isAdmin, userController.updateBalance);
 
 router.get('/users/:id/transactions', isAdmin, userController.getUserTransactions);
-router.get('/users/:id/orders', isAdmin, userController.getUserOrders);
+//router.get('/users/:id/orders', isAdmin, userController.getUserOrders);
+router.get('/users/:id/orders', userController.getUserOrdersList);
 router.post('/users/:id/toggle-block', isAdmin, userController.toggleBlockStatus);
 
 // Route for 'display' admin 'product' page
@@ -87,6 +90,26 @@ router.route('/coupons/add')
 router.route('/coupons/edit/:id')
     .get(isAdmin, couponController.loadEditCouponPage)
     .post(isAdmin, couponController.updateCoupon);
+
+
+// Route for 'orders' page in admin 
+router.get('/orders', isAdmin, adminOrderController.getAdminOrdersPage);
+router.get('/orders/:id', isAdmin, adminOrderController.getAdminOrderDetailsPage);
+router.post('/orders/:id/status', isAdmin, adminOrderController.updateOrderStatus);
+
+// Route for 'order return' page in admin
+router.get('/returns', isAdmin, adminOrderController.getAdminReturnsPage);
+router.get('/returns/:id', isAdmin, adminOrderController.getAdminReturnDetailsPage);
+router.post('/returns/:id/process', isAdmin, adminOrderController.processReturnRequest);
+
+
+// Route for 'banner'
+router.get('/banner', bannerController.getBannersPage);   
+router.post('/banner/add', uploadBanner.array('bannerImages', 5), bannerController.addBanner);      // 'Displaying' 'coupon add' page from 'banner' page itself so there is 'no' seperate 'GET' method for '/banner/add'.
+router.route('/banner/edit/:id')                                                                    // 'Router chaining' for 'banner edit'
+      .get(bannerController.getEditBannerPage)
+      .post(uploadBanner.single('bannerImage'), bannerController.editBanner);
+router.delete('/banner/delete/:id', bannerController.deleteBanner);
 
 
 export default router;

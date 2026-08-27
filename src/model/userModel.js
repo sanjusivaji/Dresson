@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     walletBalance: { type: Number, default: 0 },
     profileImage: { type: String, default: '' },
     avatar: { type: String,},
-    avatarId:{type:String,},    
+    avatarId:{type:String,},   
+    lastLogin: { type: Date, default: null } 
 }, { timestamps: true });
 export default mongoose.model('User', userSchema);

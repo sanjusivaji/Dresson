@@ -4,9 +4,7 @@
         <a href="/admin/users" class="absolute top-10 right-10 border border-gray-300 px-4 py-2 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm">
             Back To Customer
         </a>
-
         <h1 class="text-3xl font-bold text-black mb-8">User Orders</h1>
-
         <div class="flex justify-between items-center mb-6">
             
             <div class="flex space-x-4">
@@ -20,10 +18,24 @@
                 <% }) %>
             </div>
 
-            <form action="" method="GET" class="relative">
+            <form action="" method="GET" class="relative flex items-center">
                 <input type="hidden" name="status" value="<%= typeof currentStatus !== 'undefined' ? currentStatus : 'All' %>">
-                <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search By Order ID or Item..." 
-                       class="border border-gray-300 rounded-md px-4 py-2 text-sm w-72 focus:outline-none focus:border-gray-400 shadow-sm bg-gray-50/20">
+                <button type="submit" class="absolute left-3 text-gray-400 hover:text-blue-600 transition duration-150 flex items-center justify-center cursor-pointer" title="Click to Search">
+                    <i class="fas fa-search text-sm"></i>
+                </button>
+                
+                <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
+                    placeholder="Search By Order ID" 
+                    class="border border-gray-300 rounded-md py-2 pl-9 pr-8 text-sm w-72 focus:outline-none focus:border-gray-400 shadow-sm bg-gray-50/20 transition-all">
+                    
+                <!-- Clear Search Icon -->
+                <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+                    <a href="?status=<%= typeof currentStatus !== 'undefined' ? currentStatus : 'All' %>" 
+                    class="absolute right-3 text-gray-400 hover:text-red-600 transition duration-150 flex items-center justify-center"
+                    title="Clear Search">
+                        <i class="fas fa-times-circle"></i>
+                    </a>
+                <% } %>
             </form>
         </div>
 

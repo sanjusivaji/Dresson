@@ -7,20 +7,35 @@
 
         <h1 class="text-3xl font-bold text-black mb-8">User Transactions</h1>
 
-        <div class="grid grid-cols-3 gap-6 mb-10 w-[85%]">
-            <div class="bg-white py-6 rounded-lg border-2 border-[#22c55e] text-center shadow-sm">
+        <!-- Filter Summary Cards -->
+        <div class="grid grid-cols-3 gap-6 mb-4 w-[85%] relative">
+            
+            <a href="?type=Credit" class="block bg-white py-6 rounded-lg border-2 border-[#22c55e] text-center shadow-sm hover:bg-green-50 transition cursor-pointer <%= locals.currentFilter === 'Credit' ? 'bg-green-50 ring-2 ring-green-300' : '' %>">
                 <h3 class="text-[#22c55e] text-xs font-bold mb-1">Total Credit</h3>
-                <p class="text-[#22c55e] text-3xl font-bold">₹<%= totals.totalCredit %></p>
-            </div>
-            <div class="bg-white py-6 rounded-lg border-2 border-[#ef4444] text-center shadow-sm">
+                <p class="text-[#22c55e] text-3xl font-bold">₹<%= Math.round(totals.totalCredit) %></p>
+            </a>
+            
+            <a href="?type=Debit" class="block bg-white py-6 rounded-lg border-2 border-[#ef4444] text-center shadow-sm hover:bg-red-50 transition cursor-pointer <%= locals.currentFilter === 'Debit' ? 'bg-red-50 ring-2 ring-red-300' : '' %>">
                 <h3 class="text-[#ef4444] text-xs font-bold mb-1">Total Debit</h3>
-                <p class="text-[#ef4444] text-3xl font-bold">₹<%= totals.totalDebit %></p>
-            </div>
-            <div class="bg-white py-6 rounded-lg border-2 border-[#4b5563] text-center shadow-sm">
+                <p class="text-[#ef4444] text-3xl font-bold">₹<%= Math.round(totals.totalDebit) %></p>
+            </a>
+            
+            <a href="?type=Refund" class="block bg-white py-6 rounded-lg border-2 border-[#4b5563] text-center shadow-sm hover:bg-gray-50 transition cursor-pointer <%= locals.currentFilter === 'Refund' ? 'bg-gray-50 ring-2 ring-gray-300' : '' %>">
                 <h3 class="text-[#4b5563] text-xs font-bold mb-1">Total Refund</h3>
-                <p class="text-[#4b5563] text-3xl font-bold">₹<%= totals.totalRefund %></p>
-            </div>
+                <p class="text-[#4b5563] text-3xl font-bold">₹<%= Math.round(totals.totalRefund) %></p>
+            </a>
         </div>
+
+        <!-- Clear Filter Button -->
+        <% if (locals.currentFilter !== 'All') { %>
+            <div class="mb-8 w-[85%] text-right">
+                <a href="?" class="text-sm font-bold text-red-600 hover:text-red-800 transition">
+                    <i class="fas fa-times-circle mr-1"></i> Clear Filter
+                </a>
+            </div>
+        <% } else { %>
+            <div class="mb-10"></div> <!-- Spacing if no filter is active -->
+        <% } %>
 
         <div class="border border-gray-200 rounded-lg overflow-hidden mb-6">
             <table class="w-full text-center border-collapse">
@@ -36,19 +51,16 @@
                 </thead>
                 <tbody class="text-sm">
                     <% if (transactions && transactions.length > 0) { %>
-                        <% transactions.forEach(t => { %>
+                        <% transactions.forEach(item => { %>
                             <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                                <td class="py-4 px-4 text-gray-500 font-medium"><%= t.transactionId %></td>
-                                
+                                <td class="py-4 px-4 text-gray-500 font-medium"><%= item.transactionId %></td>                                
                                 <td class="py-4 px-4 text-gray-600">
-                                    <%= String(new Date(t.date).getDate()).padStart(2, '0') %>-<%= String(new Date(t.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(t.date).getFullYear() %>
-                                </td>
-                                
-                                <td class="py-4 px-4 font-medium text-gray-800"><%= t.sign %>₹<%= t.amount %></td>
-                                
-                                <td class="py-4 px-4 text-gray-600"><%= t.type %></td>
-                                <td class="py-4 px-4 text-gray-600"><%= t.gateway %></td>
-                                <td class="py-4 px-4 text-gray-600"><%= t.status %></td>
+                                    <%= String(new Date(item.date).getDate()).padStart(2, '0') %>-<%= String(new Date(item.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(item.date).getFullYear() %>
+                                </td>                                
+                                <td class="py-4 px-4 font-medium text-gray-800"><%= item.sign %>₹<%= Math.round(item.amount) %></td>                                
+                                <td class="py-4 px-4 text-gray-600"><%= item.type %></td>
+                                <td class="py-4 px-4 text-gray-600"><%= item.gateway %></td>
+                                <td class="py-4 px-4 text-gray-600"><%= item.status %></td>
                             </tr>
                         <% }) %>
                     <% } else { %>

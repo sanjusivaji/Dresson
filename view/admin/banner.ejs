@@ -1,0 +1,241 @@
+<div class="flex justify-center items-start w-full">
+    <div class="bg-white w-full max-w-6xl p-8 rounded-xl shadow-sm border border-gray-200">
+        
+        <!-- Header Section -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-black">Banner & Content</h1>
+                <p class="text-gray-500 text-sm mt-1">Manage storefront banners and promotional assets</p>
+            </div>
+            <!-- Add Button triggers the Modal -->
+            <button onclick="toggleModal('addBannerModal')" class="bg-black hover:bg-gray-800 text-white px-5 py-2.5 rounded-md text-sm font-semibold transition shadow-sm flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add New Banner
+            </button>
+        </div>
+
+        <!-- Banners Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 mb-8">
+            <% if (typeof banners !== 'undefined' && banners.length > 0) { %>
+                <% banners.forEach(banner => { %>
+                    <!-- Banner Card -->
+                    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm bg-white hover:shadow-md transition">
+                        
+                        <!-- Image Container (Object-cover ensures wide banners fit perfectly) -->
+                        <div class="w-full h-48 bg-gray-100 relative group">
+                            <img src="<%= banner.imageUrl %>" alt="<%= banner.title %>" class="w-full h-full object-cover">
+                            
+                            <!-- Status Badge -->
+                            <div class="absolute top-3 right-3">
+                                <% if (banner.isActive) { %>
+                                    <span class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">Active</span>
+                                <% } else { %>
+                                    <span class="bg-gray-200 text-gray-600 text-xs font-bold px-3 py-1 rounded-full shadow-sm">Hidden</span>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Card Details -->
+                        <div class="p-5 flex justify-between items-center">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900"><%= banner.title %></h3>
+                                <p class="text-sm text-gray-500 font-medium mt-1"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> <%= banner.placement %></p>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-3">
+                                <a href="/admin/banner/edit/<%= banner._id %>" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-blue-600 hover:border-blue-300 transition">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button onclick="deleteBanner('<%= banner._id %>')" class="w-10 h-10 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-600 hover:text-red-600 hover:border-red-300 transition">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="col-span-full py-16 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                    <i class="far fa-images text-4xl text-gray-400 mb-3"></i>
+                    <h3 class="text-lg font-semibold text-gray-700">No Banners Found</h3>
+                    <p class="text-gray-500 text-sm mt-1">Click the "Add New Banner" button to create your first promotion.</p>
+                </div>
+            <% } %>
+        </div>
+
+    </div>
+</div>
+
+<!-- For new hidden 'modal' for add coupon -->
+<div id="addBannerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center backdrop-blur-sm">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+        
+        <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50">
+            <h2 class="text-xl font-bold text-gray-800">Add New Banner</h2>
+            <button onclick="toggleModal('addBannerModal')" class="text-gray-400 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+        </div>
+        <form action="/admin/banner/add" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+            
+            <!-- RESTORED: Banner Title is required by the backend -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Banner Title</label>
+                <input type="text" name="title" required placeholder="e.g., Summer Mega Sale" class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Placement Location</label>
+                <select name="placement" required class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+                    <option value="Home Hero">Home Page - Top Hero</option>
+                    <option value="Home Mid">Home Page - Middle Section</option>
+                    <option value="Thank You Page">Order Thank You Page</option>
+                    <option value="Kids Category">Kids Category Page</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Target URL (Optional)</label>
+                <input type="text" name="targetUrl" placeholder="/category/mens" class="w-full border border-gray-300 rounded-md px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-black">
+                <p class="text-xs text-gray-500 mt-1">Where the user goes when they click the banner.</p>
+            </div>
+
+            <!-- CORRECTED: Single input for multiple images, original singular input removed -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Upload Images (Max 5 files, 5MB each)</label>
+                <input type="file" id="bannerImagesInput" name="bannerImages" accept="image/*" multiple required class="w-full border border-gray-300 rounded-md px-4 py-2 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-black hover:file:bg-gray-200 cursor-pointer">
+                <p id="fileError" class="text-xs text-red-600 font-medium mt-1 hidden">You can only select up to 5 images.</p>
+            </div>
+
+            <div class="flex items-center mt-2">
+                <input type="checkbox" name="isActive" id="isActive" checked class="w-4 h-4 text-black border-gray-300 rounded focus:ring-black">
+                <label for="isActive" class="ml-2 text-sm font-medium text-gray-700">Make this banner active immediately</label>
+            </div>
+
+            <div class="pt-4 flex justify-end space-x-3 border-t border-gray-100 mt-6">
+                <button type="button" onclick="toggleModal('addBannerModal')" class="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-md transition">Cancel</button>
+                <button type="submit" class="px-5 py-2.5 text-sm font-semibold bg-black text-white rounded-md hover:bg-gray-800 transition">Upload Banners</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   <!-- For slide the corousel-->
+<script src="/js/shared/imageCropper.js"></script>                    <!-- For image cropping-->
+
+<script>
+    const bannerInput = document.getElementById('bannerImagesInput');
+    const fileError = document.getElementById('fileError');
+    const submitBtn = document.querySelector('#addBannerModal button[type="submit"]');
+    
+    // Variables to handle sequential cropping
+    let dataTransfer = new DataTransfer(); 
+    let selectedFiles = [];
+    let currentFileIndex = 0;
+    bannerInput.addEventListener('change', function(e) {
+        selectedFiles = Array.from(this.files);    
+        //  Validate File Count
+        if (selectedFiles.length > 5) {
+            fileError.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            return;
+        } else {
+            fileError.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        if (selectedFiles.length === 0) return;
+        dataTransfer = new DataTransfer();
+        currentFileIndex = 0;        
+        submitBtn.disabled = true; 
+        submitBtn.innerText = 'Cropping...';
+        
+        processNextImage();
+    });
+
+    //  Recursive function to crop one image after another
+    function processNextImage() {
+        // If we have cropped all files, update the input and re-enable submit!
+        if (currentFileIndex >= selectedFiles.length) {
+            bannerInput.files = dataTransfer.files;
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Upload Banners';
+            return;
+        }
+
+        let file = selectedFiles[currentFileIndex];
+        
+        // Get the selected placement to determine aspect ratio
+        const placement = document.querySelector('select[name="placement"]').value;
+        // Hero banners are usually wide (16:9), Category banners might be narrower
+        const dynamicRatio = (placement === 'Home Hero' || placement === 'Home Mid') ? 16 / 9 : NaN;
+
+        window.ImageCropper.openCropper({
+            file: file,
+            aspectRatio: dynamicRatio, 
+            onCrop: (blob) => {
+                // Convert the cropped Blob back into a File object
+                let croppedFile = new File([blob], file.name, { 
+                    type: 'image/jpeg', 
+                    lastModified: Date.now() 
+                });
+                
+                // Add to our invisible holding area
+                dataTransfer.items.add(croppedFile);
+                
+                // Move to the next image in the queue
+                currentFileIndex++;
+                processNextImage(); 
+            }
+        });
+    }
+
+
+
+    // File selection limit validation
+    document.getElementById('bannerImagesInput').addEventListener('change', function(e) {
+        const fileError = document.getElementById('fileError');
+        const submitBtn = document.querySelector('#addBannerModal button[type="submit"]');
+        
+        if (this.files.length > 5) {
+            fileError.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            fileError.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    });
+    
+    function toggleModal(modalID) {
+        document.getElementById(modalID).classList.toggle("hidden");
+    }
+
+    async function deleteBanner(bannerId) {
+        const result = await Swal.fire({
+            title: 'Delete this banner?',
+            text: "This will remove the banner from your storefront.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#000', // Matches your black theme
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/admin/banner/delete/${bannerId}`, { 
+                    method: 'DELETE' 
+                });
+                
+                if (response.ok) {
+                    window.location.reload(); 
+                } else {
+                    Swal.fire('Error', 'Could not delete banner', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Server communication failed', 'error');
+            }
+        }
+    }
+</script>

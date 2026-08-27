@@ -69,17 +69,32 @@
                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : '' %></textarea>
             <p id="descriptionError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
         </div>
-        
-        <div class="flex flex-col">
-            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
-            <div class="relative">
-                <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
-                       value="<%= locals.formData && formData.discount ? formData.discount : '0' %>"
-                       class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
+
+        <!-- NEW: Discount and TaxRate Section (Side-by-Side) -->
+        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer</label>
+                <div class="relative">
+                    <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
+                           value="<%= locals.formData && formData.discount ? formData.discount : '0' %>"
+                           class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
+                </div>
+                <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront product card badge.</span>
             </div>
-            <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-            <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront product card badge.</span>
+
+            <div class="flex flex-col">
+                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Tax Rate (%)</label>
+                <select id="taxRate" name="taxRate" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                    <option value="0" <%= locals.formData && formData.taxRate == '0' ? 'selected' : '' %>>0% (Tax Exempt)</option>
+                    <option value="5" <%= locals.formData && formData.taxRate == '5' ? 'selected' : '' %>>5% (Apparel below ₹1000)</option>
+                    <option value="12" <%= locals.formData && formData.taxRate == '12' ? 'selected' : '' %>>12% (Apparel above ₹1000)</option>
+                    <option value="18" <%= locals.formData && formData.taxRate == '18' ? 'selected' : '' %>>18% (Standard GST)</option>
+                </select>
+                <p id="taxRateError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                <span class="text-[10px] text-gray-400 mt-1">Select the applicable GST slab for this apparel.</span>
+            </div>
         </div>
     </div>
 

@@ -1,7 +1,6 @@
 import * as adminProductService from '../../services/admin/adminProductService.js';
 import * as adminCategoryService from '../../services/admin/adminCategoryService.js'; 
 import Category from '../../model/categoryModel.js'; 
-import Product from '../../model/productModel.js';
 import logger from '../../utilities/logger.js';
 import { v2 as cloudinary } from 'cloudinary'; 
 

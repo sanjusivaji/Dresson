@@ -15,7 +15,7 @@ const buildInfiniteCategoryTree = (categories, parentId = null, currentDepth = 1
         return item.parentCategory && item.parentCategory.toString() === parentId.toString();                          // Here '3' 'if condition' wrote in 'single' line ie there is 'no' 'parentId'(ie '!parentId'), and 'item' has no 'parentCategory' and also check 'item.parentCategory.toString() === parentId.toString()' ie both are in 'objectId' format so for comparisn we shoudl convert into 'string'
     });
     for (let item of children) {
-        if (visited.has(item._id.toString())) continue;                            // Here 'visited' is 'Set' object and we can create 'Shirt' under 'Top wear' but without 'Set' we can create subcategory as 'reversly'(ie 'Top wear' under 'Shirt' and it cause the 'stack overflow' crash) and 'countinue' skip particular itertion, ie here we just prevent 'display' same category('not' about adding)
+        if (visited.has(item._id.toString())) continue;                            // Here 'visited' is 'Set' object and we can create 'Shirt' under 'Top wear' but without 'Set' we can create subcategory as 'reversly'(ie 'Top wear' under 'Shirt' and it cause the 'stack overflow' crash) and 'countinue' skip particular iteration, ie here we just prevent 'display' same category('not' about adding)
         visited.add(item._id.toString());
         const currentPath = [...parentPath, item.categoryName];                    // 'Spread' operator creates 'combined array'.
         tree.push({                                                                //  Here all items in the object added into 'tree' array,(ie created above) by using 'push()'. 
@@ -180,7 +180,7 @@ export const getEditCategory = async (req, res) => {
 // For 'upload' the 'edit' category
 export const postEditCategory = async (req, res) => {
     try {
-        const { gender, categoryName } = req.body;                                // Retrieve through 'req.body' data get from '<form>  <input>'
+        const { gender, categoryName } = req.body;                                                 // Retrieve through 'req.body' data get from '<form>  <input>'
         const cleanName = categoryName.trim();
         const generatedSlug = `${gender.toLowerCase()}-${cleanName.toLowerCase()}`
              .replace(/[^a-z0-9]+/g, '-')                                                          // except 'a to z' and '0 to 9' all others like 'special characters' etc 'replace' with '-'. 
