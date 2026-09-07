@@ -5,13 +5,24 @@
         <%- include('../partial/user/userSidebar') %>
     </aside>
     <main class="w-full flex-1">
+           <!-- Referral Code Display -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Your Referral Code</label>
+                <div class="flex gap-2">
+                    <input type="text" readonly id="myReferralCode" value="<%= user.referralCode || 'N/A' %>" class="w-full bg-[#f8fcf8] border border-[#208b59]/30 text-xs font-bold px-3 py-2.5 rounded-sm text-[#208b59] focus:outline-none cursor-text">
+                    <button type="button" id="copyReferralBtn" onclick="copyReferralCode()" class="w-20 bg-[#208b59] hover:bg-[#1a734a] text-white text-[10px] font-bold py-1.5 rounded-sm transition-colors duration-300 shadow-sm uppercase tracking-wider text-center">
+                        Copy
+                    </button>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-1 font-normal leading-tight">Share this code! You and your friend both get an amount to wallet balance when they sign up.</p>
+            </div>
         
         <%- include('../partial/shared/alertSuccess') %>
         <%- include('../partial/shared/alertError') %>
         <%- include('../partial/shared/warning') %> 
 
         <div class="flex-grow flex flex-col lg:flex-row gap-8 bg-white p-6 md:p-8 rounded-sm border border-gray-200 shadow-sm min-h-[500px]">
-            
+
              <!-- For change 'email' and 'name' -->
             <div class="space-y-8 flex-grow max-w-2xl">
                 <h2 class="text-2xl font-bold tracking-tight text-gray-900">Profile</h2>
@@ -26,6 +37,7 @@
                             <label class="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
                             <input type="email" readonly value="<%= user.email %>" class="w-full bg-gray-50 border-none text-xs font-semibold px-3 py-2.5 rounded-sm text-gray-500 focus:outline-none cursor-not-allowed">
                         </div>
+                                               
                     </div>
                     
                   <!--   Check for googleId instead of password -->
@@ -47,7 +59,7 @@
                 </div>
 
                  <!-- For change password -->
-                <form action="/profile/update-password" method="POST" id="passwordForm" class="space-y-4 border-t border-gray-100 pt-6">
+                <form action="/profile/update-password" method="POST" id="passwordForm" class="space-y-4 border-t border-gray-100 pt-6" novalidate>
                 <h3 class="text-base font-bold text-gray-400">
                     <%= user.password ? "Change Password" : "Set Local Password Account" %>
                 </h3>            
@@ -72,6 +84,8 @@
                                     <i class="fa-regular fa-eye"></i>
                                 </button>
                             </div>
+                            <!-- Inline Error for Current Password -->
+                            <p id="currentPasswordError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                         </div>
                     <% } %>                
                     <div>
@@ -83,6 +97,8 @@
                             </button>
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1 font-normal leading-tight">Must be at least 8 characters, with 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol.</p>
+                        <!-- Inline Error for New Password -->
+                        <p id="newPasswordError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1">Confirm Password</label>
@@ -92,6 +108,8 @@
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
+                        <!-- Inline Error for Confirm Password -->
+                        <p id="confirmNewPasswordError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                     </div>
                 </div>
                    <div class="pt-4">
@@ -147,10 +165,14 @@
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
                     <input type="text" id="newNameInput" value="<%= user.firstName %> <%= user.lastName %>" class="w-full bg-gray-50 border border-gray-200 text-xs font-semibold px-3 py-2.5 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-400">
+                    <!-- Inline Error for Name -->
+                    <p id="newNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1">New Email Address</label>
                     <input type="email" id="newEmailInput" value="<%= user.email %>" class="w-full bg-gray-50 border border-gray-200 text-xs font-semibold px-3 py-2.5 rounded-sm focus:outline-none focus:ring-1 focus:ring-gray-400">
+                    <!-- Inline Error for Email -->
+                    <p id="newEmailError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                 </div>
                 <% if (user.password) { %>
                     <div>
@@ -161,6 +183,8 @@
                                 <i class="fa-regular fa-eye"></i>
                             </button>
                         </div>
+                        <!-- Inline Error for Confirm Password Modal -->
+                        <p id="confirmPassModalError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                     </div>
                 <% } else { %>
                     <input type="hidden" id="confirmPasswordInput" value="google-user">
@@ -206,26 +230,76 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('confirmPasswordInput');
     let countdownInterval;
 
+    // It is the 'helper function' we call below
+    function clearInlineErrors() {
+        document.querySelectorAll('.inline-error').forEach(el => {
+            el.classList.add('hidden');
+            el.innerText = '';
+        });
+    }
+
+    function showInlineError(elementId, message) {
+        const errorElement = document.getElementById(elementId);
+        if (errorElement) {
+            errorElement.innerText = message;
+            errorElement.classList.remove('hidden');
+        }
+    }
+
+   // For 'copy Referral' code
+    window.copyReferralCode = function() {
+        const codeInput = document.getElementById('myReferralCode');
+        const copyBtn = document.getElementById('copyReferralBtn');        
+        if (codeInput.value && codeInput.value !== 'N/A') {
+            navigator.clipboard.writeText(codeInput.value).then(() => {
+                copyBtn.innerText = "COPIED!";                                 // Changed '<button>' text 'COPY' into 'COPIED' for '2' seconds
+                copyBtn.classList.replace('bg-[#208b59]', 'bg-gray-800');
+                copyBtn.classList.replace('hover:bg-[#1a734a]', 'hover:bg-gray-900');
+                setTimeout(() => {
+                    copyBtn.innerText = "COPY";
+                    copyBtn.classList.replace('bg-gray-800', 'bg-[#208b59]');
+                    copyBtn.classList.replace('hover:bg-gray-900', 'hover:bg-[#1a734a]');
+                }, 2000);
+            }).catch(err => {
+                console.error("Failed to copy", err);
+            });
+        }
+    };
+
     // For 'change password'
     const passwordForm = document.getElementById('passwordForm');
     const passwordFormError = document.getElementById('passwordFormError');
     if (passwordForm) {
         passwordForm.addEventListener('submit', function(e) {
+            clearInlineErrors(); // Clear existing custom validation text
+            let isValid = true;
+            
+            const currentPassEl = document.getElementById('passwordInput');
             const newPasswordValue = document.getElementById('newPassword').value;
             const confirmPasswordValue = document.getElementById('confirmNewPassword').value;
-            passwordFormError.classList.add('hidden');
-            passwordFormError.innerText = "";
+            
+            if (passwordFormError) {
+                passwordFormError.classList.add('hidden');
+                passwordFormError.innerText = "";
+            }
+
+            if (currentPassEl && !currentPassEl.value.trim()) {
+                showInlineError('currentPasswordError', 'Current password is required.');
+                isValid = false;
+            }
+            
             const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_'])[A-Za-z\d@$!%*?&_']{8,}$/;
             if (!passwordRegex.test(newPasswordValue)) {                               // If it is 'true' ie 'test' is built-in 'regular expression' method and it checks if it matches strict security pattern(ie 'passwordRegex').
-                e.preventDefault(); 
-                passwordFormError.innerText = "Weak Password: Must be at least 8 characters and include uppercase, lowercase, a number, and a special character.";
-                passwordFormError.classList.remove('hidden');                          // For display the error
-                return;
+                showInlineError('newPasswordError', 'Weak Password: Must be at least 8 characters and include uppercase, lowercase, a number, and a special character.');                          // For display the error below input
+                isValid = false;
             }
             if (newPasswordValue !== confirmPasswordValue) {
+                showInlineError('confirmNewPasswordError', 'Passwords do not match!');
+                isValid = false;
+            }
+
+            if (!isValid) {
                 e.preventDefault();
-                passwordFormError.innerText = "Passwords do not match!";
-                passwordFormError.classList.remove('hidden');
                 return;
             }
         });
@@ -235,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openModalBtn) {
         openModalBtn.addEventListener('click', () => {
             emailModal.classList.remove('hidden');
-            emailModal.classList.add('flex');          // If we put 'flex' directly into your 'ejs' file, would conflict with 'hidden' class, so we 
+            emailModal.classList.add('flex');                                   // If we put 'flex' directly into your 'ejs' file, would conflict with 'hidden' class, so we 
         });
     }
     
@@ -243,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModalBtn.addEventListener('click', () => {
             emailModal.classList.add('hidden');
             emailModal.classList.remove('flex');
-            clearInterval(countdownInterval);         // Here 'setInterval()' starts the infinite 'clock loop' and assigns its 'tracking ID' to variable 'countdownInterval' and 'clearInterval()' used for 'stop' this 'timer' and here we use it for 'close' the timer when close the 'modal'(ie when we close the 'modal' there is no need for timer).
+            clearInterval(countdownInterval);                                 // Here 'setInterval()' starts the infinite 'clock loop' and assigns its 'tracking ID' to variable 'countdownInterval' and 'clearInterval()' used for 'stop' this 'timer' and here we use it for 'close' the timer when close the 'modal'(ie when we close the 'modal' there is no need for timer).
+            clearInlineErrors(); // Clear validation on close
         });
     }
 
@@ -281,10 +356,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendOtpBtn = document.getElementById('sendOtpBtn');
     if (sendOtpBtn) {
         sendOtpBtn.addEventListener('click', async () => {
+            clearInlineErrors(); 
+            let isValid = true;
+            
             const newName = document.getElementById('newNameInput').value;       // It extract 'string' value that put inside '<input>'(ie we 'donot' retrieve entire element)
             const newEmail = document.getElementById('newEmailInput').value;
             const password = passwordInput ? passwordInput.value : '';
-            modalError.classList.add('hidden');
+            if (!newName.trim() || newName.trim().length < 3) {
+                showInlineError('newNameError', 'Name must be at least 3 characters.');
+                isValid = false;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(newEmail.trim())) {
+                showInlineError('newEmailError', 'Please enter a valid email address.');
+                isValid = false;
+            }
+            if (passwordInput && passwordInput.value !== 'google-user' && !password.trim()) {
+                showInlineError('confirmPassModalError', 'Current password is required to save changes.');
+                isValid = false;
+            }          
+            if (!isValid) return;             
+            if (modalError) modalError.classList.add('hidden');            
             const response = await fetch('/profile/change-email-request', {    // Uploading all data
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },               // We should put this 'header' except when we send 'formData'
@@ -296,8 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 stepOtp.classList.remove('hidden');
                 startCountdown();                                              // This function created just above for 'count down'
             } else {
-                modalError.innerText = data.message;
-                modalError.classList.remove('hidden');
+                if (modalError) {
+                    modalError.innerText = data.message;
+                    modalError.classList.remove('hidden');
+                }
             }
         });
     }
@@ -308,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
         verifyOtpBtn.addEventListener('click', async () => {
             let combinedOtp = "";
             otpBoxes.forEach(item => combinedOtp += item.value);              // Combine all 'otp' into single string
-            modalError.classList.add('hidden');
+            if (modalError) modalError.classList.add('hidden');
 
             const response = await fetch('/profile/change-email-verify', {
                 method: 'POST',
@@ -319,8 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 window.location.reload(); 
             } else {
-                modalError.innerText = data.message;
-                modalError.classList.remove('hidden');
+                if (modalError) {
+                    modalError.innerText = data.message;
+                    modalError.classList.remove('hidden');
+                }
             }
         });
     }
@@ -330,14 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileImageInput = document.getElementById('profileImageInput'); // For '<input>' image
     const avatarImg = document.getElementById('avatarImg');                 // For display 'image', by using '<img>' with 'src'
     const avatarPlaceholder = document.getElementById('avatarPlaceholder'); // For display 'place holder' user image, when 'not' actual image
-    
     if (profilePicBtn && profileImageInput) {
-        profilePicBtn.addEventListener('click', () => profileImageInput.click()); // Here 'profileImageInput' represents '<input type="file">' element and we make it 'hidden'(ie 'without' 'hidden' 'tailwind' class, it display a 'box' with name 'choose file') and when user click the '<button>'(ie 'edit profile picture' text), it triggers the 'input' and display 'our' own computer 'file inputs'. 
-        
+        profilePicBtn.addEventListener('click', () => profileImageInput.click()); // Here 'profileImageInput' represents '<input type="file">' element and we make it 'hidden'(ie 'without' 'hidden' 'tailwind' class, it display a 'box' with name 'choose file') and when user click the '<button>'(ie 'edit profile picture' text), it triggers the 'input' and display 'our' own computer 'file inputs'.        
         profileImageInput.addEventListener('change', async (e) => {               // 'change' event triggers when user 'select' the file and we interact with internet and it may be make 'slow' so we should use 'async/await',
             const imageFile = e.target.files[0];
-            if (!imageFile) return;
-            
+            if (!imageFile) return;        
             const packetData = new FormData();
             packetData.append('profileImage', imageFile);
             
@@ -375,8 +468,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 </script>
-
-
-
-
-

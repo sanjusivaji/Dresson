@@ -46,7 +46,7 @@ export const getAddProduct = async (req, res) => {
             categories: treeCategories, 
             formData: {},
             errorMessage: null,
-            activePage: 'products'                    
+            layout: 'layout/auth'                  
         });
     } catch (error) {
         logger.error("Error loading Add Product workspace:", error);
@@ -63,7 +63,7 @@ export const postAddProduct = async (req, res) => {
                 categories,                                                              // Here we 'rendering' in 'error' case, and then also we should need 'categories' because 'error' should display between normal display.
                 error: "Catalog creation failed: A minimum of 3 product images is required.",
                 formData: req.body,
-                activePage: 'products'
+                layout: 'layout/auth'
             });
         }  
         await adminProductService.executeProductCreate(req.body, req.files);              // After structuring the 'data' it 'saved' in 'database'.   
@@ -104,7 +104,7 @@ export const postAddProduct = async (req, res) => {
                 categories,
                 error: cleanErrorMessage,                                                           // 'cleanErrorMessage' is used for 'display' error message. 
                 formData: req.body,                                                                 // Here we send 'req.body' in 'catch' block again, because when error occurs, we did 'not' write again. 
-                activePage: 'products'
+                layout: 'layout/auth',
             });
         } catch (fallbackError) {
             logger.error("Critical failure recovering Add Product view:", fallbackError);
@@ -120,10 +120,10 @@ export const getEditProduct = async (req, res) => {
         const page = req.query.page || 1;
         const editData = await adminProductService.fetchEditProductData(req.params.id);  // It 'retrieve' 'product' and 'categories' 
         res.render('admin/editProduct', {
+            layout: 'layout/auth',
             ...editData,
             error: null, 
             formData: null,
-            activePage: 'products',
             page: page
         });
     } catch (error) {
@@ -159,6 +159,7 @@ export const postEditProduct = async (req, res) => {
             const fallbackData = await adminProductService.fetchEditProductData(req.params.id); // For 'retrieve' 'product' and 'categories' 
             res.render('admin/editProduct', {
                 ...fallbackData,
+                layout: 'layout/auth',
                 error: error.message || "Database collection compilation failure parsing data formats.", 
                 formData: req.body, 
                 activePage: 'products'

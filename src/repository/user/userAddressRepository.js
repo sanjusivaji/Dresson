@@ -9,6 +9,17 @@ export const findAddressesByUserId = async (userId, skip, limit) => {  // Here w
         .limit(limit);
 };
 
+// For retrieve 'first matching' 'address' document based on 'userId' only
+export const getUserAddresses = async (userId) => {
+    try {
+        const addressDoc = await Address.findOne({ user: userId });
+        return addressDoc ? addressDoc.addresses : [];                            // If the document exists, return the array of addresses. Otherwise, return an empty array.
+    } catch (error) {
+        console.error("Error fetching user addresses in repository:", error);
+        throw error;
+    }
+};
+
 // For retrieve 'no.of' 'addresses' for 'pagination'
 export const countAddressesByUserId = async (userId) => {
     return await Address.countDocuments({ userId });

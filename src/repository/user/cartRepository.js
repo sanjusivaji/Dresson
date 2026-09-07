@@ -1,6 +1,8 @@
+import mongoose from 'mongoose';
 import Cart from '../../model/cartModel.js';
 import Product from '../../model/productModel.js';
 import Wishlist from '../../model/wishlistModel.js';
+import Offer from '../../model/offerModel.js'; 
 
 
 // Retrieve only 'name', 'brand' etc from 'Cart' for 'display' it
@@ -18,7 +20,7 @@ export const getActiveProductById = async (productId) => {
     return await Product.findOne({ _id: productId, isListed: true });
 };
 
-// Retrieve single 'cart' based on 'userId'
+// Retrieve 'first matching' 'cart' document based on 'userId'
 export const getCartDocument = async (userId) => {
     return await Cart.findOne({ user: userId });
 };
@@ -57,4 +59,34 @@ export const getCartDocumentPopulated = async (userId) => {
 // For retrieve 'one' 'product' 'document' based on 'productId'
 export const getProductById = async (productId) => {
     return await Product.findById(productId);
+};
+
+
+export const getActiveOffers = async () => {
+    const currentDate = new Date();
+    return await Offer.find({
+        startDate: { $lte: currentDate },
+        endDate: { $gte: currentDate },
+        isManuallyActive: true,
+        type: 'Buy X, Get Y'
+    }).lean();
+};
+
+
+export const getOfferById = async (offerId) => {
+    try {
+        // 1. Validate the ObjectId to prevent Mongoose casting errors
+        if (!mongoose.Types.ObjectId.isValid(offerId)) {
+            console.warn(`[Repository Warning] Invalid Offer ID format received: ${offerId}`);
+            return null; 
+        }
+        const offer = await Offer.findById(offerId).lean();
+        
+        return offer;
+
+    } catch (error) {
+        // Log the error for backend debugging, but throw a clean error for the service layer
+        console.error("Repository Error in getOfferById:", error);
+        throw new Error("Failed to retrieve offer details from the database.");
+    }
 };

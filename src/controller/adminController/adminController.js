@@ -29,17 +29,21 @@ export const processLogin = async (req, res) => {
 // For 'display' 'dashboard'
 export const loadDashboard = async (req, res) => {
     try {
-        const dashboardData = await adminAuthService.getDashboardData();        
+        const filter = req.query.filter || 'yearly';    
+        const dashboardData = await adminAuthService.getDashboardData(filter);
         res.render('admin/dashboard', {
+            currentFilter: filter,
             ...dashboardData,
             pageTitle: "Dashboard - Dresson",
-            activePage: 'dashboard'                                                  // For 'display' violet color in 'sidebar'
+            activePage: 'dashboard'                                                        // For 'display' violet color in 'sidebar'
+//         });                                              
         });
     } catch (error) {
         console.error(error);
         res.status(500).send("Server Error");
     }
 };
+
 
 // For 'logout'
 export const logout = (req, res) => {

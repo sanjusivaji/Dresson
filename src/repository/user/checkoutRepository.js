@@ -4,6 +4,7 @@ import Order from '../../model/orderModel.js';
 import User from '../../model/userModel.js';
 import WalletTransaction from '../../model/walletTransactions.js';
 import Product from '../../model/productModel.js';
+import Offer from '../../model/offerModel.js';
 
 
 // Retrieve 'only' 'active' 'coupon' based on 'currentDate'
@@ -43,7 +44,7 @@ export const findCartByUserIdDoc = async (userId) => {
 
 // For creates a new 'document' in 'order' collection based on 'orderData'
 export const createOrder = async (orderData) => {
-    return await Order.create(orderData);              // 'create()' creates a new 'document' in 'order' collection based on 'orderData'
+    return await Order.create(orderData);              // 'create()' creates a new 'document' in 'order' collection based on 'orderData'('orderData' contains fields like 'appliedCoupon', 'discount', 'userId','orderId','paymentMethod', 'status' etc)and we 'retrieve' all these data in 'findOrderByIdDoc()' in below.
 };
 
 // Retrieve 'order' data based on 'orderId'.
@@ -78,4 +79,15 @@ export const clearCartByUserId = async (userId) => {
 // Retrieve 'User' data based on 'userId'
 export const findUserByIdDoc = async (userId) => {
     return await User.findById(userId);
+};
+
+
+export const getActiveFreeShippingOffer = async () => {
+    const currentDate = new Date();
+    return await Offer.findOne({
+        type: 'Free Shipping',
+        isManuallyActive: true,
+        startDate: { $lte: currentDate },
+        endDate: { $gte: currentDate }
+    }).lean();
 };

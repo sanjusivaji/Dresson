@@ -44,8 +44,7 @@ const productSchema = new mongoose.Schema({
     description: { type: String, required: true, trim: true },
     parentCategory: { type: String, required: true, enum: ['Men', 'Women', 'Kids'] },
     subCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
-    categoryAncestors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true }],      // 'categoryAncestors' is the 'array of object' and when we put 'index:true' inside 'array of object' it creates 'multi key indexing' or 'array indexing'(ie each element in the array have 'index' value)
-    discount: { type: Number, default: 0, min: 0, max: 99 },
+    categoryAncestors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true }],      // 'categoryAncestors' is the 'array of object' and when we put 'index:true' inside 'array of object' it creates 'multi key indexing' or 'array indexing'(ie each element in the array have 'index' value).
     images: [{
         url: { type: String, required: true },
         public_id: { type: String, required: true }

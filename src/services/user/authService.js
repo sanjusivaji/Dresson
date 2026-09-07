@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto'; // <-- ADDED: Built-in Node module for generating random strings
 import * as authRepository from '../../repository/user/authRepository.js';
 import { sendOtpEmail } from '../../utilities/emailSender.js';
 import paginate from '../../utilities/paginationHelper.js';
@@ -8,6 +9,13 @@ import  normalizeEmail  from '../../utilities/emailHelper.js';
 import logger from '../../utilities/logger.js'; 
 
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();  // This function is only used here for generate 'random' nubers for 'OTP'.
+
+// For 'generate' 'referal code' when user 'signup'
+const generateReferralCode = (name) => {
+    const prefix = name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'USR');         // First 3 letters of name
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();               // 6 random characters
+    return `${prefix}${randomHex}`;
+};
 
 // For 'sign up' process
 export const initiateUserRegistration = async (bodyData) => {
@@ -41,28 +49,52 @@ export const initiateUserRegistration = async (bodyData) => {
             email: cleanEmail, 
             normalizedEmail: normEmail, 
             password: hashedPassword, 
-            referralCode 
+            referralCode // Maintains the entered referral code across the session
         },
         otp,
         otpExpiry: Date.now() + AUTH_CONFIG.SIGNUP_OTP_EXPIRY_MS   // Value of 'expiry' time created in 'constants/userAuthConstants.js' folder
     };
 };
 
+
 // For 'register' user after 'inputting' the 'OTP'
-export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
-    if (!sessionData.tempUser || !sessionData.otp) {        // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'.
+export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {           // We call the function with 'req.session' and 'req.body.otp' as 'argument' from 'controller'.
+    if (!sessionData.tempUser || !sessionData.otp) {                                 // Here checks 'session' 'tempUser' and 'otp' is 'available' or 'not'.
         throw new Error("Session expired. Please sign up again.");
     }
-    if (Date.now() > sessionData.otpExpiry) {               // Checks 'OTP' time period expires or not
+    if (Date.now() > sessionData.otpExpiry) {                                        // Checks 'OTP' time period expires or not
         throw new Error("OTP has expired. Please request a new one.");
     }
-    if (inputtedOtp !== sessionData.otp) {                 // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
+    if (inputtedOtp !== sessionData.otp) {                                           // Checks 'inputtedOtp'(ie passess as argument from user)and 'sessionData.otp'(ie 'otp' already stored in session)
         throw new Error("Invalid OTP. Please try again.");
     }
-    const { name, email, normalizedEmail, password } = sessionData.tempUser;
-    const nameParts = name.trim().split(/\s+/);            // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
+    const { name, email, normalizedEmail, password, referralCode } = sessionData.tempUser;  // Extracted referralCode inputted by the user (if any)    
+    const nameParts = name.trim().split(/\s+/);                                      // It 'split()' the 'string' into 'array' based on 'space' and took 'only' first 'array' value(Eg, "Harry Potter" and it takes 'givenName: "Harry" ie avoids 'Potter')
     const givenName = nameParts[0];
     const familyName = nameParts.slice(1).join(' ') || '';
+    const newReferralCode = generateReferralCode(givenName);                         // Function created above.
+    let initialWalletBalance = 0;
+    let walletTransactions = [];    
+    if (referralCode) {
+        const referrer = await authRepository.findUserByReferralCode(referralCode);  // For 'retrieve' 'first' matching 'document' in 'user' collection based on 'referral code'      
+        if (referrer) {
+            initialWalletBalance = AUTH_CONFIG.REFERRAL_REWARD_AMOUNT;               // Adding 'amount' based on 'REFERRAL_REWARD_AMOUNT'(ie created in 'constants' file)
+            walletTransactions.push({
+                amount: AUTH_CONFIG.REFERRAL_REWARD_AMOUNT,
+                type: 'credit',
+                description: 'Sign-up bonus from applying a referral code',
+                date: new Date()
+            });
+            await authRepository.creditReferrerWallet(                               // For 'increase' 'user' 'wallet balance' in 'User' collection
+                referrer._id, 
+                AUTH_CONFIG.REFERRAL_REWARD_AMOUNT, 
+                `Referral bonus for inviting ${givenName}`
+            );
+        } else {
+             throw new Error("Invalid Referral Code.");
+        }
+    }
+   // console.log(walletTransactions/n, walletBalance)
     await authRepository.createNewUser({                    // 'createNewUser()' is the function in 'repository/user/userAuthRepository.js' used for 'save' the data into 'data base' by using 'save()'.
         firstName: givenName,
         lastName: familyName,
@@ -71,10 +103,20 @@ export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {  // W
         password: password,            
         isVerified: true,
         role: AUTH_ROLES.USER,                              // From 'constants/userAuthConstants.js'
-        isBlocked: false
+        isBlocked: false,
+        referralCode: newReferralCode,                      // Their own unique code to share
+        walletBalance: initialWalletBalance,                // Starts at 200 if referred, else 0
+        walletHistory: walletTransactions                   // Stores the initial credit transaction
     });
+    const savedUser = await authRepository.findUserByNormalizedEmail(normalizedEmail);
+    if (initialWalletBalance > 0 && savedUser) {
+        await authRepository.creditNewUserWalletTransaction(
+            savedUser._id,
+            initialWalletBalance,
+            'Sign-up bonus from applying a referral code'
+        );
+    }
 };
-
 
 // For 'authenticate' is it 'user' or 'not'
 export const authenticateLocalUser = async (email, password) => {

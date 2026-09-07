@@ -1,0 +1,329 @@
+<%- contentFor('body') %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="w-full bg-white min-h-screen p-6 md:p-8 font-sans">
+    
+    <!-- Page Header & Export Buttons -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Sales Report</h1>
+        <div class="flex gap-3">
+            <a href="/admin/analytics/export/pdf<%= locals.queryString ? '?' + queryString : '' %>" class="bg-[#2eb85c] hover:bg-[#259b4c] text-white text-xs font-bold px-5 py-2.5 rounded shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-file-pdf"></i> Download Report (PDF)
+            </a>
+            <a href="/admin/analytics/export/excel<%= locals.queryString ? '?' + queryString : '' %>" class="bg-[#2eb85c] hover:bg-[#259b4c] text-white text-xs font-bold px-5 py-2.5 rounded shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Download Report (Excel)
+            </a>
+        </div>
+    </div>
+
+    <!-- Custom Filters (Date Range & Status) -->
+    <form method="GET" action="/admin/analytics" class="flex flex-wrap items-end gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+        <!-- Hidden input to maintain the quick filter if active -->
+        <input type="hidden" name="filter" value="<%= locals.currentFilter || '' %>">
+        
+        <div class="flex flex-col">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">From</label>
+            <input type="date" name="startDate" id="startDate" value="<%= locals.startDate || '' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2 rounded focus:outline-none focus:border-[#6b66f5]">
+        </div>
+        <div class="flex flex-col">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">To</label>
+            <input type="date" name="endDate" id="endDate" value="<%= locals.endDate || '' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2 rounded focus:outline-none focus:border-[#6b66f5]">
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="flex flex-col">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Order Status</label>
+            <select name="status" class="border border-gray-300 text-gray-700 text-xs px-3 py-2 rounded focus:outline-none focus:border-[#6b66f5] min-w-[140px]">
+                <option value="">All Statuses</option>
+                <option value="Delivered" <%= locals.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                <option value="Processing" <%= locals.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                <option value="Shipped" <%= locals.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                <option value="Cancelled" <%= locals.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                <option value="Return Pending" <%= locals.status === 'Return Pending' ? 'selected' : '' %>>Return Pending</option>
+                <option value="Return Refunded" <%= locals.status === 'Return Refunded' ? 'selected' : '' %>>Return Refunded</option>
+                <option value="Return Rejected" <%= locals.status === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
+            </select>
+        </div>
+
+        <button type="submit" class="bg-[#6b66f5] hover:bg-[#5752d5] text-white text-xs font-bold px-6 py-2 rounded shadow-sm transition h-[34px]">
+            Filter
+        </button>
+        
+        <% if(locals.startDate || locals.status || locals.currentFilter) { %>
+            <a href="/admin/analytics" class="text-xs text-gray-500 hover:text-red-500 underline ml-2 h-[34px] flex items-center">Clear Filters</a>
+        <% } %>
+    </form>
+
+    <!-- Quick Filter Pills -->
+    <div class="flex flex-wrap gap-3 mb-8">
+        <a href="?filter=daily" class="px-5 py-1.5 rounded-full text-xs font-bold transition border <%= currentFilter === 'daily' ? 'bg-[#6b66f5] text-white border-[#6b66f5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' %>">Today</a>
+        <a href="?filter=7days" class="px-5 py-1.5 rounded-full text-xs font-bold transition border <%= currentFilter === '7days' ? 'bg-[#6b66f5] text-white border-[#6b66f5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' %>">This week</a>
+        <a href="?filter=monthly" class="px-5 py-1.5 rounded-full text-xs font-bold transition border <%= currentFilter === 'monthly' ? 'bg-[#6b66f5] text-white border-[#6b66f5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' %>">This month</a>
+        <a href="?filter=yearly" class="px-5 py-1.5 rounded-full text-xs font-bold transition border <%= (!currentFilter || currentFilter === 'yearly') ? 'bg-[#6b66f5] text-white border-[#6b66f5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' %>">This Year</a>
+    </div>
+
+    <!-- 4 Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="border border-gray-200 rounded-xl p-5 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+            <h3 class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Total Revenue</h3>
+            <p class="text-xl font-black text-gray-800">₹<%= (locals.stats?.totalSales || 0).toLocaleString('en-IN') %></p>
+        </div>
+        <div class="border border-gray-200 rounded-xl p-5 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+            <h3 class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Total Orders</h3>
+            <p class="text-xl font-black text-gray-800"><%= locals.stats?.totalOrders || 0 %></p>
+        </div>
+        <div class="border border-gray-200 rounded-xl p-5 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+            <h3 class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Total Products Sold</h3>
+            <p class="text-xl font-black text-gray-800"><%= locals.stats?.totalProductsSold || 0 %></p>
+        </div>
+        <div class="border border-gray-200 rounded-xl p-5 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+            <h3 class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Total Discounts</h3>
+            <p class="text-xl font-black text-gray-800">₹<%= (locals.stats?.totalDiscounts || 0).toLocaleString('en-IN') %></p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Sales Overview (Line Chart) -->
+        <div class="lg:col-span-2 border border-gray-200 rounded-xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+            <h2 class="text-sm font-bold text-gray-800 mb-6 tracking-tight">Sales Overview</h2>
+            <div class="h-64 relative w-full">
+                <canvas id="salesOverviewChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sales By Payment Method (Doughnut Chart) -->
+        <div class="lg:col-span-1 border border-gray-200 rounded-xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] flex flex-col items-center">
+            <h2 class="text-sm font-bold text-gray-800 mb-6 tracking-tight w-full text-left">Sales By Payment Method</h2>
+            
+            <div class="relative w-48 h-48 mb-6">
+                <canvas id="paymentMethodChart"></canvas>
+                <!-- Centered Text Overlay inside Doughnut -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-[10px] text-gray-400 font-bold">Total</span>
+                    <span class="text-sm font-black text-gray-800">₹<%= (locals.stats?.totalSales || 0).toLocaleString('en-IN') %></span>
+                </div>
+            </div>
+
+            <!-- Custom Legend Matching Figma -->
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 w-full px-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#36A2EB]"></span>
+                    <span class="text-[10px] font-bold text-gray-600">UPI <span class="text-gray-400 ml-1"><%= locals.paymentStats?.upiPercent || 0 %>%</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#FFCE56]"></span>
+                    <span class="text-[10px] font-bold text-gray-600">COD <span class="text-gray-400 ml-1"><%= locals.paymentStats?.codPercent || 0 %>%</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#FF6384]"></span>
+                    <span class="text-[10px] font-bold text-gray-600">Wallet <span class="text-gray-400 ml-1"><%= locals.paymentStats?.walletPercent || 0 %>%</span></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#4BC0C0]"></span>
+                    <span class="text-[10px] font-bold text-gray-600">Credit Card <span class="text-gray-400 ml-1"><%= locals.paymentStats?.cardPercent || 0 %>%</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="border border-gray-200 rounded-xl overflow-hidden shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse whitespace-nowrap">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payment</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th class="py-4 px-6 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-[11px] font-medium text-gray-600">
+                    <% if (locals.orders && orders.length > 0) { %>
+                        <% orders.forEach(order => { %>
+                            
+                            <!-- Status Extraction Logic -->
+                            <% 
+                                let displayStatuses = new Set();
+                                
+                                if (order.returnRequest?.isRequested) {
+                                    if (order.returnRequest.status === 'Pending') displayStatuses.add('Return Pending');
+                                    else if (order.returnRequest.status === 'Rejected') displayStatuses.add('Return Rejected');
+                                    else if (order.returnRequest.status === 'Refunded') displayStatuses.add('Return Refunded');
+                                }
+
+                                if (order.items && order.items.length > 0) {
+                                    let hasActiveItems = false;
+                                    order.items.forEach(item => {
+                                        if (item.itemStatus === 'Cancelled') displayStatuses.add('Cancelled');
+                                        else if (item.itemStatus === 'Return Pending') displayStatuses.add('Return Pending');
+                                        else if (item.itemStatus === 'Return Rejected') displayStatuses.add('Return Rejected');
+                                        else if (item.itemStatus === 'Returned') displayStatuses.add('Return Refunded');
+                                        else hasActiveItems = true; 
+                                    });
+
+                                    if (hasActiveItems || displayStatuses.size === 0) {
+                                        if (order.deliveryStatus === 'Returned') displayStatuses.add('Return Refunded');
+                                        else displayStatuses.add(order.deliveryStatus);
+                                    }
+                                } else {
+                                    displayStatuses.add(order.deliveryStatus);
+                                }
+                                const statusArray = Array.from(displayStatuses);
+                            %>
+
+                            <tr class="hover:bg-gray-50/50 transition">
+                                <td class="py-4 px-6 text-[#6b66f5]"><%= order.orderId %></td>
+                                <td class="py-4 px-6"><%= new Date(order.createdAt).toLocaleDateString('en-IN') %></td>
+                                <td class="py-4 px-6"><%= order.shippingAddress?.fullName || order.user?.firstName || 'Unknown' %></td>
+                                <td class="py-4 px-6 truncate max-w-[150px]">
+                                    <%= order.items[0]?.product?.name || order.items[0]?.product?.productName || 'Multiple Items' %>
+                                    <% if(order.items.length > 1) { %><span class="text-gray-400 ml-1">(+<%= order.items.length - 1 %>)</span><% } %>
+                                </td>
+                                <td class="py-4 px-6"><%= order.paymentMethod %></td>
+                                
+                                <td class="py-4 px-6 align-top">
+                                    <div class="flex flex-col gap-1 items-start">
+                                        <% statusArray.forEach(status => { %>
+                                            <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider
+                                                <%= status === 'Delivered' ? 'bg-green-100 text-green-700' : '' %>
+                                                <%= status === 'Processing' || status === 'Shipped' ? 'bg-blue-100 text-blue-700' : '' %>
+                                                <%= status === 'Cancelled' ? 'bg-red-100 text-red-700' : '' %>
+                                                <%= status === 'Return Pending' || status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : '' %>
+                                                <%= status === 'Return Rejected' ? 'bg-orange-100 text-orange-700' : '' %>
+                                                <%= status === 'Return Refunded' || status === 'Returned' ? 'bg-purple-100 text-purple-700' : '' %>
+                                            ">
+                                                <%= status %>
+                                            </span>
+                                        <% }) %>
+                                    </div>
+                                </td>
+
+                                <td class="py-4 px-6 text-red-500">₹<%= order.discountAmount || 0 %></td>
+                                <td class="py-4 px-6 font-bold text-gray-800">₹<%= order.totalAmount.toLocaleString('en-IN') %></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="8" class="text-center py-8 text-xs text-gray-500">No orders found for the selected filters.</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <% if (locals.totalPages > 1) { %>
+        <div class="flex justify-center items-center gap-2 mt-6 mb-8">
+            <% if (locals.currentPage > 1) { %>
+                <a href="?page=<%= currentPage - 1 %>&<%= (locals.queryString || '').replace(/&?page=\d+/, '') %>" class="px-3 py-1 bg-white border border-gray-300 rounded text-xs font-bold text-gray-600 hover:bg-gray-50">Prev</a>
+            <% } %>
+            
+            <span class="text-xs font-bold text-gray-600">Page <%= currentPage %> of <%= totalPages %></span>
+            
+            <% if (locals.currentPage < locals.totalPages) { %>
+                <a href="?page=<%= currentPage + 1 %>&<%= (locals.queryString || '').replace(/&?page=\d+/, '') %>" class="px-3 py-1 bg-white border border-gray-300 rounded text-xs font-bold text-gray-600 hover:bg-gray-50">Next</a>
+            <% } %>
+        </div>
+    <% } %>
+
+</div>
+
+<script>
+    // 1. Line Chart: Sales Overview
+    const ctxLine = document.getElementById('salesOverviewChart').getContext('2d');
+    const labels = <%- JSON.stringify(locals.chartLabels || []) %>;
+    const data = <%- JSON.stringify(locals.chartData || []) %>;
+    
+    new Chart(ctxLine, {
+        type: 'line',
+        data: {
+            labels: labels.length > 0 ? labels : ['No Data'],
+            datasets: [{
+                label: 'Revenue',
+                data: data.length > 0 ? data : [0],
+                borderColor: '#6b66f5', // The blue/violet from Figma
+                borderWidth: 2,
+                tension: 0.4,
+                fill: false,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#6b66f5',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f3f4f6', drawBorder: false },
+                    ticks: {
+                        color: '#9ca3af', font: { size: 10 },
+                        callback: function(value) { return '₹' + value.toLocaleString('en-IN'); }
+                    }
+                },
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { color: '#9ca3af', font: { size: 10 } }
+                }
+            } 
+        }
+    });
+
+    // 2. Doughnut Chart: Payment Methods
+    const ctxDoughnut = document.getElementById('paymentMethodChart').getContext('2d');
+    
+    const upi = <%= locals.paymentStats?.upi || 0 %>;
+    const cod = <%= locals.paymentStats?.cod || 0 %>;
+    const wallet = <%= locals.paymentStats?.wallet || 0 %>;
+    const card = <%= locals.paymentStats?.card || 0 %>;
+
+    // Prevents empty chart crash by injecting a grey placeholder if all values are 0
+    const hasData = upi > 0 || cod > 0 || wallet > 0 || card > 0;
+    const doughnutData = hasData ? [upi, cod, wallet, card] : [1];
+    const doughnutColors = hasData ? ['#36A2EB', '#FFCE56', '#FF6384', '#4BC0C0'] : ['#e5e7eb'];
+
+    new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+            labels: hasData ? ['UPI', 'COD', 'Wallet', 'Credit Card'] : ['No Data'],
+            datasets: [{
+                data: doughnutData,
+                backgroundColor: doughnutColors,
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%', // Makes it thin like the Figma design to fit text
+            plugins: {
+                legend: { display: false }, 
+                tooltip: { enabled: hasData }
+            }
+        }
+    });
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    if (startDateInput && endDateInput) {                              // For 'date' validation
+        startDateInput.addEventListener('change', function() {
+            // Set the minimum allowed date for the 'To' input
+            endDateInput.min = this.value; 
+            
+            // If the current 'To' date is now invalid, clear it
+            if (endDateInput.value && endDateInput.value < this.value) {
+                endDateInput.value = '';
+            }
+        });
+    }
+</script>

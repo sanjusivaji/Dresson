@@ -1,4 +1,4 @@
-//  'Error handling' middleware handle almost all type of errors like ReferenceError, TypeError, SyntaxError, etc inside an application because we declare it globally.
+//  'Error handling' middleware handle almost all type of errors like ReferenceError, TypeError, SyntaxError, etc inside an application because we declare it globally and apply this in 'server.js' file at 'last'(ie 'app.use(globalErrorHandler)').
 import logger from '../utilities/logger.js';
 export const globalErrorHandler = (err, req, res, next) => {
     console.error("This is for display error", err);

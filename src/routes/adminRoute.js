@@ -10,6 +10,8 @@ import * as couponController from '../controller/adminController/couponControlle
 import * as adminOrderController from '../controller/adminController/adminOrderController.js'
 import { uploadBanner } from '../middleware/uploadMiddleware.js';
 import * as bannerController from '../controller/adminController/bannerController.js';
+import * as offerController from '../controller/adminController/offerController.js'
+import * as adminAnalyticsController from '../controller/adminController/adminAnalyticsController.js';
 
 
 const router = express.Router();
@@ -110,6 +112,20 @@ router.route('/banner/edit/:id')                                                
       .get(bannerController.getEditBannerPage)
       .post(uploadBanner.single('bannerImage'), bannerController.editBanner);
 router.delete('/banner/delete/:id', bannerController.deleteBanner);
+
+
+router.get('/offers', isAdmin, offerController.renderOfferManagement);
+router.get('/offers/add', isAdmin, offerController.renderAddOffer);
+router.post('/offers', isAdmin, offerController.processAddOffer);
+router.get('/offers/edit/:id', isAdmin, offerController.renderEditOffer);
+router.post('/offers/edit/:id', isAdmin, offerController.processEditOffer);
+router.post('/offers/delete/:id', isAdmin, offerController.deleteOffer);
+
+
+router.get('/analytics',  isAdmin, adminAnalyticsController.loadAnalyticsPage);
+router.get('/analytics/export/pdf',  isAdmin, adminAnalyticsController.exportReportPDF);
+router.get('/analytics/export/excel',  isAdmin, adminAnalyticsController.exportReportExcel);
+
 
 
 export default router;

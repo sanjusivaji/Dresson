@@ -43,6 +43,7 @@
     </div>
 </div>
 
+
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
     <table class="w-full text-left border-collapse">
         <thead class="text-gray-400 text-[10px] uppercase font-bold border-b border-gray-200 bg-gray-50/40 tracking-wider">
@@ -194,7 +195,7 @@
         } else {
             urlParams.delete('category');
         }
-        urlParams.set('page', '1'); // Always reset to Page 1 when filtering
+        urlParams.set('page', '1');
         window.location.search = urlParams.toString();
     }
 
@@ -211,10 +212,10 @@
         const urlParams = new URLSearchParams(window.location.search);
     });
 
+    // For display 'pop modal' for 'unlist' and 'list'
     function confirmToggleStatus(productId, isListed) {
         const actionText = isListed ? 'unlist' : 'list';
         const confirmColor = isListed ? '#d33' : '#16a34a';
-
         Swal.fire({
             title: 'Are you sure?',
             text: `Do you want to ${actionText} this product?`,

@@ -35,26 +35,26 @@ export const getUserOrdersPaginated = async (userId, page, filters) => {
 
 // For 'order' details for 'display' it
 export const getOrderDetails = async (orderId, userId) => {
-    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'name images' });         // It retrieve 'name' and 'image' of 'product' based on 'userId' and 'productId'
+    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'name images' });
     if (!order) return null;
-    const formattedDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });  // Here 'new Date()' is built-in 'js' object used for create a 'date' object and we can 'manipulate'(ie we can manipulate it by using '.getFullYear(), .getMonth(), and .toLocaleDateString()' like methods) and 'en-GB' means 'English Great Britain'(ie it is for 'date formate' like 'Day-Month-Year' format)and 'day: 'numeric'(ie 'day' should be 'number'), ;month: 'long'(ie 'month' should be complete Eg, 'August' and if we use 'short' it will be 'Aug')and 'year: 'numeric' for display year in 'number'.
+    const formattedDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });    
     let subTotal = 0;
     let totalTax = 0;
-    order.items.forEach(item => {
+    const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');    
+    activeItems.forEach(item => {
         const itemTotal = item.price * item.quantity;
         subTotal += itemTotal;
         totalTax += (itemTotal * (item.taxRate || 0)) / 100;
-    });
-    const shipping = USER_ORDER_CONSTANTS.SHIPPING_COST;
+    });    
+    const shipping = activeItems.length > 0 ? USER_ORDER_CONSTANTS.SHIPPING_COST : 0;
     const calculatedTotal = subTotal + totalTax + shipping;
-    const discount = calculatedTotal > order.totalAmount ? calculatedTotal - order.totalAmount : 0;
+    const discount = calculatedTotal > order.totalAmount ? calculatedTotal - order.totalAmount : 0;    
     return { 
         order, 
         formattedDate, 
         summary: { subTotal, tax: totalTax, shipping, discount, grandTotal: order.totalAmount } 
     };
 };
-
 
 
 // For 'cancel' the order
@@ -91,6 +91,111 @@ export const cancelOrder = async (orderId, userId) => {
     return true;
 };
 
+
+export const handleItemAction = async (orderId, itemId, userId, actionType, reason) => {
+    const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId);
+    if (!order) throw new Error("Order not found.");   
+    const item = order.items.find(i => 
+        (i._id && i._id.toString() === itemId.toString()) || 
+        (i.product && i.product.toString() === itemId.toString())
+    );
+    if (!item || item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
+        throw new Error("Item cannot be modified.");
+    }
+
+    if (actionType === 'Cancel') {
+        item.itemStatus = 'Cancelled';
+        item.cancellationReason = reason;
+        await userOrderRepository.restoreProductStock(item.product, item.variantSku, item.quantity);
+        if (item.comboId) {
+            const partnerItems = order.items.filter(i => 
+                i.comboId === item.comboId && 
+                i._id.toString() !== item._id.toString() &&
+                i.itemStatus !== 'Cancelled'
+            );            
+            for (let partner of partnerItems) {
+                partner.itemStatus = 'Cancelled';
+                partner.cancellationReason = 'Auto-cancelled: Partner item in combo was cancelled.';
+                await userOrderRepository.restoreProductStock(partner.product, partner.variantSku, partner.quantity);
+            }
+        }
+        
+    } else if (actionType === 'Return') {
+        item.itemStatus = 'Return Pending';
+        item.returnReason = reason;
+        order.markModified('items');
+        await order.save();
+        return true; 
+    }
+    if (actionType === 'Cancel') {
+        const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');                
+        let newSubTotal = 0;
+        let newTaxTotal = 0;        
+        activeItems.forEach(activeItem => {
+            const itemTotal = activeItem.price * activeItem.quantity;
+            newSubTotal += itemTotal;
+            newTaxTotal += (itemTotal * (activeItem.taxRate || 0)) / 100;
+        });
+        let newDiscount = 0;
+        if (order.appliedCoupon && activeItems.length > 0) {
+            await order.populate('appliedCoupon');
+            const coupon = order.appliedCoupon;
+            const minCartValue = coupon.minCartValue || 0;             
+            if (newSubTotal >= minCartValue) {
+                newDiscount = coupon.discountType === 'percentage' 
+                    ? Math.min((newSubTotal * coupon.discountValue) / 100, coupon.maxDiscount || Infinity)
+                    : (coupon.discountValue || 0);
+            } else {
+                newDiscount = 0; 
+            }
+        }
+        
+        const safeShippingCost = (typeof USER_ORDER_CONSTANTS !== 'undefined' && USER_ORDER_CONSTANTS.SHIPPING_COST) ? USER_ORDER_CONSTANTS.SHIPPING_COST : 150;
+        const newShipping = activeItems.length === 0 ? 0 : safeShippingCost;
+        
+        let newExpectedTotal = newSubTotal + newTaxTotal + newShipping - newDiscount;
+        if (newExpectedTotal < 0) newExpectedTotal = 0;
+        
+        // Process wallet refund if they already paid online
+        if (order.paymentStatus === PAYMENT_STATUS.PAID) {
+            let refundAmount = order.totalAmount - newExpectedTotal;
+            if (refundAmount < 0) refundAmount = 0; 
+
+            if (refundAmount > 0) {
+                const user = await userOrderRepository.findUserById(userId);
+                user.walletBalance += refundAmount;
+                await user.save();
+
+                const uniqueTxId = 'TX-' + Date.now().toString().slice(-6) + Math.floor(100 + Math.random() * 900);
+                await userOrderRepository.createRefundTransaction({
+                    user: userId,
+                    transactionId: uniqueTxId,
+                    orderId: order._id,
+                    amount: refundAmount,
+                    type: 'Credit',
+                    adjustmentType: 'Refund',
+                    reason: `Refund for Cancelled Item(s).`,
+                    gateway: 'Wallet',
+                    status: 'Success',
+                    balanceAfter: user.walletBalance
+                });
+            }
+        }
+        
+        order.totalAmount = newExpectedTotal;
+        if (order.discountAmount !== undefined) order.discountAmount = newDiscount;
+    }
+
+    const allCancelled = order.items.every(i => i.itemStatus === 'Cancelled');
+    if (allCancelled) {
+        order.deliveryStatus = ORDER_STATUS.CANCELLED;
+        if (order.paymentStatus === PAYMENT_STATUS.PAID) order.paymentStatus = PAYMENT_STATUS.REFUNDED;
+    }
+    
+    order.markModified('items'); 
+    await order.save();
+    return true;
+};
 
 
 // For 'calculate' 'subTotal', 'taxTotal' etc and display it in 'ejs' file and then download as 'pdf'.

@@ -9,7 +9,7 @@ export default {
  theme: {
     extend: {
       colors: {
-        'primary-violet': '#8B8DF8', // <-- Tailwind now owns this color permanently!
+        'primary-violet': '#8B8DF8', //  Tailwind now owns this color permanently!
       }
     },
   },

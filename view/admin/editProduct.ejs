@@ -1,356 +1,351 @@
-<div class="mb-6">
-    <a href="/admin/products" class="text-xs font-semibold text-gray-400 hover:text-gray-600 transition flex items-center space-x-2">
-        <i class="fas fa-arrow-left"></i>
-        <span>Back to Products List</span>
-    </a>
-</div>
+<%- contentFor('body') %>
 
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-black tracking-tight">Edit Product</h1>
-    <p class="text-xs text-gray-400 mt-1">Modify item specification fields, update image assets layers, and allocate custom variant structures.</p>
-</div>
+<main class="flex-1 p-8 bg-[#fafafa] min-h-screen">
+    <!-- Shared Common Alerts & Modal Partials -->
+    <%- include('../partial/shared/alertSuccess') %>
+    <%- include('../partial/shared/alertError') %>
+    <%- include('../partial/shared/warning') %>
 
-<!-- Shared Common Alerts & Modal Partials -->
-<%- include('../partial/shared/alertSuccess') %>
-<%- include('../partial/shared/alertError') %>
-<%- include('../partial/shared/warning') %>
+    <!-- Serialized Database Categories for Client-Side Filtering -->
+    <input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
+    <input type="hidden" id="historicalSelectedSubId" value="<%= product.subCategory ? (product.subCategory._id || product.subCategory) : '' %>">
 
-<!-- Serialized Database Categories for Client-Side Filtering -->
-<input type="hidden" id="rawServerCategories" value='<%= typeof categories !== "undefined" ? JSON.stringify(categories) : "[]" %>'>
-
-<!-- Safely extracts _id whether subCategory is populated or just a raw string -->
-<input type="hidden" id="historicalSelectedSubId" value="<%= product.subCategory ? (product.subCategory._id || product.subCategory) : '' %>">
-
-<form action="/admin/products/edit/<%= product._id %>?page=<%= typeof page !== 'undefined' ? page : 1 %>" method="POST" enctype="multipart/form-data" id="productForm" class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 max-w-4xl mb-12">
-    
-    <!--  Product Identity & Categories -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div class="space-y-6">
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
-                <input type="text" id="baseName" name="productName" value="<%= locals.formData && formData.productName ? formData.productName : (product.name || product.productName || '') %>" placeholder="e.g., Premium Comfort Polo Tee" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition font-medium">
-                <p id="baseNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-            </div>
-
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
-                <input type="text" id="brandName" name="brand" value="<%= locals.formData && formData.brand ? formData.brand : (product.brand || '') %>" placeholder="e.g., Levi's, Zara, Dresson Original" 
-                       class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
-                <p id="brandNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-            </div>
-        </div>
+    <!-- Main Centered Container -->
+    <div class="max-w-5xl mx-auto mt-4">
         
-        <div class="space-y-6">
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
-                <select id="parentCategory" name="parentCategory" onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
-                    <option value="" disabled>Select Gender Target Room</option>
-                    <% const activeParent = locals.formData && formData.parentCategory ? formData.parentCategory : product.parentCategory; %>
-                    <option value="Men" <%= activeParent === 'Men' ? 'selected' : '' %>>Men</option>
-                    <option value="Women" <%= activeParent === 'Women' ? 'selected' : '' %>>Women</option>
-                    <option value="Kids" <%= activeParent === 'Kids' ? 'selected' : '' %>>Kids</option>
-                </select>
-                <p id="parentCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-            </div>
-
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Sub-Category Assignment Tree</label>
-                <select id="subCategory" name="subCategory" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
-                    <option value="" disabled>Select Subcategory</option>
-                </select>
-                <p id="subCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-            </div>
-        </div>
-
-        <!-- NEW: Discount and TaxRate Section (Side-by-Side) -->
-        <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Discount Offer (% Off)</label>
-                <div class="relative">
-                    <input type="number" id="discountPercent" name="discount" min="0" max="99" placeholder="0" 
-                           value="<%= locals.formData && formData.discount !== undefined ? formData.discount : (typeof product !== 'undefined' && product.discount !== undefined ? product.discount : '0') %>"
-                           class="w-full border border-gray-300 rounded-lg pl-4 pr-16 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-semibold text-gray-900">
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 font-black text-xs tracking-wider">% OFF</span>
-                </div>
-                <p id="discountPercentError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-                <span class="text-[10px] text-gray-400 mt-1">Enter a number from 0 to 99. This will display on the storefront circular badge.</span>
-            </div>
-
-            <div class="flex flex-col">
-                <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Tax Rate (%)</label>
-                <% const currentTax = locals.formData && formData.taxRate !== undefined ? formData.taxRate : (typeof product !== 'undefined' && product.taxRate !== undefined ? product.taxRate : '0'); %>
-                <select id="taxRate" name="taxRate" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
-                    <option value="0" <%= currentTax == '0' ? 'selected' : '' %>>0% (Tax Exempt)</option>
-                    <option value="5" <%= currentTax == '5' ? 'selected' : '' %>>5% (Apparel below ₹1000)</option>
-                    <option value="12" <%= currentTax == '12' ? 'selected' : '' %>>12% (Apparel above ₹1000)</option>
-                    <option value="18" <%= currentTax == '18' ? 'selected' : '' %>>18% (Standard GST)</option>
-                </select>
-                <p id="taxRateError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-                <span class="text-[10px] text-gray-400 mt-1">Select the applicable GST slab for this apparel.</span>
-            </div>
-        </div>
-
-        <div class="md:col-span-2 flex flex-col">
-            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
-            <textarea id="description" name="description" rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
-                      class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : (product.description || '') %></textarea>
-            <p id="descriptionError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
-        </div>
-    </div>
-
-    <!--  Modern Cropper.js Image Gallery -->
-    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
-        <div class="mb-4">
-            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery</h3>
-            <p class="text-[11px] text-gray-400 mt-0.5">Uploading new replacement photos will overwrite your active historical gallery. Leave untouched to retain current photos.</p>
-        </div>
-
-        <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-white hover:border-gray-400 transition cursor-pointer group" onclick="document.getElementById('rawFileInput').click()">
-            <div class="w-12 h-12 rounded-full bg-red-50 mx-auto flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200 mb-3">
-                <i class="fas fa-cloud-upload-alt text-xl"></i>
-            </div>
-            <p class="text-xs font-bold text-gray-700">Click to upload replacement apparel photos</p>
-            <p class="text-[10px] text-gray-400 mt-1">If replacing photos, a minimum of 3 cropped images is required (Aspect ratio 3:4)</p>
-            
-            <input type="file" id="rawFileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
-            <input type="file" name="productImages" id="finalFormFileInput" multiple class="hidden">
-        </div>
-
-        <div id="imageCountError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-bold text-red-600 flex items-center gap-2">
-            <i class="fas fa-exclamation-circle text-sm"></i>
-            <span>If you choose to replace images, you must upload and crop at least 3 photos.</span>
-        </div>
-
-        <% const savedImages = product.images || product.productImages || []; %>
-        <div id="galleryStatusBadge" class="mt-4 flex items-center justify-between px-4 py-2.5 bg-gray-100 rounded-lg border border-gray-200 text-xs font-bold text-gray-700">
-            <span><i class="fas fa-history text-gray-400 mr-2"></i>Displaying Active Historical Gallery (<%= savedImages.length %> Saved Photos)</span>
-            <span class="text-[10px] uppercase text-gray-400 font-semibold">Untouched</span>
-        </div>
-
-        <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <% if (savedImages.length > 0) { %>
-                <% savedImages.forEach((img, index) => { %>
-                    <div class="relative group aspect-3/4 rounded-xl border border-gray-200 overflow-hidden bg-white historical-image-slot shadow-xs" id="historical-slot-<%= index %>">
-                        <img src="<%= img.url || img %>" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                            <span class="text-[10px] text-white font-bold bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-md">Slot #<%= index + 1 %></span>
-                            <button type="button" onclick="handleHistoricalCrop(<%= index %>)" class="p-2 bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer" title="Crop/Resize Saved Photo">
-                                <i class="fas fa-crop-alt"></i>
-                            </button>
-                            <button type="button" onclick="handleHistoricalDelete(<%= index %>)" class="p-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer" title="Remove Saved Photo">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">Active #<%= index + 1 %></span>
-                    </div>
-                <% }) %>
-            <% } %>
-        </div>
-    </div>
-
-    <!--  Upgraded Variants & Apparel Attributes Workspace -->
-    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50/30 mb-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <!-- TOP HEADER -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
-                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants & Apparel Attributes Workspace</h3>
-                <p class="text-[11px] text-gray-400 mt-0.5">Use predefined quick defaults for clean data, or construct custom rules.</p>
+                <h1 class="text-3xl font-bold text-black tracking-tight mb-2">Edit Product</h1>
+                <p class="text-xs text-gray-500 leading-relaxed">Modify item specification fields, update image assets layers, and allocate custom variant structures.</p>
             </div>
             
-            <div class="flex items-center space-x-2">
-                <button type="button" onclick="addNewOptionRow('Size')" class="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition shadow-xs flex items-center space-x-1.5 cursor-pointer">
-                    <i class="fas fa-plus text-gray-400"></i>
-                    <span>Add Standard Row</span>
-                </button>
-                <button type="button" onclick="openCustomVariantModal()" class="px-3 py-1.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
-                    <i class="fas fa-magic"></i>
-                    <span>Create Custom Variant</span>
-                </button>
-            </div>
+            <!-- Back Button Inside a Box -->
+            <a href="/admin/products" class="px-5 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition flex items-center space-x-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                <i class="fas fa-arrow-left text-gray-400"></i>
+                <span>Back to Products</span>
+            </a>
         </div>
 
-        <!-- Quick-Add Standard Preset Pills Bar -->
-        <div class="bg-white p-3 rounded-lg border border-gray-200 mb-6 shadow-2xs flex flex-wrap items-center gap-2">
-            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
-                <i class="fas fa-bolt text-amber-500"></i> Quick Presets:
-            </span>
-            <button type="button" onclick="addNewOptionRow('Size')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Size</button>
-            <button type="button" onclick="addNewOptionRow('Color')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Color</button>
-            <button type="button" onclick="addNewOptionRow('Fabric / Material')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fabric</button>
-            <button type="button" onclick="addNewOptionRow('Fit Type')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Fit Type</button>
-            <button type="button" onclick="addNewOptionRow('Sleeve Length')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Sleeve</button>
-            <button type="button" onclick="addNewOptionRow('Neckline / Collar')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Neckline</button>
-            <button type="button" onclick="addNewOptionRow('Pattern / Print')" class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-md transition border border-gray-200 cursor-pointer">+ Pattern</button>
-        </div>
-
-        <!-- Active Options Container (Dynamically Pre-filled) -->
-        <div id="optionsContainer" class="space-y-4">
-            <% 
-                let reconstructedOptions = [];
-                let activeVariants = [];
-                if (locals.formData && formData.variants) {
-                    activeVariants = Array.isArray(formData.variants) ? formData.variants : Object.values(formData.variants);
-                } else if (typeof product !== 'undefined' && product.variants && product.variants.length > 0) {
-                    activeVariants = product.variants;
-                }
-
-                if (activeVariants.length > 0) {
-                    activeVariants.forEach(v => {
-                        let displayName = v.name || [v.size, v.color].filter(p => p && p !== 'Standard').join(' / ');
-                        
-                        let parts = displayName.split(' / ');
-                        parts.forEach((part, i) => {
-                            if (!reconstructedOptions[i]) reconstructedOptions[i] = new Set();
-                            reconstructedOptions[i].add(part.trim());
-                        });
-                    });
-                    reconstructedOptions = reconstructedOptions.map(set => Array.from(set).join(', '));
-                }
-            %>
+        <!-- THE FORM -->
+        <form action="/admin/products/edit/<%= product._id %>?page=<%= typeof page !== 'undefined' ? page : 1 %>" method="POST" enctype="multipart/form-data" id="productForm" class="space-y-8 pb-12">
             
-            <% if (reconstructedOptions.length > 0) { %>
-                <!-- Pre-fill existing options dynamically -->
-                <% reconstructedOptions.forEach((optionString, index) => { %>
-                    <div class="grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row">
-                        <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                            <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer mt-1">
-                                <option value="Size" <%= index === 0 ? 'selected' : '' %>>Size</option>
-                                <option value="Color" <%= index === 1 ? 'selected' : '' %>>Color</option>
-                                <option value="Fit Type" <%= index === 2 ? 'selected' : '' %>>Fit Type</option>
-                                <option value="Fabric / Material">Fabric / Material</option>
-                                <option value="Custom">Custom Attribute</option>
+            <!-- Product Identity & Categories Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- LEFT COLUMN: Product Basics & Tax -->
+                    <div class="space-y-6">
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Name</label>
+                            <input type="text" id="baseName" name="productName" value="<%= locals.formData && formData.productName ? formData.productName : (product.name || product.productName || '') %>" placeholder="e.g., Premium Comfort Polo Tee" 
+                                   class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition font-medium">
+                            <p id="baseNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Brand</label>
+                            <input type="text" id="brandName" name="brand" value="<%= locals.formData && formData.brand ? formData.brand : (product.brand || '') %>" placeholder="e.g., Levi's, Zara, Dresson Original" 
+                                   class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition font-medium">
+                            <p id="brandNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Tax Rate (%)</label>
+                            <% const currentTax = locals.formData && formData.taxRate !== undefined ? formData.taxRate : (typeof product !== 'undefined' && product.taxRate !== undefined ? product.taxRate : '0'); %>
+                            <select id="taxRate" name="taxRate" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                                <option value="0" <%= currentTax == '0' ? 'selected' : '' %>>0% (Tax Exempt)</option>
+                                <option value="5" <%= currentTax == '5' ? 'selected' : '' %>>5% (Apparel below ₹1000)</option>
+                                <option value="12" <%= currentTax == '12' ? 'selected' : '' %>>12% (Apparel above ₹1000)</option>
+                                <option value="18" <%= currentTax == '18' ? 'selected' : '' %>>18% (Standard GST)</option>
                             </select>
-                        </div>
-                        <div class="col-span-8">
-                            <input type="text" oninput="generateCombinationsMatrix()" value="<%= optionString %>" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
-                            
-                            <!-- Default Preset Clickable Chips Container -->
-                            <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
-                            
-                            <p class="text-[10px] text-gray-400 mt-2 pl-1"><i class="fas fa-info-circle mr-1 text-blue-400"></i>You can add new Value by putting a comma ( <strong>,</strong> ) after each variant.</p>
-                        </div>
-                        <div class="col-span-1 text-center mt-2">
-                            <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt"></i></button>
+                            <p id="taxRateError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                            <span class="text-[10px] text-gray-400 mt-1">Select the applicable GST slab for this apparel.</span>
                         </div>
                     </div>
-                <% }) %>
-            <% } else { %>
-                <!-- Default Blank Row for zero variants -->
-                <div class="grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row">
-                    <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
-                        <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer mt-1">
-                            <option value="Size" selected>Size</option>
-                            <option value="Color">Color</option>
-                            <option value="Fit Type">Fit Type</option>
-                        </select>
+                    
+                    <!-- RIGHT COLUMN: Category Mapping -->
+                    <div class="space-y-6">
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Parent Category (Gender Target)</label>
+                            <select id="parentCategory" name="parentCategory" onchange="handleParentCategoryChange()" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                                <option value="" disabled>Select Gender Target Room</option>
+                                <% const activeParent = locals.formData && formData.parentCategory ? formData.parentCategory : product.parentCategory; %>
+                                <option value="Men" <%= activeParent === 'Men' ? 'selected' : '' %>>Men</option>
+                                <option value="Women" <%= activeParent === 'Women' ? 'selected' : '' %>>Women</option>
+                                <option value="Kids" <%= activeParent === 'Kids' ? 'selected' : '' %>>Kids</option>
+                            </select>
+                            <p id="parentCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Sub-Category Assignment Tree</label>
+                            <select id="subCategory" name="subCategory" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-white shadow-sm transition cursor-pointer font-medium text-gray-800">
+                                <option value="" disabled>Select Subcategory</option>
+                            </select>
+                            <p id="subCategoryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
+                        </div>
                     </div>
-                    <div class="col-span-8">
-                        <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
-                        <!-- Default Preset Clickable Chips Container -->
-                        <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
-                    </div>
-                    <div class="col-span-1 text-center mt-2">
-                        <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer"><i class="fas fa-trash-alt"></i></button>
+
+                    <!-- FULL WIDTH: Rich Description -->
+                    <div class="md:col-span-2 flex flex-col pt-2">
+                        <label class="text-xs font-bold text-black mb-2 uppercase tracking-wider">Product Rich Description</label>
+                        <textarea id="description" name="description" rows="3" placeholder="Detail fabric metrics, cut attributes, care instructions..." 
+                                  class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-gray-500 bg-gray-50/30 shadow-sm transition resize-none font-medium"><%= locals.formData && formData.description ? formData.description : (product.description || '') %></textarea>
+                        <p id="descriptionError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
                     </div>
                 </div>
-            <% } %>
-        </div>
-    </div>
+            </div>
 
-    <!--  Dynamic Multi-Variant Matrix Card -->
-    <div id="matrixGlobalError" class="inline-error hidden px-6 py-3 mb-4 rounded-lg bg-red-50 text-red-600 text-xs font-bold border border-red-200">
-        <i class="fas fa-exclamation-circle mr-1"></i> You must configure at least one valid variant combination.
-    </div>
+            <!-- Modern Cropper.js Image Gallery Card -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="px-8 py-6 border-b border-gray-100 border-dashed">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Product Media Gallery</h3>
+                        <span class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded font-bold tracking-widest">MIN 3 REQUIRED</span>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1">Uploading new photos will overwrite the active gallery. Leave untouched to retain current photos.</p>
+                </div>
+                
+                <div class="p-8">
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50/50 hover:bg-gray-50 hover:border-gray-400 transition cursor-pointer group" onclick="document.getElementById('rawFileInput').click()">
+                        <div class="w-12 h-12 rounded-full bg-[#fce8e8] mx-auto flex items-center justify-center text-[#e78d8d] group-hover:scale-110 transition-transform duration-200 mb-3 shadow-inner">
+                            <i class="fas fa-cloud-upload-alt text-xl"></i>
+                        </div>
+                        <p class="text-xs font-bold text-gray-700">Click to upload replacement apparel photos</p>
+                        <p class="text-[10px] text-gray-400 mt-1">If replacing, a minimum of 3 cropped images is required (Aspect ratio 3:4)</p>
+                        
+                        <input type="file" id="rawFileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+                        <input type="file" name="productImages" id="finalFormFileInput" multiple class="hidden">
+                    </div>
 
-    <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm" id="combinationsCard">
-        <div class="bg-gray-50/80 px-6 py-4 border-b border-gray-200">
-            <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation Matrix</h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse" id="matrixTable">
-                <thead class="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50/30 border-b border-gray-200">
-                    <tr>
-                        <th class="py-3 px-6">Combination Properties</th>
-                        <th class="py-3 px-6 w-44">SKU Inventory Code</th>
-                        <th class="py-3 px-6 w-36 text-right">Price Value (₹)</th>
-                        <th class="py-3 px-6 w-32 text-center">Available Stock</th>
-                    </tr>
-                </thead>
-                <tbody class="text-xs text-gray-700 divide-y divide-gray-100 font-medium" id="matrixTableBody">
-                    <% if (activeVariants.length > 0) { %>
-                        <% activeVariants.forEach((v, index) => { %>
-                            <tr class="hover:bg-gray-50/50 transition historical-matrix-row">
-                               <td class="py-4 px-6 font-bold text-gray-900">
-                                    <% const rowDisplayName = v.name || [v.size, v.color].filter(p => p && p !== 'Standard').join(' / '); %>
-                                    
-                                    <span><%= rowDisplayName %></span>
-                                    <input type="hidden" name="variants[<%= index %>][name]" class="matrix-variant-name" value="<%= rowDisplayName %>">
-                                    
-                                    <!-- Explicity carry forward existing Size/Color if available -->
-                                    <input type="hidden" name="variants[<%= index %>][size]" value="<%= v.size || 'Standard' %>">
-                                    <input type="hidden" name="variants[<%= index %>][color]" value="<%= v.color || 'Standard' %>">
-                                    
-                                    <% if(v._id) { %>
-                                        <input type="hidden" name="variants[<%= index %>][_id]" class="matrix-variant-id" value="<%= v._id %>">
-                                    <% } %>
-                                </td>
-                                <td class="py-4 px-6">
-                                    <input type="text" name="variants[<%= index %>][sku]" value="<%= v.sku %>" class="matrix-variant-sku w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
-                                </td>
-                                <td class="py-4 px-6 text-right">
-                                    <div class="relative inline-block w-full">
-                                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                                        <input type="number" name="variants[<%= index %>][price]" value="<%= v.price %>" min="0" class="matrix-variant-price w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                    <div id="imageCountError" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs font-bold text-red-600 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-sm"></i>
+                        <span>If replacing images, you must upload and crop at least 3 photos.</span>
+                    </div>
+
+                    <% const savedImages = product.images || product.productImages || []; %>
+                    <div id="galleryStatusBadge" class="mt-6 flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 shadow-xs">
+                        <span><i class="fas fa-history text-gray-400 mr-2"></i>Displaying Active Historical Gallery (<%= savedImages.length %> Saved Photos)</span>
+                        <span class="text-[10px] uppercase text-gray-400 font-semibold tracking-wider">Untouched</span>
+                    </div>
+
+                    <div id="imagePreviewGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <% if (savedImages.length > 0) { %>
+                            <% savedImages.forEach((img, index) => { %>
+                                <div class="relative group aspect-3/4 rounded-xl border border-gray-200 overflow-hidden bg-white shadow-xs" id="historical-slot-<%= index %>">
+                                    <img src="<%= img.url || img %>" class="w-full h-full object-cover">
+                                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 backdrop-blur-xs">
+                                        <span class="absolute top-2 left-2 text-[9px] text-white font-bold bg-white/20 backdrop-blur-md px-2 py-0.5 rounded shadow">Slot #<%= index + 1 %></span>
+                                        <button type="button" onclick="handleHistoricalCrop(<%= index %>)" class="w-9 h-9 flex items-center justify-center bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer transition-transform hover:scale-105" title="Crop Photo">
+                                            <i class="fas fa-crop-alt"></i>
+                                        </button>
+                                        <button type="button" onclick="handleHistoricalDelete(<%= index %>)" class="w-9 h-9 flex items-center justify-center bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer transition-transform hover:scale-105" title="Remove Photo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
-                                </td>
-                                <td class="py-4 px-6 text-center">
-                                    <input type="number" name="variants[<%= index %>][stock]" value="<%= v.stock %>" min="0" class="matrix-variant-stock w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
-                                </td>
+                                    <span class="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">Active #<%= index + 1 %></span>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upgraded Variants & Apparel Attributes Workspace Card -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div class="px-8 py-6 border-b border-gray-100 border-dashed flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Variants & Attributes Workspace</h3>
+                        <p class="text-[11px] text-gray-400 mt-1">Use predefined quick defaults for clean data, or construct custom rules.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="addNewOptionRow('Size')" class="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-bold rounded-lg transition shadow-xs flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fas fa-plus text-gray-400"></i>
+                            <span>Add Standard Row</span>
+                        </button>
+                        <button type="button" onclick="openCustomVariantModal()" class="px-3 py-1.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                            <i class="fas fa-magic"></i>
+                            <span>Create Custom Variant</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-8 pt-6">
+                    <!-- Quick-Add Standard Preset Pills Bar -->
+                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-6 flex flex-wrap items-center gap-2">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+                            <i class="fas fa-bolt text-amber-500"></i> Quick Presets:
+                        </span>
+                        <button type="button" onclick="addNewOptionRow('Size')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Size</button>
+                        <button type="button" onclick="addNewOptionRow('Color')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Color</button>
+                        <button type="button" onclick="addNewOptionRow('Fabric / Material')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Fabric</button>
+                        <button type="button" onclick="addNewOptionRow('Fit Type')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Fit Type</button>
+                        <button type="button" onclick="addNewOptionRow('Sleeve Length')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Sleeve</button>
+                        <button type="button" onclick="addNewOptionRow('Neckline / Collar')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Neckline</button>
+                        <button type="button" onclick="addNewOptionRow('Pattern / Print')" class="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 text-[11px] font-semibold rounded transition border border-gray-200 cursor-pointer shadow-xs">+ Pattern</button>
+                    </div>
+
+                    <!-- Active Options Container -->
+                    <div id="optionsContainer" class="space-y-4">
+                        <% 
+                            let reconstructedOptions = [];
+                            let activeVariants = [];
+                            if (locals.formData && formData.variants) {
+                                activeVariants = Array.isArray(formData.variants) ? formData.variants : Object.values(formData.variants);
+                            } else if (typeof product !== 'undefined' && product.variants && product.variants.length > 0) {
+                                activeVariants = product.variants;
+                            }
+                            if (activeVariants.length > 0) {
+                                activeVariants.forEach(v => {
+                                    let displayName = v.name || [v.size, v.color].filter(p => p && p !== 'Standard').join(' / ');
+                                    let parts = displayName.split(' / ');
+                                    parts.forEach((part, i) => {
+                                        if (!reconstructedOptions[i]) reconstructedOptions[i] = new Set();
+                                        reconstructedOptions[i].add(part.trim());
+                                    });
+                                });
+                                reconstructedOptions = reconstructedOptions.map(set => Array.from(set).join(', '));
+                            }
+                        %>
+                        
+                        <% if (reconstructedOptions.length > 0) { %>
+                            <% reconstructedOptions.forEach((optionString, index) => { %>
+                                <div class="grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row">
+                                    <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
+                                        <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-500 option-type cursor-pointer">
+                                            <option value="Size" <%= index === 0 ? 'selected' : '' %>>Size</option>
+                                            <option value="Color" <%= index === 1 ? 'selected' : '' %>>Color</option>
+                                            <option value="Fit Type" <%= index === 2 ? 'selected' : '' %>>Fit Type</option>
+                                            <option value="Fabric / Material">Fabric / Material</option>
+                                            <option value="Custom">Custom Attribute</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-8">
+                                        <input type="text" oninput="generateCombinationsMatrix()" value="<%= optionString %>" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
+                                        <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
+                                    </div>
+                                    <div class="col-span-1 text-right mt-1">
+                                        <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt text-xs"></i></button>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row">
+                                <div class="col-span-3 font-semibold text-xs text-gray-500 uppercase tracking-wider">
+                                    <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-500 option-type cursor-pointer">
+                                        <option value="Size" selected>Size</option>
+                                        <option value="Color">Color</option>
+                                        <option value="Fit Type">Fit Type</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-8">
+                                    <input type="text" oninput="generateCombinationsMatrix()" placeholder="e.g., S, M, L, XL" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
+                                    <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
+                                </div>
+                                <div class="col-span-1 text-right mt-1">
+                                    <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition cursor-pointer"><i class="fas fa-trash-alt text-xs"></i></button>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Multi-Variant Matrix Card -->
+            <div id="matrixGlobalError" class="inline-error hidden px-6 py-4 rounded-xl bg-red-50 text-red-600 text-xs font-bold border border-red-200 flex items-center shadow-sm">
+                <i class="fas fa-exclamation-circle mr-2 text-lg"></i> You must configure at least one valid variant combination.
+            </div>
+
+            <div class="border border-gray-200 rounded-xl bg-white overflow-hidden shadow-sm" id="combinationsCard">
+                <div class="bg-gray-50 px-8 py-5 border-b border-gray-200">
+                    <h3 class="text-xs font-bold text-black uppercase tracking-wider">Dynamic Multi-Variant Pricing & Stock Allocation</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="matrixTable">
+                        <thead class="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-white border-b border-gray-200">
+                            <tr>
+                                <th class="py-4 px-8">Combination Properties</th>
+                                <th class="py-4 px-6 w-48">SKU Code</th>
+                                <th class="py-4 px-6 w-40 text-right">Price (₹)</th>
+                                <th class="py-4 px-8 w-32 text-center">Stock</th>
                             </tr>
-                        <% }) %>
-                    <% } %>
-                </tbody>
-            </table>
-        </div>
+                        </thead>
+                        <tbody class="text-xs text-gray-700 divide-y divide-gray-100 font-medium" id="matrixTableBody">
+                            <% if (activeVariants.length > 0) { %>
+                                <% activeVariants.forEach((v, index) => { %>
+                                    <tr class="hover:bg-gray-50/50 transition historical-matrix-row">
+                                       <td class="py-4 px-8 font-bold text-gray-900">
+                                            <% const rowDisplayName = v.name || [v.size, v.color].filter(p => p && p !== 'Standard').join(' / '); %>
+                                            <span><%= rowDisplayName %></span>
+                                            <input type="hidden" name="variants[<%= index %>][name]" class="matrix-variant-name" value="<%= rowDisplayName %>">
+                                            <input type="hidden" name="variants[<%= index %>][size]" value="<%= v.size || 'Standard' %>">
+                                            <input type="hidden" name="variants[<%= index %>][color]" value="<%= v.color || 'Standard' %>">
+                                            <% if(v._id) { %>
+                                                <input type="hidden" name="variants[<%= index %>][_id]" class="matrix-variant-id" value="<%= v._id %>">
+                                            <% } %>
+                                        </td>
+                                        <td class="py-4 px-6">
+                                            <input type="text" name="variants[<%= index %>][sku]" value="<%= v.sku %>" class="matrix-variant-sku w-full border border-gray-200 rounded-md px-3 py-2 font-mono text-[11px] uppercase bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
+                                        </td>
+                                        <td class="py-4 px-6 text-right">
+                                            <div class="relative inline-block w-full">
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                                                <input type="number" name="variants[<%= index %>][price]" value="<%= v.price %>" min="0" class="matrix-variant-price w-full border border-gray-200 rounded-md pl-7 pr-3 py-2 text-right font-semibold text-gray-900 bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
+                                            </div>
+                                        </td>
+                                        <td class="py-4 px-8 text-center">
+                                            <input type="number" name="variants[<%= index %>][stock]" value="<%= v.stock %>" min="0" class="matrix-variant-stock w-full border border-gray-200 rounded-md px-3 py-2 text-center font-bold bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Form Submit Actions -->
+            <div class="pt-6 border-t border-gray-200 flex justify-end space-x-4">
+                <a href="/admin/products" class="px-6 py-3 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 transition shadow-sm uppercase tracking-wider">Cancel changes</a>
+                <button type="submit" class="px-8 py-3 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer uppercase tracking-wider">Update Product Unit</button>
+            </div>
+
+        </form>
     </div>
+</main>
 
-    <!-- Form Submit Actions -->
-    <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-3">
-        <a href="/admin/products" class="px-5 py-2.5 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel changes</a>
-        <button type="submit" class="px-6 py-2.5 bg-[#8b3c3c] hover:bg-[#723131] text-white text-xs font-bold rounded-lg shadow-md transition cursor-pointer uppercase tracking-wider">Update Product Live Catalog Unit</button>
-    </div>
-
-</form>
-
-<!-- Custom Variant Creator -->
-<div id="customVariantModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-xs">
-    <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
-        <div class="bg-gray-50 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+<!-- Custom Variant Modal -->
+<div id="customVariantModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-sm mx-4 overflow-hidden transform scale-95 transition-transform duration-200" id="cvModalContent">
+        <div class="bg-gray-50/80 px-6 py-5 border-b border-gray-100 flex justify-between items-center">
             <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center space-x-2">
-                <i class="fas fa-wand-magic-sparkles text-[#e78d8d]"></i>
-                <span>Custom Variant Rule</span>
+                <div class="w-6 h-6 rounded-full bg-purple-100 text-[#6b66d6] flex items-center justify-center text-xs">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </div>
+                <span>Custom Variant</span>
             </h3>
-            <button type="button" onclick="closeCustomVariantModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            <button type="button" onclick="closeCustomVariantModal()" class="text-gray-400 hover:text-gray-900 transition"><i class="fas fa-times"></i></button>
         </div>
-        <div class="p-5 space-y-4">
-            <div class="bg-amber-50 border border-amber-100 text-[11px] text-amber-800 rounded-lg p-3 leading-relaxed font-medium">
-                <strong>Guide:</strong> Create options that aren't size or color, like <strong>"Water Resistance"</strong> or <strong>"Sleeve Type"</strong>.
+        <div class="p-6 space-y-5">
+            <div class="bg-blue-50/50 border border-blue-100 text-[11px] text-blue-800 rounded-lg p-3.5 leading-relaxed font-medium">
+                <strong>Guide:</strong> Create options that aren't standard, like <strong>"Collar Type"</strong> or <strong>"Material Blend"</strong>.
             </div>
             <div class="flex flex-col">
-                <label class="text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-1.5">Variant Parameter Identifier Label</label>
-                <input type="text" id="customVariantInputName" placeholder="e.g., Sleeve, Pocket, Fit Type" class="border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-gray-500 font-medium">
+                <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Parameter Identifier Label</label>
+                <input type="text" id="customVariantInputName" placeholder="e.g., Pocket Style, Fit Drop" class="border border-gray-300 rounded-lg px-4 py-3 text-xs focus:outline-none focus:border-[#6b66d6] focus:ring-1 focus:ring-[#6b66d6] font-medium bg-gray-50/50">
             </div>
         </div>
-        <div class="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-end space-x-2">
-            <button type="button" onclick="closeCustomVariantModal()" class="px-3 py-1.5 border border-gray-300 bg-white text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50">Cancel</button>
-            <button type="button" onclick="submitCustomVariantRow()" class="px-4 py-1.5 bg-[#6b66d6] text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer">Inject Option Row</button>
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end space-x-3">
+            <button type="button" onclick="closeCustomVariantModal()" class="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 transition shadow-sm">Cancel</button>
+            <button type="button" onclick="submitCustomVariantRow()" class="px-5 py-2.5 bg-[#6b66d6] hover:bg-[#5752b5] text-white text-xs font-bold rounded-lg shadow-sm transition cursor-pointer">Inject Row</button>
         </div>
     </div>
 </div>
 
 <script src="/js/shared/imageCropper.js"></script>
 <script>
-    //  Default Pre-defined Options Data
+    // Javascript remains unchanged from previous step
     const defaultPresets = {
         'Size': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
         'Color': ['Black', 'White', 'Navy Blue', 'Red', 'Olive Green', 'Grey', 'Maroon', 'Multi'],
@@ -373,46 +368,35 @@
         if (document.getElementById('parentCategory').value) {
             handleParentCategoryChange(initialSubId);
         }
-
-        // Auto-initialize preset chips for any pre-loaded rows saved from the database
         document.querySelectorAll('.option-row select.option-type').forEach(select => {
             updateRowPlaceholders(select);
         });
     });
 
-    //  Parent → Sub Category Filter
     function handleParentCategoryChange(historicalSubId = null) {
         const activeGender = document.getElementById('parentCategory').value;
         const subSelect = document.getElementById('subCategory');
-
         subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
-
         const filteredMatches = databaseCategories.filter(cat => {
             const isMatchingGender = cat.gender === activeGender;
             const isNotRoot = cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined;
             return isMatchingGender && isNotRoot;
         });
-
         if (filteredMatches.length > 0) {
             subSelect.disabled = false;
             subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.add('bg-white', 'cursor-pointer');
-
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat._id;
-
                 if (cat.breadcrumb) {
                     opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`;
                 } else if (cat.lineage && Array.isArray(cat.lineage)) {
                     opt.innerText = cat.lineage.join(" → ") + ` (Level ${cat.depth || 2})`;
                 } else {
-                    const parentName = cat.parentCategory && cat.parentCategory.categoryName
-                        ? cat.parentCategory.categoryName
-                        : "Main";
+                    const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
                     opt.innerText = `${parentName} → ${cat.categoryName}`;
                 }
-
                 if (historicalSubId && cat._id.toString() === historicalSubId.toString()) {
                     opt.selected = true;
                 }
@@ -426,49 +410,39 @@
         }
     }
 
-    //  Variant Option Rows
     function addNewOptionRow(presetType = 'Size') {
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
-        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
-
+        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
         const standardAttributes = Object.keys(defaultPresets);
         standardAttributes.push("Occasion", "Custom Attribute");
-
         let optionsHtml = standardAttributes.map(attr => {
             const isSelected = attr === presetType ? 'selected' : '';
             return `<option value="${attr}" ${isSelected}>${attr}</option>`;
         }).join('');
-
         row.innerHTML = `
             <div class="col-span-3">
-                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-white focus:outline-none focus:border-gray-500 option-type cursor-pointer mt-1">
+                <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-500 option-type cursor-pointer">
                     ${optionsHtml}
                 </select>
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
-                
-                <!-- NEW: Default Preset Clickable Chips Container -->
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium">
                 <div class="preset-container mt-2.5 flex flex-wrap gap-1.5 empty:hidden"></div>
             </div>
-            <div class="col-span-1 text-center mt-2">
-                <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 transition text-sm cursor-pointer" title="Delete Option Row">
-                    <i class="fas fa-trash-alt"></i>
+            <div class="col-span-1 text-right mt-1">
+                <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition cursor-pointer" title="Delete Option Row">
+                    <i class="fas fa-trash-alt text-xs"></i>
                 </button>
             </div>
         `;
-
         container.appendChild(row);
-        const newSelect = row.querySelector('.option-type');
-        updateRowPlaceholders(newSelect);
+        updateRowPlaceholders(row.querySelector('.option-type'));
     }
 
-    // Function to append clicked preset chip to the input box
     function appendPresetToInput(btn, value) {
         const inputField = btn.closest('.col-span-8').querySelector('.option-values');
         let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean);
-        
         if (!currentValues.includes(value)) {
             currentValues.push(value);
             inputField.value = currentValues.join(', ') + ', '; 
@@ -477,7 +451,6 @@
         inputField.focus();
     }
 
-
     function updateRowPlaceholders(select) {
         const parentCol = select.closest('.option-row').querySelector('.col-span-8');
         const input = parentCol.querySelector('.option-values');
@@ -485,31 +458,19 @@
         const type = select.value;
         if (defaultPresets[type]) {
             const chipsHtml = defaultPresets[type].map(val => 
-                `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-gray-50 border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-semibold transition-colors cursor-pointer shadow-xs">${val}</button>`
+                `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-white border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-bold transition-colors cursor-pointer shadow-xs">${val}</button>`
             ).join('');
             presetContainer.innerHTML = chipsHtml;
         } else {
             presetContainer.innerHTML = ''; 
         }
-        const placeholderMap = {
-            'Size': "Type sizes or click presets below...",
-            'Color': "Type colors or click presets below...",
-            'Fit Type': "Type fits or click presets below...",
-        };
+        const placeholderMap = { 'Size': "Type sizes or click presets...", 'Color': "Type colors or click presets...", 'Fit Type': "Type fits or click presets..." };
         input.placeholder = placeholderMap[type] || `Enter variables for ${type}`;
         generateCombinationsMatrix();
     }
 
-
-    function openCustomVariantModal() {
-        toggleModalVisibility('customVariantModal', 'cvModalContent', true);
-    }
-
-
-    function closeCustomVariantModal() {
-        toggleModalVisibility('customVariantModal', 'cvModalContent', false);
-    }
-
+    function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
+    function closeCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', false); }
 
     function submitCustomVariantRow() {
         const inputName = document.getElementById('customVariantInputName').value.trim();
@@ -517,19 +478,16 @@
         const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
         const container = document.getElementById('optionsContainer');
         const row = document.createElement('div');
-        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-4 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
         row.innerHTML = `
             <div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2 mt-2">
-                <span>${cleanKeyLabel}</span>
-                <input type="hidden" class="option-type" value="${cleanKeyLabel}">
+                <span>${cleanKeyLabel}</span><input type="hidden" class="option-type" value="${cleanKeyLabel}">
             </div>
             <div class="col-span-8">
-                <input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ${cleanKeyLabel} (separate with commas)" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
+                <input type="text" oninput="generateCombinationsMatrix()" placeholder="Enter discrete variables for ${cleanKeyLabel}" class="w-full border border-gray-300 rounded-lg px-4 py-2 text-xs focus:outline-none focus:border-gray-500 option-values font-medium mt-1">
             </div>
-            <div class="col-span-1 text-center mt-2">
-                <button type="button" onclick="removeOptionRow(this)" class="text-red-400 hover:text-red-600 text-sm cursor-pointer" title="Delete Option Row">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+            <div class="col-span-1 text-right mt-1">
+                <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt text-xs"></i></button>
             </div>
         `;
         container.appendChild(row);
@@ -537,33 +495,19 @@
         document.getElementById('customVariantInputName').value = '';
     }
 
+    function removeOptionRow(btn) { btn.closest('.option-row').remove(); generateCombinationsMatrix(); }
 
-    function removeOptionRow(btn) {
-        btn.closest('.option-row').remove();
-        generateCombinationsMatrix();
-    }
-
-  
-    // Combinations Matrix 
     const persistentVariantMemory = {};
-
     function generateCombinationsMatrix() {
         const rows = document.getElementsByClassName('option-row');
         const baseName = document.getElementById('baseName').value.trim() || "PROD";
         const brandName = document.getElementById('brandName').value.trim() || "DRSN";      
-        let optionKeys = []; // NEW: Track the column types for backend bypassing
-        let arraysToCombine = [];
-
+        let optionKeys = []; let arraysToCombine = [];
         for (let row of rows) {
             const type = row.querySelector('.option-type').value;
             const rawValue = row.querySelector('.option-values').value;            
-            const cleanValues = [...new Set(
-                rawValue.split(',').map(v => v.trim()).filter(v => v !== '')
-            )];            
-            if (cleanValues.length > 0) {
-                optionKeys.push(type);
-                arraysToCombine.push(cleanValues);
-            }
+            const cleanValues = [...new Set(rawValue.split(',').map(v => v.trim()).filter(v => v !== ''))];            
+            if (cleanValues.length > 0) { optionKeys.push(type); arraysToCombine.push(cleanValues); }
         }
         const matrixCard = document.getElementById('combinationsCard');
         const tableBody = document.getElementById('matrixTableBody');
@@ -574,133 +518,82 @@
             const skuInput = tr.querySelector('.matrix-variant-sku');
             const priceInput = tr.querySelector('.matrix-variant-price');
             const stockInput = tr.querySelector('.matrix-variant-stock');
-
             if (nameInput && nameInput.value) {
                 persistentVariantMemory[nameInput.value.trim()] = {
-                    id: idInput ? idInput.value : '',
-                    sku: skuInput ? skuInput.value : '',
-                    price: priceInput ? priceInput.value : '',
-                    stock: stockInput ? stockInput.value : '0'
+                    id: idInput ? idInput.value : '', sku: skuInput ? skuInput.value : '',
+                    price: priceInput ? priceInput.value : '', stock: stockInput ? stockInput.value : '0'
                 };
             }
         });
-        if (arraysToCombine.length === 0) {
-            matrixCard.classList.add('hidden');
-            tableBody.innerHTML = '';
-            return;
-        }
-        if (rows.length !== arraysToCombine.length) {
-            return;
-        }
-        let combinations = arraysToCombine.reduce((a, b) =>
-            a.flatMap(d => b.map(e => [d, e].flat()))
-        );
-
-        if (!Array.isArray(combinations[0])) {
-            combinations = combinations.map(item => [item]);
-        }
-        tableBody.innerHTML = '';
-        matrixCard.classList.remove('hidden');
+        if (arraysToCombine.length === 0) { matrixCard.classList.add('hidden'); tableBody.innerHTML = ''; return; }
+        if (rows.length !== arraysToCombine.length) return;
+        let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+        if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]);
+        tableBody.innerHTML = ''; matrixCard.classList.remove('hidden');
         combinations.forEach((combo, index) => {
             const comboString = combo.join(' / ');
             const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase();
             const generatedSku = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`;
-            
             let historical = persistentVariantMemory[comboString];
-            
             if (!historical) {
                 const memoryKeys = Object.keys(persistentVariantMemory);
-                let bestKey = null;
-                let maxOverlap = 0;
-
+                let bestKey = null; let maxOverlap = 0;
                 for (let key of memoryKeys) {
                     const oldParts = key.split(' / ');
                     const overlap = oldParts.filter(part => combo.includes(part)).length;                    
-                    if (overlap === oldParts.length && overlap > maxOverlap) {
-                        maxOverlap = overlap;
-                        bestKey = key;
-                    }
+                    if (overlap === oldParts.length && overlap > maxOverlap) { maxOverlap = overlap; bestKey = key; }
                 }                
-                if (bestKey) {
-                    historical = { ...persistentVariantMemory[bestKey] };
-                    historical.id = ''; // Wipe ID so Mongoose correctly registers it as a new dimension matrix
-                } else {
-                    historical = {};
-                }
+                if (bestKey) { historical = { ...persistentVariantMemory[bestKey] }; historical.id = ''; } 
+                else historical = {};
             }
-            const finalId = historical.id || '';
-            const finalSku = historical.sku || generatedSku;
-            const finalPrice = historical.price || '';
-            const finalStock = historical.stock || '0';
-            let sizeValue = 'Standard';
-            let colorValue = 'Standard';            
-            combo.forEach((val, i) => {
-                if (optionKeys[i] === 'Size') sizeValue = val;
-                if (optionKeys[i] === 'Color') colorValue = val;
-            });
-            const idHtml = finalId
-                ? `<input type="hidden" name="variants[${index}][_id]" class="matrix-variant-id" value="${finalId}">`
-                : '';
-
+            const finalId = historical.id || ''; const finalSku = historical.sku || generatedSku;
+            const finalPrice = historical.price || ''; const finalStock = historical.stock || '0';
+            let sizeValue = 'Standard'; let colorValue = 'Standard';            
+            combo.forEach((val, i) => { if (optionKeys[i] === 'Size') sizeValue = val; if (optionKeys[i] === 'Color') colorValue = val; });
+            const idHtml = finalId ? `<input type="hidden" name="variants[${index}][_id]" class="matrix-variant-id" value="${finalId}">` : '';
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-50/50 transition historical-matrix-row";
             tr.innerHTML = `
-                <td class="py-4 px-6 font-bold text-gray-900">
+                <td class="py-4 px-8 font-bold text-gray-900">
                     <span class="text-xs">${comboString}</span>
                     <input type="hidden" name="variants[${index}][name]" class="matrix-variant-name" value="${comboString}">
-                    
-                    <!-- EXPLICIT DATA TO BYPASS BACKEND REGEX HACKS -->
                     <input type="hidden" name="variants[${index}][size]" value="${sizeValue}">
                     <input type="hidden" name="variants[${index}][color]" value="${colorValue}">
-                    
                     ${idHtml}
                 </td>
                 <td class="py-4 px-6">
-                    <input type="text" name="variants[${index}][sku]" value="${finalSku}"
-                        class="matrix-variant-sku w-full border border-gray-200 rounded px-2.5 py-1.5 font-mono text-[11px] uppercase bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                    <input type="text" name="variants[${index}][sku]" value="${finalSku}" class="matrix-variant-sku w-full border border-gray-200 rounded-md px-3 py-2 font-mono text-[11px] uppercase bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
                 </td>
                 <td class="py-4 px-6 text-right">
                     <div class="relative inline-block w-full">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                        <input type="number" name="variants[${index}][price]" value="${finalPrice}" min="0"
-                            class="matrix-variant-price w-full border border-gray-200 rounded pl-6 pr-2.5 py-1.5 text-right font-semibold text-gray-900 bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                        <input type="number" name="variants[${index}][price]" value="${finalPrice}" min="0" class="matrix-variant-price w-full border border-gray-200 rounded-md pl-7 pr-3 py-2 text-right font-semibold text-gray-900 bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
                     </div>
                 </td>
-                <td class="py-4 px-6 text-center">
-                    <input type="number" name="variants[${index}][stock]" value="${finalStock}" min="0"
-                        class="matrix-variant-stock w-full border border-gray-200 rounded px-2 py-1.5 text-center font-medium bg-gray-50/30 focus:outline-none focus:border-gray-500 transition-colors">
+                <td class="py-4 px-8 text-center">
+                    <input type="number" name="variants[${index}][stock]" value="${finalStock}" min="0" class="matrix-variant-stock w-full border border-gray-200 rounded-md px-3 py-2 text-center font-bold bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
                 </td>
             `;
             tableBody.appendChild(tr);
         });
     }
 
-    // 5. Image Gallery Management
-    const processedFilesArray = [];
-    const dataTransfer = new DataTransfer();
-    let isHistoricalConverted = false;
-
+    const processedFilesArray = []; const dataTransfer = new DataTransfer(); let isHistoricalConverted = false;
     const historicalImagesData = [
-        <% savedImages.forEach((img, idx) => { %>
-            { url: "<%= img.url || img %>", name: "historical-dress-<%= idx + 1 %>.jpg" },
-        <% }) %>
+        <% savedImages.forEach((img, idx) => { %> { url: "<%= img.url || img %>", name: "historical-dress-<%= idx + 1 %>.jpg" }, <% }) %>
     ];
 
     async function importHistoricalWorkspace() {
         if (isHistoricalConverted) return;
         const badge = document.getElementById('galleryStatusBadge');
         if (badge) badge.innerHTML = `<span><i class="fas fa-spinner fa-spin text-gray-500 mr-2"></i>Loading workspace...</span>`;
-
         for (let i = 0; i < historicalImagesData.length; i++) {
             const item = historicalImagesData[i];
             try {
-                const res = await fetch(item.url);
-                const blob = await res.blob();
+                const res = await fetch(item.url); const blob = await res.blob();
                 const file = new File([blob], item.name, { type: blob.type || 'image/jpeg', lastModified: Date.now() });
                 processedFilesArray.push(file);
-            } catch (error) {
-                console.error("Failed to load historical photo:", error);
-            }
+            } catch (error) { console.error("Failed to load historical photo:", error); }
         }
         isHistoricalConverted = true;
     }
@@ -708,110 +601,68 @@
     async function handleFileSelect(event) {
         const files = Array.from(event.target.files);
         if (!files.length) return;
-
         await importHistoricalWorkspace();
-        files.forEach(file => {
-            if (file.type.startsWith('image/')) processedFilesArray.push(file);
-        });
-
-        updateFormFileInput();
-        renderPreviews();
-        event.target.value = '';
+        files.forEach(file => { if (file.type.startsWith('image/')) processedFilesArray.push(file); });
+        updateFormFileInput(); renderPreviews(); event.target.value = '';
     }
 
-    async function handleHistoricalCrop(index) {
-        await importHistoricalWorkspace();
-        updateFormFileInput();
-        renderPreviews();
-        openCropper(index);
-    }
-
-    async function handleHistoricalDelete(index) {
-        await importHistoricalWorkspace();
-        removeImage(index);
-    }
+    async function handleHistoricalCrop(index) { await importHistoricalWorkspace(); updateFormFileInput(); renderPreviews(); openCropper(index); }
+    async function handleHistoricalDelete(index) { await importHistoricalWorkspace(); removeImage(index); }
 
     function updateFormFileInput() {
         dataTransfer.items.clear();
         processedFilesArray.forEach(file => dataTransfer.items.add(file));
         document.getElementById('finalFormFileInput').files = dataTransfer.files;
-
         const badge = document.getElementById('galleryStatusBadge');
         if (processedFilesArray.length > 0) {
-            badge.className = "mt-4 flex items-center justify-between px-4 py-2.5 bg-amber-50 rounded-lg border border-amber-200 text-xs font-bold text-amber-800";
-            badge.innerHTML = `
-                <span><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Gallery Workspace Active (${processedFilesArray.length} Photos Prepared)</span>
-                <button type="button" onclick="restoreHistoricalGallery()" class="text-[10px] underline hover:text-amber-950 font-bold cursor-pointer">Reset to Historical</button>
-            `;
+            badge.className = "mt-6 flex items-center justify-between px-4 py-2.5 bg-amber-50 rounded-lg border border-amber-200 text-xs font-bold text-amber-800 shadow-xs";
+            badge.innerHTML = `<span><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Gallery Workspace Active (${processedFilesArray.length} Photos Prepared)</span><button type="button" onclick="restoreHistoricalGallery()" class="text-[10px] underline hover:text-amber-950 font-bold cursor-pointer uppercase tracking-wider">Reset to Historical</button>`;
         }
-
-        if (processedFilesArray.length === 0 || processedFilesArray.length >= 3) {
-            document.getElementById('imageCountError').classList.add('hidden');
-        }
+        if (processedFilesArray.length === 0 || processedFilesArray.length >= 3) { document.getElementById('imageCountError').classList.add('hidden'); }
     }
 
     function renderPreviews() {
-        const grid = document.getElementById('imagePreviewGrid');
-        grid.innerHTML = '';
-
+        const grid = document.getElementById('imagePreviewGrid'); grid.innerHTML = '';
         processedFilesArray.forEach((file, index) => {
-            const url = URL.createObjectURL(file);
-            const card = document.createElement('div');
+            const url = URL.createObjectURL(file); const card = document.createElement('div');
             card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs";
             card.innerHTML = `
                 <img src="${url}" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
-                    <button type="button" onclick="openCropper(${index})" class="p-2 bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer">
-                        <i class="fas fa-crop-alt"></i>
-                    </button>
-                    <button type="button" onclick="removeImage(${index})" class="p-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 backdrop-blur-xs">
+                    <button type="button" onclick="openCropper(${index})" class="w-9 h-9 flex items-center justify-center bg-white text-gray-800 rounded-lg shadow hover:bg-gray-100 text-xs font-bold cursor-pointer transition-transform hover:scale-105"><i class="fas fa-crop-alt"></i></button>
+                    <button type="button" onclick="removeImage(${index})" class="w-9 h-9 flex items-center justify-center bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer transition-transform hover:scale-105"><i class="fas fa-trash"></i></button>
                 </div>
-                <span class="absolute bottom-2 left-2 bg-black/60 text-white text-[9px] font-bold px-2 py-0.5 rounded backdrop-blur-xs">#${index + 1}</span>
+                <span class="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">#${index + 1}</span>
             `;
             grid.appendChild(card);
         });
     }
 
     function removeImage(index) {
-        processedFilesArray.splice(index, 1);
-        updateFormFileInput();
-
-        if (processedFilesArray.length === 0) {
-            restoreHistoricalGallery();
-        } else {
+        processedFilesArray.splice(index, 1); updateFormFileInput();
+        if (processedFilesArray.length === 0) restoreHistoricalGallery();
+        else {
             renderPreviews();
             if (processedFilesArray.length < 3) {
-                const errorBox = document.getElementById('imageCountError');
-                errorBox.classList.remove('hidden');
-                errorBox.querySelector('span').innerText = `You currently have ${processedFilesArray.length} photo(s). Please upload more to meet the minimum 3 required.`;
+                const errorBox = document.getElementById('imageCountError'); errorBox.classList.remove('hidden');
+                errorBox.querySelector('span').innerText = `You have ${processedFilesArray.length} photo(s). Please upload more to meet the minimum 3 required.`;
             }
         }
     }
 
-    function restoreHistoricalGallery() {
-        window.location.reload();
-    }
+    function restoreHistoricalGallery() { window.location.reload(); }
 
     function openCropper(index) {
         const originalFile = processedFilesArray[index];
         window.ImageCropper.openCropper({
-            file: originalFile,
-            aspectRatio: NaN,
+            file: originalFile, aspectRatio: NaN,
             onCrop: (blob, newUrl) => {
-                const croppedFile = new File([blob], originalFile.name, {
-                    type: 'image/jpeg',
-                    lastModified: Date.now()
-                });
-                processedFilesArray[index] = croppedFile;
-                updateFormFileInput();
-                renderPreviews();
+                processedFilesArray[index] = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: Date.now() });
+                updateFormFileInput(); renderPreviews();
             }
         });
     }
 
-    // 6. Complete Client-Side Validation Logic
     document.getElementById('productForm').addEventListener('submit', function (event) {
         let isValid = true;
         document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden'));
@@ -821,91 +672,47 @@
             const inputField = document.getElementById(elementId);
             const errorElement = document.getElementById(elementId + 'Error');
             if (inputField && errorElement) {
-                inputField.classList.add('border-red-500');
-                errorElement.innerText = errorText;
-                errorElement.classList.remove('hidden');
-                isValid = false;
+                inputField.classList.add('border-red-500'); errorElement.innerText = errorText;
+                errorElement.classList.remove('hidden'); isValid = false;
             }
         }
-
-        const baseName = document.getElementById('baseName').value.trim();
-        if (!baseName) fireError('baseName', 'Product name is mandatory.');
-
-        const brandName = document.getElementById('brandName').value.trim();
-        if (!brandName) fireError('brandName', 'Brand name is mandatory.');
-
-        const discount = document.getElementById('discountPercent').value;
-        if (discount === '' || discount < 0 || discount > 99) {
-            fireError('discountPercent', 'Discount must be a valid number between 0 and 99.');
-        }
-
-        const parentCat = document.getElementById('parentCategory').value;
-        if (!parentCat) fireError('parentCategory', 'Please select a Target Gender.');
-
-        const subCat = document.getElementById('subCategory').value;
-        if (!subCat) fireError('subCategory', 'Please assign a Sub-Category.');
-
-        const desc = document.getElementById('description').value.trim();
-        if (!desc) fireError('description', 'Rich description is mandatory.');
+        
+        if (!document.getElementById('baseName').value.trim()) fireError('baseName', 'Product name is mandatory.');
+        if (!document.getElementById('brandName').value.trim()) fireError('brandName', 'Brand name is mandatory.');
+        if (!document.getElementById('parentCategory').value) fireError('parentCategory', 'Please select a Target Gender.');
+        if (!document.getElementById('subCategory').value) fireError('subCategory', 'Please assign a Sub-Category.');
+        if (!document.getElementById('description').value.trim()) fireError('description', 'Rich description is mandatory.');
 
         if (processedFilesArray.length > 0 && processedFilesArray.length < 3) {
-            const errorBox = document.getElementById('imageCountError');
-            errorBox.classList.remove('hidden');
-            isValid = false;
+            document.getElementById('imageCountError').classList.remove('hidden'); isValid = false;
         }
 
-        const matrixBody = document.getElementById('matrixTableBody');
-        const rows = matrixBody.querySelectorAll('tr');
+        const rows = document.getElementById('matrixTableBody').querySelectorAll('tr');
         const matrixGlobalErr = document.getElementById('matrixGlobalError');
-        
-        if (rows.length === 0) {
-            matrixGlobalErr.classList.remove('hidden');
-            isValid = false;
-        } else {
+        if (rows.length === 0) { matrixGlobalErr.classList.remove('hidden'); isValid = false; } 
+        else {
             rows.forEach(tr => {
-                const priceInput = tr.querySelector('.matrix-variant-price');
-                const stockInput = tr.querySelector('.matrix-variant-stock');
+                const pInput = tr.querySelector('.matrix-variant-price');
+                const sInput = tr.querySelector('.matrix-variant-stock');
                 const skuInput = tr.querySelector('.matrix-variant-sku');
-
-                if (!skuInput.value.trim()) {
-                    skuInput.classList.add('border-red-500', 'bg-red-50');
-                    isValid = false;
-                }
-                if (!priceInput.value || parseFloat(priceInput.value) < 0) {
-                    priceInput.classList.add('border-red-500', 'bg-red-50');
-                    isValid = false;
-                }
-                if (!stockInput.value || parseInt(stockInput.value) < 0) {
-                    stockInput.classList.add('border-red-500', 'bg-red-50');
-                    isValid = false;
-                }
+                if (!skuInput.value.trim()) { skuInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
+                if (!pInput.value || parseFloat(pInput.value) < 0) { pInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
+                if (!sInput.value || parseInt(sInput.value) < 0) { sInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
             });
         }
-
         if (!isValid) {
             event.preventDefault(); 
             const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     });
 
     function toggleModalVisibility(modalId, contentId, shouldShow) {
-        const modal = document.getElementById(modalId);
-        const content = document.getElementById(contentId);
+        const modal = document.getElementById(modalId); const content = document.getElementById(contentId);
         if (shouldShow) {
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
+            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
         } else {
-            modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 200);
+            modal.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 200);
         }
     }
 </script>

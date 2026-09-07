@@ -125,7 +125,8 @@
 
                 <!-- '<form>' used for select 'variant', 'Quantity', 'Add To Cart', 'Buy Now' etc   -->
                 <hr class="my-6 border-gray-200">
-                <form id="addToCartForm" action="/cart/add" method="POST" class="space-y-6">
+                <!--  Added onsubmit handler to intercept standard form submission -->
+                <form id="addToCartForm" action="/cart/add" method="POST" class="space-y-6" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" name="productId" value="<%= product._id %>">
                     <input type="hidden" name="variantId" id="selectedVariantId" value="<%= product.variants && product.variants.length > 0 ? product.variants[0]._id : '' %>">  
                     <input type="hidden" name="actionType" id="formActionType" value="cart">      
@@ -227,23 +228,21 @@
         </div>
     </div>
 
-    <!-- REVIEWS SECTION -->
+    <!-- For 'review' section -->
     <section id="reviews" class="mt-16 pt-12 border-t border-gray-200">
         <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-8">Customer Reviews</h2>
 
         <% if (product.reviews && product.reviews.length > 0) { %>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <% product.reviews.forEach(review => { %>
-                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-                        
-                        <!-- Reviewer Profile Header -->
+                    <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">                      
+                        <!-- For 'review' name -->
                         <div class="flex items-center space-x-3 mb-3">
                             <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm">
                                 <%= review.name ? review.name.charAt(0).toUpperCase() : 'U' %>
                             </div>
                             <span class="font-bold text-sm text-gray-900"><%= review.name || 'Unknown User' %></span>
                         </div>
-
                         <!-- Stars & Date -->
                         <div class="flex items-center space-x-2 mb-3">
                             <div class="text-amber-400 text-[11px]">
@@ -259,13 +258,11 @@
                                 Reviewed on <%= new Date(review.createdAt || new Date()).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) %>
                             </span>
                         </div>
-
                         <!-- Review Comment -->
                         <p class="text-sm text-gray-700 leading-relaxed font-medium">
                             <%= review.comment %>
                         </p>
-
-                        <!-- Customer Uploaded Image -->
+                      <!-- Customer Uploaded Image -->
                         <% if (review.image) { %>
                             <div class="mt-4">
                                 <img src="<%= review.image %>" alt="Customer uploaded image" class="w-24 h-24 object-cover rounded-md border border-gray-200 cursor-pointer hover:opacity-90 transition">
@@ -293,7 +290,6 @@
                     View More <i class="fas fa-arrow-right text-[10px]"></i>
                 </a>
             </div>
-
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                 <% relatedProducts.forEach(relProduct => { %>
                     <% 
@@ -304,8 +300,7 @@
                         }
                         let relImage = relProduct.images && relProduct.images.length > 0 
                             ? relProduct.images[0].url 
-                            : '/images/default-dress.jpg';
-                            
+                            : '/images/default-dress.jpg';                            
                         let relMrp = relPrice;
                         if (relProduct.discount && relProduct.discount > 0) {
                             relMrp = Math.round(relPrice / (1 - (relProduct.discount / 100)));
@@ -345,9 +340,26 @@
     <% } %>
 </main>
 
-<script src="/js/shared/imageZoom.js"></script>.
+<script src="/js/shared/imageZoom.js"></script>
 
 <script>
+    // For 'helper function' for 'toast messages'
+    function showToastMessage(message) {
+        // Create the toast container
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-5 right-5 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3 z-[100] transform transition-all duration-300 translate-y-10 opacity-0 text-sm font-bold tracking-wide';
+        toast.innerHTML = `<i class="fas fa-check-circle text-green-400 text-lg"></i><span>${message}</span>`;      
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-10', 'opacity-0');
+        });
+        setTimeout(() => {
+            toast.classList.add('translate-y-10', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);                   // Automatically hide and remove the toast after 3 seconds
+        }, 3000);
+    }
+
+
     // For change the image
     function switchMainImage(newUrl, btnElement) {                    // Here 'newUrl'(ie 'url' is the 'key' of image and value 'newUrl' get when we iterate it like 'item.url')and 'btnElement'(ie it represents 'button')are arguments.
         const mainImage = document.getElementById('mainViewerImage'); // 'mainImage' is for display 'hero'/ 'main' image(ie main image of product).
@@ -363,6 +375,7 @@
         btnElement.classList.remove('border-transparent', 'opacity-70');                   // 'btnElement' means '<button>' passes as argument we remove classes 'added' just before
         btnElement.classList.add('border-[#6b66d6]', 'shadow-md', 'scale-95', 'opacity-100');
     }
+
 
     // For select variant
     let currentMaxStock = "<%= initialStock %>";                                            // Here 'ejs' gives value of 'initialStock' to 'js'(ie it happens before 'browser' get 'js')and we declared 'currentMaxStock' 'outside' of the function so we can use it any other function.
@@ -447,6 +460,58 @@
         }
     }
 
+  // For 'handle' '<form>' submission through 'fetch()' for both 'Add to Cart' and 'Buy Now'.
+    async function handleFormSubmit(event) {
+        event.preventDefault(); // Stop standard form submission initially        
+        const actionType = document.getElementById('formActionType').value;
+        const form = event.target;
+        if (actionType === 'buy_now') {
+            form.submit();
+            return; 
+        }
+        const formData = new URLSearchParams(new FormData(form));
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json' 
+                },
+                body: formData 
+            });
+            
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            const data = await response.json();          
+            if (response.ok && data.success) {
+                const cartBadge = document.getElementById('cart-badge');
+               if (cartBadge) {
+                    let newCount;
+                    if (data.cart && data.cart.items) {
+                        newCount = data.cart.items.reduce((total, item) => total + (item.quantity || 1), 0);
+                    } else {
+                        let currentCartCount = parseInt(cartBadge.innerText || '0', 10);
+                        let addedQuantity = parseInt(formData.get('quantity') || '1', 10);
+                        newCount = currentCartCount + addedQuantity; 
+                    }                  
+                    cartBadge.innerText = newCount;
+                    if (newCount > 0) {
+                        cartBadge.classList.remove('hidden');
+                    }
+                }
+                showToastMessage("Item added to cart successfully!");
+            } else {
+                if (typeof showCustomAlert === 'function') showCustomAlert(data.message || "Could not add item to cart.", "Notice", "warning");
+            }
+        } catch (error) {
+            console.error("Add to cart error:", error);
+            if (typeof showCustomAlert === 'function') showCustomAlert("A network error occurred. Please try again.", "Connection Error", "error");
+        }
+    }
+
+
     // For 'wishlist'
     async function toggleWishlist(productId, btnElement) {
         try {
@@ -455,20 +520,32 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ productId })
-            });
-            const data = await response.json();
+            });          
+            if (response.status === 401) {
+                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            const data = await response.json();            
             if (data.success) {
+                const wishlistBadge = document.getElementById('wishlist-badge');
+                let currentWishCount = wishlistBadge ? parseInt(wishlistBadge.innerText || '0', 10) : 0;
                 if (data.action === 'added') {
                     icon.classList.remove('far');
                     icon.classList.add('fas', 'text-red-500');
-                    if (typeof showCustomAlert === 'function') showCustomAlert("Item saved to your Wishlist!", "Wishlist Updated", "success");
+                    currentWishCount += 1;
                 } else {
                     icon.classList.remove('fas', 'text-red-500');
                     icon.classList.add('far');
-                    if (typeof showCustomAlert === 'function') showCustomAlert("Item removed from Wishlist.", "Wishlist Updated", "warning");
+                    currentWishCount = Math.max(0, currentWishCount - 1);
                 }
-            } else if (response.status === 401) {
-                window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                if (wishlistBadge) {
+                    wishlistBadge.innerText = currentWishCount;
+                    if (currentWishCount > 0) {
+                        wishlistBadge.classList.remove('hidden');
+                    } else {
+                        wishlistBadge.classList.add('hidden');
+                    }
+                }
             }
         } catch (error) {
             console.error("Wishlist sync error:", error);

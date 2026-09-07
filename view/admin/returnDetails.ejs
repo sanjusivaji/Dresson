@@ -25,31 +25,56 @@
                 <span class="text-gray-600 font-medium">Requested Date</span>
                 <span class="col-span-2 text-gray-900 font-semibold">: &nbsp; <%= requestedDate %></span>
             </div>
-            <div class="grid grid-cols-3">
-                <span class="text-gray-600 font-medium">Reason</span>
-                <span class="col-span-2 text-gray-900 font-semibold">: &nbsp; <%= order.returnRequest.reason || 'Not specified' %></span>
-            </div>
+            
         </div>
 
         <!-- Product Details Section -->
         <div class="mb-10 space-y-6">
             <% order.items.forEach(item => { %>
                 <% 
-                    const variantParts = item.variantName ? item.variantName.split(' / ') : [];
-                    const productName = item.product.productName || item.product.name || 'Dresson Product';
+                    // Only display items that are actually part of a return process to keep the view clean
+                    if (['Return Pending', 'Returned', 'Return Rejected'].includes(item.itemStatus) || (order.returnRequest && order.returnRequest.isRequested)) {
+                        const variantParts = item.variantName ? item.variantName.split(' / ') : [];
+                        const productName = item.product.productName || item.product.name || 'Dresson Product';
                 %>
-                <div class="flex items-start space-x-6">
-                    <img src="<%= item.product.images[0]?.url || '/images/default-product.jpg' %>" alt="Product" class="w-20 h-24 object-cover rounded border border-gray-100 shadow-sm">
-                    <div class="text-[13px] space-y-1.5 text-gray-600 font-medium mt-1">
-                        <h3 class="text-sm font-bold text-gray-900 mb-2"><%= productName %></h3>
+                <div class="flex items-start space-x-6 border-b border-gray-100 pb-6 last:border-0">
+                    <img src="<%= item.product.images && item.product.images[0] ? item.product.images[0].url : '/images/default-product.jpg' %>" alt="Product" class="w-20 h-24 object-cover rounded border border-gray-100 shadow-sm">
+                    <div class="text-[13px] space-y-1.5 text-gray-600 font-medium mt-1 w-full">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-sm font-bold text-gray-900 mb-1"><%= productName %></h3>
+                            
+                            <!-- Current Item Status Badge -->
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap
+                                <%= item.itemStatus === 'Returned' ? 'bg-purple-100 text-purple-700' : 
+                                    item.itemStatus === 'Return Pending' ? 'bg-yellow-100 text-yellow-700 animate-pulse' : 
+                                    item.itemStatus === 'Return Rejected' ? 'bg-orange-100 text-orange-800' :
+                                    'bg-gray-100 text-gray-700' %>">
+                                <%= item.itemStatus %>
+                            </span>
+                        </div>
+
                         <% if (variantParts.length > 0) { %>
-                            <% variantParts.forEach(part => { %>
-                                <p><%= part %></p>
-                            <% }) %>
+                            <p class="text-gray-500"><%= variantParts.join(' / ') %></p>
                         <% } %>
                         <p class="font-bold text-gray-900 mt-2">₹<%= item.price %></p>
+
+                        <!-- Item-Specific Return Info Box -->
+                        <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md space-y-2">
+                            <div class="grid grid-cols-12 gap-2">
+                                <span class="col-span-3 text-gray-500 font-semibold text-xs uppercase tracking-wide">Reason</span>
+                                <span class="col-span-9 text-gray-800"><%= item.returnReason || 'Not specified' %></span>
+                            </div>
+                            
+                            <% if (item.adminMessage) { %>
+                                <div class="grid grid-cols-12 gap-2 border-t border-gray-200 pt-2 mt-2">
+                                    <span class="col-span-3 text-gray-500 font-semibold text-xs uppercase tracking-wide">Admin Note</span>
+                                    <span class="col-span-9 text-gray-800 italic">"<%= item.adminMessage %>"</span>
+                                </div>
+                            <% } %>
+                        </div>
                     </div>
                 </div>
+                <% } %>
             <% }) %>
         </div>
 
@@ -61,19 +86,20 @@
 
             <div class="mb-8">
                 <label for="adminMessage" class="block text-[13px] font-semibold text-gray-700 mb-2">
-                    Message(mandatory)
+                    Message (mandatory)
                 </label>
                 <textarea 
                     name="adminMessage" 
                     id="adminMessage" 
                     rows="4" 
                     required
+                    placeholder="Enter the reason for approval or rejection..."
                     class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#8a7aee] resize-none text-sm"
                 ></textarea>
             </div>
 
             <div class="flex gap-4">
-                <!-- Approve Button (Changed to type="button") -->
+                <!-- Approve Button -->
                 <button 
                     type="button" 
                     onclick="handleProcess(event, 'Approve')"
@@ -82,7 +108,7 @@
                     Approve Return
                 </button>
                 
-                <!-- Reject Button (Changed to type="button") -->
+                <!-- Reject Button -->
                 <button 
                     type="button" 
                     onclick="handleProcess(event, 'Reject')"
@@ -106,13 +132,12 @@
         
         const form = document.getElementById('process-return-form');
         const hiddenInput = document.getElementById('form-action-input');
-        const messageInput = document.getElementById('adminMessage'); // Grab the textarea
+        const messageInput = document.getElementById('adminMessage'); 
         
         // 1. Check if the textarea is empty
         if (!messageInput.value.trim()) {
-            // Replace native validation with YOUR custom alert!
             showCustomAlert('Please provide a mandatory message before processing the return.', 'Required Field', 'warning');
-            return; // Stop here so it doesn't process the return yet
+            return; 
         }
 
         // 2. Customize the warning message based on the button clicked
@@ -125,9 +150,8 @@
         showCustomConfirm(
             modalMessage, 
             function() {
-                // If the admin clicks "Yes, Continue" in your modal:
-                hiddenInput.value = actionType; // Set the hidden input to "Approve" or "Reject"
-                form.submit(); // Actually submit the form
+                hiddenInput.value = actionType; 
+                form.submit(); 
             }, 
             modalTitle
         );

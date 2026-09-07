@@ -21,7 +21,7 @@
         </div>
     <% } %>
 
-    <form action="/admin/coupons/add" method="POST">
+    <form id="addCouponForm" action="/admin/coupons/add" method="POST">
         
         <!-- Grid Container for Form Fields -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
@@ -29,18 +29,20 @@
             <!-- Row 1: Names and Codes -->
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Coupon Name</label>
-                <input type="text" name="couponName" value="<%= formData ? formData.couponName : '' %>" required placeholder="e.g. Festival Special" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <input type="text" id="couponName" name="couponName" value="<%= formData ? formData.couponName : '' %>" placeholder="e.g. Festival Special" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <p id="error-couponName" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
             
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Coupon Code</label>
-                <input type="text" name="couponCode" value="<%= formData ? formData.couponCode : '' %>" required placeholder="e.g. FESTIVAL20" style="text-transform:uppercase" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition font-mono font-bold tracking-wider text-red-600">
+                <input type="text" id="couponCode" name="couponCode" value="<%= formData ? formData.couponCode : '' %>" placeholder="e.g. FESTIVAL20" style="text-transform:uppercase" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition font-mono font-bold tracking-wider text-red-600">
+                <p id="error-couponCode" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <!-- Row 2: Discount Details -->
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Discount Type</label>
-                <select name="discountType" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full bg-white transition cursor-pointer">
+                <select id="discountType" name="discountType" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full bg-white transition cursor-pointer">
                     <option value="percentage" <%= formData && formData.discountType === 'percentage' ? 'selected' : '' %>>Percentage (%)</option>
                     <option value="flat" <%= formData && formData.discountType === 'flat' ? 'selected' : '' %>>Flat Amount (₹)</option>
                 </select>
@@ -48,35 +50,41 @@
 
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Discount Value</label>
-                <input type="number" name="discountValue" value="<%= formData ? formData.discountValue : '' %>" required min="1" placeholder="e.g. 20" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <input type="number" id="discountValue" name="discountValue" value="<%= formData ? formData.discountValue : '' %>" placeholder="e.g. 20" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <p id="error-discountValue" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <!-- Row 3: Validity Dates -->
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Valid From</label>
-                <input type="date" name="validFrom" value="<%= formData ? formData.validFrom : '' %>" required class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition cursor-text">
+                <input type="date" id="validFrom" name="validFrom" value="<%= formData ? formData.validFrom : '' %>" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition cursor-text">
+                <p id="error-validFrom" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Valid Till</label>
-                <input type="date" name="validTill" value="<%= formData ? formData.validTill : '' %>" required class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition cursor-text">
+                <input type="date" id="validTill" name="validTill" value="<%= formData ? formData.validTill : '' %>" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition cursor-text">
+                <p id="error-validTill" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <!-- Row 4: Constraints -->
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Minimum Cart Amount (₹)</label>
-                <input type="number" name="minCartValue" value="<%= formData ? formData.minCartValue : '' %>" required min="0" placeholder="e.g. 1000" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <input type="number" id="minCartValue" name="minCartValue" value="<%= formData ? formData.minCartValue : '' %>" placeholder="e.g. 1000" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <p id="error-minCartValue" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <div class="flex flex-col">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Maximum Discount (₹)</label>
-                <input type="number" name="maxDiscount" value="<%= formData ? formData.maxDiscount : '' %>" min="0" placeholder="Leave blank for no limit" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <input type="number" id="maxDiscount" name="maxDiscount" value="<%= formData ? formData.maxDiscount : '' %>" placeholder="Leave blank for no limit" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition">
+                <p id="error-maxDiscount" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
             </div>
 
             <!-- Row 5: usage limit  -->
             <div class="flex flex-col md:col-span-2 p-4 bg-gray-50 border border-gray-100 rounded-lg mt-2">
                 <label class="text-[11px] font-extrabold text-gray-800 mb-1.5">Max Uses Per User</label>
-                <input type="number" name="usageLimitPerUser" value="<%= formData && formData.usageLimitPerUser ? formData.usageLimitPerUser : '1' %>" required min="1" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition bg-white">
+                <input type="number" id="usageLimitPerUser" name="usageLimitPerUser" value="<%= formData && formData.usageLimitPerUser ? formData.usageLimitPerUser : '1' %>" class="border border-gray-300 rounded-md px-3 py-2 text-xs focus:ring-1 focus:ring-gray-900 outline-none w-full transition bg-white">
+                <p id="error-usageLimitPerUser" class="text-[10px] text-red-500 font-bold mt-1 hidden"></p>
                 <span class="text-[10px] font-semibold text-gray-500 mt-1.5"><i class="fas fa-info-circle mr-1"></i>How many times can a single customer use this exact promo code? (Default is 1)</span>
             </div>
 
@@ -102,3 +110,92 @@
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('addCouponForm');
+
+        form.addEventListener('submit', (e) => {
+            let isValid = true;
+
+            // Helper function to show errors
+            const showError = (inputId, message) => {
+                const errorEl = document.getElementById(`error-${inputId}`);
+                const inputEl = document.getElementById(inputId);                
+                errorEl.innerText = message;
+                errorEl.classList.remove('hidden');
+                inputEl.classList.remove('border-gray-300', 'focus:ring-gray-900');
+                inputEl.classList.add('border-red-500', 'focus:ring-red-500');                
+                isValid = false;
+            };
+
+            // Helper function to reset all errors before checking again
+            const resetErrors = () => {
+                document.querySelectorAll('p[id^="error-"]').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('input, select').forEach(el => {
+                    el.classList.remove('border-red-500', 'focus:ring-red-500');
+                    el.classList.add('border-gray-300', 'focus:ring-gray-900');
+                });
+            };
+
+            resetErrors();
+            const name = document.getElementById('couponName').value.trim();
+            if (!name) showError('couponName', 'Coupon name is required.');
+
+            //  Coupon Code Validation (No spaces allowed)
+            const code = document.getElementById('couponCode').value.trim();
+            if (!code) {
+                showError('couponCode', 'Coupon code is required.');
+            } else if (/\s/.test(code)) {
+                showError('couponCode', 'Coupon code cannot contain spaces.');
+            }
+
+            //  Discount Value & Type Logic
+            const type = document.getElementById('discountType').value;
+            const discount = parseFloat(document.getElementById('discountValue').value);
+            
+            if (isNaN(discount) || discount <= 0) {
+                showError('discountValue', 'Enter a valid discount greater than 0.');
+            } else if (type === 'percentage' && discount > 100) {
+                showError('discountValue', 'Percentage cannot exceed 100%.');
+            }
+            const fromDateStr = document.getElementById('validFrom').value;
+            const tillDateStr = document.getElementById('validTill').value;
+            
+            if (!fromDateStr) showError('validFrom', 'Start date is required.');
+            if (!tillDateStr) showError('validTill', 'End date is required.');
+            
+            if (fromDateStr && tillDateStr) {
+                const fromDate = new Date(fromDateStr);
+                const tillDate = new Date(tillDateStr);
+                fromDate.setHours(0, 0, 0, 0);
+                tillDate.setHours(0, 0, 0, 0);
+
+                if (tillDate <= fromDate) {
+                    showError('validTill', 'End date must be strictly after the start date.');
+                }
+            }
+            const minCart = parseFloat(document.getElementById('minCartValue').value);
+            if (isNaN(minCart) || minCart < 0) {
+                showError('minCartValue', 'Minimum cart value cannot be negative.');
+            }
+
+            const maxDiscStr = document.getElementById('maxDiscount').value;
+            if (maxDiscStr !== '') {
+                const maxDisc = parseFloat(maxDiscStr);
+                if (maxDisc <= 0) showError('maxDiscount', 'Max discount must be greater than 0.');
+            }
+
+            //  Usage Limit
+            const limit = parseInt(document.getElementById('usageLimitPerUser').value);
+            if (isNaN(limit) || limit < 1) {
+                showError('usageLimitPerUser', 'Usage limit must be at least 1.');
+            }
+
+            // Prevent submission if any validation failed
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>

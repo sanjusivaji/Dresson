@@ -1,0 +1,80 @@
+<%- contentFor('body') %>
+
+<%- include('../partial/shared/warning') %>
+
+<main class="flex-1 p-8 bg-white">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Offer management</h1>
+            <p class="text-gray-500 text-sm">Create, schedule and manage offers</p>
+        </div>
+        <a href="/admin/offers/add" class="bg-black text-white px-6 py-2 rounded-full font-semibold inline-block transition hover:bg-gray-800">
+            + Add New Offer
+        </a>
+    </div>
+
+    <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-gray-50 text-gray-600 border-b border-gray-200">
+                <tr>
+                    <th class="p-4">Offer Title</th>
+                    <th class="p-4">Type</th>
+                    <th class="p-4">Target</th>
+                    <th class="p-4">Discount</th>
+                    <th class="p-4">Start Date</th>
+                    <th class="p-4">End Date</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% offers.forEach(offer => { %>
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="p-4"><%= offer.title %></td>
+                    <td class="p-4"><%= offer.type %></td>
+                    <td class="p-4"><%= offer.targetType %></td>
+                    <td class="p-4"><%= offer.discountValue || '-' %></td>
+                    <td class="p-4"><%= new Date(offer.startDate).toLocaleDateString('en-GB') %></td>
+                    <td class="p-4"><%= new Date(offer.endDate).toLocaleDateString('en-GB') %></td>
+                    <td class="p-4"><%= offer.dynamicStatus %></td>
+               <td class="p-4 text-center flex justify-center gap-3">
+                    <!-- Edit Link -->
+                    <a href="/admin/offers/edit/<%= offer._id %>" class="text-gray-500 hover:text-black">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    
+                    <!-- For 'delete' button, when click it appears a popup modal  -->
+                    <form id="deleteForm-<%= offer._id %>" action="/admin/offers/delete/<%= offer._id %>" method="POST" class="inline">
+                        <button type="button" onclick="triggerDelete('<%= offer._id %>', '<%= offer.title %>')" class="text-gray-500 hover:text-red-500 transition-colors">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- For pagination -->
+    <div class="mt-8 pb-4">
+        <% 
+            const activeQuery = {};
+            if (typeof searchQuery !== 'undefined' && searchQuery) activeQuery.search = searchQuery;
+        %>
+        <%- include('../partial/shared/pagination', { 
+            baseUrl: '/admin/offers', 
+            query: activeQuery 
+        }) %>
+    </div>
+</main>
+
+
+<script>
+    function triggerDelete(offerId, offerTitle) {
+        const message = `You are about to permanently delete '${offerTitle}'. This will remove the discount from all associated products. Do you wish to continue?`;
+        showCustomConfirm(message, function() {                               // Here 'showCustomConfirm()' created in 'view/partial/shared/warning.ejs' file and we can 'call' this function because '< %- include('../partial/shared/warning') %>'
+            document.getElementById(`deleteForm-${offerId}`).submit();
+        }, "Delete Offer?");
+    }
+</script>

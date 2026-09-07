@@ -52,7 +52,6 @@
             </div>
 
             <!-- Back to Order Button -->
-            <!-- Update the href to point to your specific order details route -->
             <a href="/profile/orders" class="px-6 py-2 border border-gray-300 rounded-full text-sm font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm">
                 Back to Order
             </a>
@@ -131,39 +130,38 @@
 
 
 <script>
-    // --- Star Rating Logic ---
+    //For 'star rating'
     const stars = document.querySelectorAll('.star-icon');
     const ratingInput = document.getElementById('ratingValue');
     const ratingError = document.getElementById('ratingError');
-
     stars.forEach(star => {
         star.addEventListener('mouseover', function() {
             const value = this.getAttribute('data-value');
             highlightStars(value);
         });
-
         star.addEventListener('click', function() {
             const value = this.getAttribute('data-value');
             ratingInput.value = value;
             ratingError.classList.add('hidden'); 
         });
     });
-
     document.getElementById('starRatingContainer').addEventListener('mouseleave', function() {
         highlightStars(ratingInput.value);
     });
+
 
     function highlightStars(value) {
         stars.forEach(star => {
             if (star.getAttribute('data-value') <= value) {
                 star.classList.remove('text-gray-300');
-                star.classList.add('text-yellow-400'); // Gold for selected
+                star.classList.add('text-yellow-400');     // Gold for selected
             } else {
                 star.classList.remove('text-yellow-400');
-                star.classList.add('text-gray-300'); // Gray for unselected
+                star.classList.add('text-gray-300');       // Gray for unselected
             }
         });
     }
+
 
     function validateRating() {
         if (ratingInput.value === "0" || ratingInput.value === "") {
@@ -173,23 +171,20 @@
         return true;
     }
 
-    // --- Image Preview Logic ---
+    // For 'preview' user uploading image
     function previewImage(event) {
         const input = event.target;
         const preview = document.getElementById('imagePreview');
         const placeholder = document.getElementById('uploadPlaceholder');
         const overlay = document.getElementById('changeOverlay');
-
         if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            
+            const reader = new FileReader();            
             reader.onload = function(e) {
                 preview.src = e.target.result;
                 preview.classList.remove('hidden');
                 placeholder.classList.add('hidden');
                 overlay.classList.replace('opacity-0', 'opacity-100');
-            }
-            
+            }          
             reader.readAsDataURL(input.files[0]);
         } else {
             preview.src = "";
@@ -199,10 +194,10 @@
         }
     }
 
+
+
     function validateRating() {
         let isValid = true;
-        
-        // 1. Check if Star Rating is selected
         const ratingError = document.getElementById('ratingError');
         if (ratingInput.value === "0" || ratingInput.value === "") {
             ratingError.classList.remove('hidden');
@@ -210,11 +205,8 @@
         } else {
             ratingError.classList.add('hidden');
         }
-
-        // 2. Check if Message is written (Mandatory)
         const messageInput = document.getElementById('message');
-        const messageError = document.getElementById('messageError');
-        
+        const messageError = document.getElementById('messageError');      
         if (messageInput.value.trim() === "") {
             messageError.classList.remove('hidden');
             messageInput.classList.add('border-red-500', 'ring-1', 'ring-red-500'); // Highlight the box in red
@@ -223,8 +215,6 @@
             messageError.classList.add('hidden');
             messageInput.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
         }
-
-        // Only submits if both the stars AND the message are filled out
         return isValid; 
     }
 </script>

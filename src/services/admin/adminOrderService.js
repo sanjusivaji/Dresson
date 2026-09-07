@@ -12,6 +12,9 @@ export const getOrdersPaginated = async (page, limit, filters) => {
             { "shippingAddress.fullName": { $regex: filters.search, $options: 'i' } }
         ];
     }
+    if(filters.date){
+        
+    }
     if (filters.status) query.deliveryStatus = filters.status;
     if (filters.payment) query.paymentMethod = filters.payment;    
     if (filters.date) {
@@ -58,29 +61,54 @@ export const updateStatus = async (orderId, newStatus) => {
 // For retrieve 'order' data only that 'return' initiated and also return 'product' data with 'date' and 'total pages' for 'pagination'   
 export const getReturnsPaginated = async (page, limit, filters) => {
     const skip = (page - 1) * limit;
-    let query = { "returnRequest.isRequested": true };
+    let query = { 
+        $or: [
+            { "returnRequest.isRequested": true },
+            { "items.itemStatus": { $in: ['Return Pending', 'Returned', 'Return Rejected'] } }
+        ]
+    };   
     if (filters.search) {
-        query.$or = [
-            { orderId: { $regex: filters.search, $options: 'i' } },
-            { "shippingAddress.fullName": { $regex: filters.search, $options: 'i' } }
+        query.$and = [
+            {
+                $or: [
+                    { orderId: { $regex: filters.search, $options: 'i' } },
+                    { "shippingAddress.fullName": { $regex: filters.search, $options: 'i' } }
+                ]
+            }
         ];
     }
-    if (filters.status) query["returnRequest.status"] = filters.status;
-    const returns = await adminOrderRepository.findReturns(query, skip, limit);              // For retrieve 'order' details and 'sort' the data 'new to old' 
-    const totalReturns = await adminOrderRepository.countOrders(query);                      // Retrieve number of 'orders' based on 'query'
-    const formattedReturns = returns.map(order => {
-        const dateObj = order.returnRequest.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
-        const requestedDate = dateObj.toLocaleDateString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric'
-        }).replace(/\//g, '-');
-        const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;  // Here we create a 'returnId' start with '#RET' and 'substring()' is the 'string' method 'substring(startIndex, endIndex)' is the 'syntax'(but 'endIndex' is 'optional' and here we do 'not' use 'endIndex')ie if 'order.orderId.length' is '8' then 'order.orderId.substring(order.orderId.length - 4)' ie 'order.orderId.substring(8-4)'(ie it 'start' with '4th' character and if length is '12' it start from '8th' character).   
-        let productSummary = 'N/A';
-        if (order.items && order.items.length > 0 && order.items[0].product) {
-            productSummary = order.items[0].product.name || 'Product';
-            if (order.items.length > 1) productSummary += ` (+${order.items.length - 1})`;  // ie 'productSummary' contains 'product name' and here we accumulate 'no.of' product only when 'order.items.length > 0' and each iteration after adding value into 'productSummary' it reduces '1' value(ie ' ` (+${order.items.length - 1})`)
+    if (filters.status) {
+        if (filters.status === 'Pending') {
+            query.$or = [{ "returnRequest.status": 'Pending' }, { "items.itemStatus": 'Return Pending' }];
+        } else if (filters.status === 'Approved' || filters.status === 'Refunded') {
+            query.$or = [{ "returnRequest.status": { $in: ['Approved', 'Refunded'] } }, { "items.itemStatus": 'Returned' }];
+        } else if (filters.status === 'Rejected') {
+            query.$or = [{ "returnRequest.status": 'Rejected' }, { "items.itemStatus": 'Return Rejected' }];
+        } else {
+            query["returnRequest.status"] = filters.status;
         }
-        return { ...order, returnId, requestedDate, productSummary };                       // Here before 'return' we adding 'returnId', 'productSummary' etc into 'item' by '...'
+    }    
+    const returns = await adminOrderRepository.findReturns(query, skip, limit);              
+    const totalReturns = await adminOrderRepository.countOrders(query);                           
+    const formattedReturns = returns.map(order => {
+        const returningItems = (order.items || []).filter(i => 
+            ['Return Pending', 'Returned', 'Return Rejected'].includes(i.itemStatus)
+        );        
+        const dateObj = returningItems.length > 0 && order.updatedAt ? new Date(order.updatedAt) : (order.returnRequest?.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt));
+        const requestedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');      
+        const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;          
+        let productSummary = 'N/A';
+        if (returningItems.length > 0) {
+            productSummary = returningItems[0].product.name || returningItems[0].product.productName || 'Product';
+            if (returningItems.length > 1) productSummary += ` (+${returningItems.length - 1})`;
+        } else if (order.items && order.items.length > 0 && order.items[0].product) {
+            productSummary = order.items[0].product.name || order.items[0].product.productName || 'Product';
+            if (order.items.length > 1) productSummary += ` (+${order.items.length - 1})`;
+        }
+        
+        return { ...order, returnId, requestedDate, productSummary };                       
     });
+    
     return {
         returns: formattedReturns,
         totalPages: Math.ceil(totalReturns / limit) || 1
@@ -88,37 +116,207 @@ export const getReturnsPaginated = async (page, limit, filters) => {
 };
 
 
-// For 'order return' details in sorted order(ie 'new to old')with 'requested date' and 'returnId'
+// For 'return' details
 export const getReturnDetails = async (orderId) => {
-    const order = await adminOrderRepository.findReturns({ _id: orderId }, 0, 1).then(res => res[0]); // It retrieve 'order' details and 'sort' the data 'new to old'    
-    if (!order || !order.returnRequest || !order.returnRequest.isRequested) {
-        return null;
-    }
-    const dateObj = order.returnRequest.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
-    const requestedDate = dateObj.toLocaleDateString('en-GB', {
-        day: '2-digit', month: '2-digit', year: 'numeric'
-    }).replace(/\//g, '-');
+    const order = await adminOrderRepository.findReturns({ _id: orderId }, 0, 1).then(res => res[0]); 
+    if (!order) return null;
+    const hasReturningItems = order.items && order.items.some(i => 
+        ['Return Pending', 'Returned', 'Return Rejected'].includes(i.itemStatus)
+    );
+    const isLegacyReturn = order.returnRequest && order.returnRequest.isRequested;
+    
+    if (!hasReturningItems && !isLegacyReturn) {
+        return null; 
+    }    
+    const dateObj = order.returnRequest?.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
+    const requestedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
     const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;
+    
     return { order, returnId, requestedDate };
 };
 
 
-// For 'process' of return product
+// For 'return' process
 export const processReturn = async (orderId, action, adminMessage) => {
-    const order = await adminOrderRepository.findOrderDocumentById(orderId);      // Retrieve all 'Order' data only based on 'orderId'
-    if (!order || !order.returnRequest || !order.returnRequest.isRequested) {
-        throw new Error('Invalid return request.');
+    const order = await adminOrderRepository.findOrderDocumentById(orderId);      
+    if (!order) throw new Error('Order not found.');
+    
+    const pendingItems = order.items.filter(i => i.itemStatus === 'Return Pending');
+    
+    if (pendingItems.length === 0 && (!order.returnRequest || !order.returnRequest.isRequested)) {
+        throw new Error('No pending return requests found for this order.');
     }
-    if (order.returnRequest.status !== RETURN_STATUSES.PENDING) {
-        throw new Error('This return has already been processed.');
+
+    if (action === 'Reject' || action === 'REJECT') { // Adjust condition based on your frontend form values
+        pendingItems.forEach(item => {
+            item.itemStatus = 'Return Rejected'; 
+            item.adminMessage = adminMessage; // Save message to the specific item
+        });
+        if (order.returnRequest && order.returnRequest.isRequested) {
+            order.returnRequest.status = 'Rejected';
+            order.returnRequest.adminMessage = adminMessage;
+        }       
+    } else if (action === 'Approve' || action === 'APPROVE') {
+        pendingItems.forEach(item => {
+            item.itemStatus = 'Returned'; 
+            item.adminMessage = adminMessage; // Save approval note if provided
+        });
+        if (order.returnRequest && order.returnRequest.isRequested) {
+            order.returnRequest.status = 'Refunded';
+            order.returnRequest.adminMessage = adminMessage;
+        }
     }
-    order.returnRequest.adminMessage = adminMessage;
-    if (action === RETURN_ACTIONS.REJECT) {
-        order.returnRequest.status = RETURN_STATUSES.REJECTED;
-    } else if (action === RETURN_ACTIONS.APPROVE) {
-        order.returnRequest.status = RETURN_STATUSES.REFUNDED;
-        order.deliveryStatus = 'Returned'; 
-    }
+    order.markModified('items');
     await order.save();
     return action;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// For retrieve 'order' data only that 'return' initiated and also return 'product' data with 'date' and 'total pages' for 'pagination'   
+// export const getReturnsPaginated = async (page, limit, filters) => {
+//     const skip = (page - 1) * limit;
+//     let query = { "returnRequest.isRequested": true };
+//     if (filters.search) {
+//         query.$or = [
+//             { orderId: { $regex: filters.search, $options: 'i' } },
+//             { "shippingAddress.fullName": { $regex: filters.search, $options: 'i' } }
+//         ];
+//     }
+//     if (filters.status) query["returnRequest.status"] = filters.status;
+//     const returns = await adminOrderRepository.findReturns(query, skip, limit);              // For retrieve 'order' details and 'sort' the data 'new to old' 
+//     const totalReturns = await adminOrderRepository.countOrders(query);                      // Retrieve number of 'orders' based on 'query'
+//     const formattedReturns = returns.map(order => {
+//         const dateObj = order.returnRequest.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
+//         const requestedDate = dateObj.toLocaleDateString('en-GB', {
+//             day: '2-digit', month: '2-digit', year: 'numeric'
+//         }).replace(/\//g, '-');
+//         const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;  // Here we create a 'returnId' start with '#RET' and 'substring()' is the 'string' method 'substring(startIndex, endIndex)' is the 'syntax'(but 'endIndex' is 'optional' and here we do 'not' use 'endIndex')ie if 'order.orderId.length' is '8' then 'order.orderId.substring(order.orderId.length - 4)' ie 'order.orderId.substring(8-4)'(ie it 'start' with '4th' character and if length is '12' it start from '8th' character).   
+//         let productSummary = 'N/A';
+//         if (order.items && order.items.length > 0 && order.items[0].product) {
+//             productSummary = order.items[0].product.name || 'Product';
+//             if (order.items.length > 1) productSummary += ` (+${order.items.length - 1})`;  // ie 'productSummary' contains 'product name' and here we accumulate 'no.of' product only when 'order.items.length > 0' and each iteration after adding value into 'productSummary' it reduces '1' value(ie ' ` (+${order.items.length - 1})`)
+//         }
+//         return { ...order, returnId, requestedDate, productSummary };                       // Here before 'return' we adding 'returnId', 'productSummary' etc into 'item' by '...'
+//     });
+//     return {
+//         returns: formattedReturns,
+//         totalPages: Math.ceil(totalReturns / limit) || 1
+//     };
+// };
+
+
+// For 'order return' details in sorted order(ie 'new to old')with 'requested date' and 'returnId'
+// export const getReturnDetails = async (orderId) => {
+//     const order = await adminOrderRepository.findReturns({ _id: orderId }, 0, 1).then(res => res[0]); 
+//     if (!order) return null;
+    
+//     const hasReturningItems = order.items && order.items.some(i => i.itemStatus === 'Return Pending' || i.itemStatus === 'Returned');
+//     const isLegacyReturn = order.returnRequest && order.returnRequest.isRequested;
+    
+//     if (!hasReturningItems && !isLegacyReturn) {
+//         return null; // Not a return request
+//     }
+    
+//     const dateObj = order.returnRequest?.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
+//     const requestedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+//     const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;
+    
+//     return { order, returnId, requestedDate };
+// };
+
+
+
+// // For 'order return' details in sorted order(ie 'new to old')with 'requested date' and 'returnId'
+// export const getReturnDetails = async (orderId) => {
+//     const order = await adminOrderRepository.findReturns({ _id: orderId }, 0, 1).then(res => res[0]); // It retrieve 'order' details and 'sort' the data 'new to old'    
+//     if (!order || !order.returnRequest || !order.returnRequest.isRequested) {
+//         return null;
+//     }
+//     const dateObj = order.returnRequest.requestedAt ? new Date(order.returnRequest.requestedAt) : new Date(order.updatedAt);
+//     const requestedDate = dateObj.toLocaleDateString('en-GB', {
+//         day: '2-digit', month: '2-digit', year: 'numeric'
+//     }).replace(/\//g, '-');
+//     const returnId = `#RET${order.orderId ? order.orderId.substring(order.orderId.length - 4) : '0000'}`;
+//     return { order, returnId, requestedDate };
+// };
+
+
+
+// For 'process' of return product
+// export const processReturn = async (orderId, action, adminMessage) => {
+//     const order = await adminOrderRepository.findOrderDocumentById(orderId);      
+//     if (!order) throw new Error('Order not found.');
+//     const pendingItems = order.items.filter(i => i.itemStatus === 'Return Pending');
+    
+//     if (pendingItems.length === 0 && (!order.returnRequest || !order.returnRequest.isRequested)) {
+//         throw new Error('No pending return requests found for this order.');
+//     }
+
+//     if (action === RETURN_ACTIONS.REJECT) {
+//         // Reject all pending items back to 'Active' (or you could create a 'Return Rejected' status)
+//         pendingItems.forEach(item => {
+//             item.itemStatus = 'Active'; // They keep the item
+//         });
+        
+//         // Handle legacy whole-order
+//         if (order.returnRequest && order.returnRequest.isRequested) {
+//             order.returnRequest.status = RETURN_STATUSES.REJECTED;
+//             order.returnRequest.adminMessage = adminMessage;
+//         }
+        
+//     } else if (action === RETURN_ACTIONS.APPROVE) {
+//         // Approve all pending items
+//         pendingItems.forEach(item => {
+//             item.itemStatus = 'Returned'; 
+//         });
+        
+//         // Handle legacy whole-order
+//         if (order.returnRequest && order.returnRequest.isRequested) {
+//             order.returnRequest.status = RETURN_STATUSES.REFUNDED;
+//             order.returnRequest.adminMessage = adminMessage;
+//             order.deliveryStatus = 'Returned'; 
+//         }
+        
+//         // TODO: You will eventually need to trigger the wallet refund logic here for the approved items!
+//     }
+    
+//     // Crucial: Tell Mongoose we changed the array
+//     order.markModified('items');
+//     await order.save();
+//     return action;
+// };
+
+
+// For 'process' of return product
+// export const processReturn = async (orderId, action, adminMessage) => {
+//     const order = await adminOrderRepository.findOrderDocumentById(orderId);      // Retrieve all 'Order' data only based on 'orderId'
+//     if (!order || !order.returnRequest || !order.returnRequest.isRequested) {
+//         throw new Error('Invalid return request.');
+//     }
+//     if (order.returnRequest.status !== RETURN_STATUSES.PENDING) {
+//         throw new Error('This return has already been processed.');
+//     }
+//     order.returnRequest.adminMessage = adminMessage;
+//     if (action === RETURN_ACTIONS.REJECT) {
+//         order.returnRequest.status = RETURN_STATUSES.REJECTED;
+//     } else if (action === RETURN_ACTIONS.APPROVE) {
+//         order.returnRequest.status = RETURN_STATUSES.REFUNDED;
+//         order.deliveryStatus = 'Returned'; 
+//     }
+//     await order.save();
+//     return action;
+// };

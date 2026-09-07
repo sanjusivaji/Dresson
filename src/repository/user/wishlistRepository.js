@@ -35,3 +35,9 @@ export const removeProductFromWishlist = async (userId, productId) => {
         { returnDocument: 'after', new: true }                      // Here both 'returnDocument: 'after'(ie for 'mongodb' driver) and 'new: true'(ie for 'mongoose') are used for same purpose ie for 'create' a 'new document'. 
     );
 };
+
+
+// Retrieve the user's wishlist document
+export const getWishlistByUserId = async (userId) => {
+    return await Wishlist.findOne({ user: userId });
+};

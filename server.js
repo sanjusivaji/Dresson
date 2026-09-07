@@ -11,7 +11,7 @@ import { globalErrorHandler } from './src/middleware/errorMiddleware.js';
 // import path from 'path';
 // import { fileURLToPath } from 'url'; 
 import expressLayouts from 'express-ejs-layouts';
-import flash from 'connect-flash';
+import { injectHeaderData } from './src/middleware/headerDataMiddleware.js';
 
 
 dotenv.config();
@@ -25,6 +25,7 @@ app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(expressLayouts);
+
 
 // For embedding 'session' and 'cookies'
 app.use(session({
@@ -47,9 +48,11 @@ app.get('/test', (req, res) => {
 
 
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session());                                                   // For 'session' in 'google' authentication
+app.use(injectHeaderData);                                                     // For 'fetching'  data and display specifically the total quantity of items in the 'cart', the total number of items in the 'wishlist', and the user's 'login status' etc.
 app.use('/', userRoute);
 app.use('/admin', adminRoutes);
+
 
 
 // Global error middleware 

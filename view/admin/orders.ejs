@@ -35,7 +35,10 @@
                 <option value="Shipped" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Shipped' ? 'selected' : '' %>>Shipped</option>
                 <option value="Delivered" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Delivered' ? 'selected' : '' %>>Delivered</option>
                 <option value="Cancelled" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                <option value="Returned" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Returned' ? 'selected' : '' %>>Returned</option>
+                <!-- Added Granular Return Filters -->
+                <option value="Return Pending" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Return Pending' ? 'selected' : '' %>>Return Pending</option>
+                <option value="Return Refunded" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Return Refunded' ? 'selected' : '' %>>Return Refunded</option>
+                <option value="Return Rejected" class="bg-white" <%= typeof statusFilter !== 'undefined' && statusFilter === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
             </select>
 
             <!-- Payment Method -->
@@ -72,7 +75,7 @@
                     <th class="px-6 py-4 text-xs font-bold text-gray-600 uppercase tracking-wider">Customer</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-600 w-28 uppercase tracking-wider">Amount</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-600 w-32 uppercase tracking-wider">Date</th>
-                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-28 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-4 text-xs font-bold text-gray-600 w-36 uppercase tracking-wider">Status</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-600 w-36 uppercase tracking-wider">Payment</th>
                     <th class="px-6 py-4 w-20"></th> 
                 </tr>
@@ -102,23 +105,68 @@
                                 <%= order.formattedDate %>
                             </td>
                             
-                            <!-- Status -->
-                            <td class="px-6 py-4 text-[12px] font-bold uppercase tracking-wider">
-                                <% if (order.deliveryStatus === 'Delivered') { %>
-                                    <span class="text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">Delivered</span>
-                                <% } else if (order.deliveryStatus === 'Cancelled') { %>
-                                    <span class="text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">Cancelled</span>
-                                <% } else if (order.deliveryStatus === 'Pending' || order.deliveryStatus === 'Processing') { %>
-                                    <span class="text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100"><%= order.deliveryStatus %></span>
-                                <% } else if (order.deliveryStatus === 'Shipped' || order.deliveryStatus === 'Out for Delivery') { %>
-                                    <span class="text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100"><%= order.deliveryStatus %></span>
-                                <% } else if (order.deliveryStatus === 'Returned') { %>
-                                    <span class="text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100">Returned</span>
-                                <% } else { %>
-                                    <span class="text-gray-600 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-200"><%= order.deliveryStatus %></span>
-                                <% } %>
+                           <!-- Status -->
+                            <td class="px-6 py-4 text-[12px] font-bold uppercase tracking-wider align-top">
+                                <% 
+                                    // Set to collect unique statuses
+                                    let displayStatuses = new Set();
+                                    
+                                    // 1. Check legacy whole-order return status
+                                    if (order.returnRequest?.isRequested) {
+                                        if (order.returnRequest.status === 'Pending') displayStatuses.add('Return Pending');
+                                        else if (order.returnRequest.status === 'Rejected') displayStatuses.add('Return Rejected');
+                                        else if (order.returnRequest.status === 'Refunded') displayStatuses.add('Return Refunded');
+                                    }
+
+                                    // 2. Check individual item statuses
+                                    if (order.items && order.items.length > 0) {
+                                        let hasActiveItems = false;
+                                        
+                                        order.items.forEach(item => {
+                                            if (item.itemStatus === 'Cancelled') displayStatuses.add('Cancelled');
+                                            else if (item.itemStatus === 'Return Pending') displayStatuses.add('Return Pending');
+                                            else if (item.itemStatus === 'Return Rejected') displayStatuses.add('Return Rejected');
+                                            else if (item.itemStatus === 'Returned') displayStatuses.add('Return Refunded');
+                                            else hasActiveItems = true; // Items that are just progressing normally
+                                        });
+
+                                        // If there are normal items, OR if no special statuses exist, show the overarching order delivery status
+                                        if (hasActiveItems || displayStatuses.size === 0) {
+                                            if (order.deliveryStatus === 'Returned') {
+                                                displayStatuses.add('Return Refunded');
+                                            } else {
+                                                displayStatuses.add(order.deliveryStatus);
+                                            }
+                                        }
+                                    } else {
+                                        displayStatuses.add(order.deliveryStatus);
+                                    }
+
+                                    const statusArray = Array.from(displayStatuses);
+                                %>
+
+                                <div class="flex flex-col gap-1.5 items-start">
+                                    <% statusArray.forEach(status => { %>
+                                        <% if (status === 'Return Pending') { %>
+                                            <span class="text-yellow-700 bg-yellow-100 px-2 py-1 rounded border border-yellow-200 animate-pulse text-[10px]">Return Pending</span>
+                                        <% } else if (status === 'Return Rejected') { %>
+                                            <span class="text-orange-700 bg-orange-100 px-2 py-1 rounded border border-orange-200 text-[10px]">Return Rejected</span>
+                                        <% } else if (status === 'Return Refunded' || status === 'Returned') { %>
+                                            <span class="text-purple-700 bg-purple-100 px-2 py-1 rounded border border-purple-200 text-[10px]">Return Refunded</span>
+                                        <% } else if (status === 'Cancelled') { %>
+                                            <span class="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100 text-[10px]">Cancelled</span>
+                                        <% } else if (status === 'Delivered') { %>
+                                            <span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-100 text-[10px]">Delivered</span>
+                                        <% } else if (status === 'Pending' || status === 'Processing') { %>
+                                            <span class="text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 text-[10px]"><%= status %></span>
+                                        <% } else if (status === 'Shipped' || status === 'Out for Delivery') { %>
+                                            <span class="text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 text-[10px]"><%= status %></span>
+                                        <% } else { %>
+                                            <span class="text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-200 text-[10px]"><%= status %></span>
+                                        <% } %>
+                                    <% }) %>
+                                </div>
                             </td>
-                            
                             <!-- Payment Method -->
                             <td class="px-6 py-4 text-[13px] font-bold text-gray-700">
                                 <%= order.paymentMethod %>

@@ -61,6 +61,22 @@ export const cancelOrder = async (req, res) => {
 };
 
 
+export const processItemAction = async (req, res) => {
+    try {
+        const userId = req.session.user._id || req.session.user;
+        const { orderId, itemId, actionType, reason } = req.body;
+        if (!reason) {
+            return res.status(400).send("A reason is mandatory.");
+        }
+        await userOrderService.handleItemAction(orderId, itemId, userId, actionType, reason);        
+        res.redirect(`/profile/orders/${orderId}`);
+    } catch (error) {
+        console.error(`Error processing item ${req.body.actionType}:`, error);
+        res.status(500).send(`Could not process your ${req.body.actionType} request.`);
+    }
+};
+
+
 // For 'calculate' 'subTotal', 'taxTotal' etc and display it in 'ejs' file and then download as 'pdf'.
 export const downloadInvoice = async (req, res) => {
     try {

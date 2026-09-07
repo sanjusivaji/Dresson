@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const cartItemSchema = new mongoose.Schema({      // We replaced it in 'cartSchema'(ie 'items: [cartItemSchema]')in below.
+const cartItemSchema = new mongoose.Schema({      
     product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
@@ -14,11 +14,11 @@ const cartItemSchema = new mongoose.Schema({      // We replaced it in 'cartSche
         type: String, 
         required: true 
     },
-    variantName: {                               // Eg) "M / Black / Cotton"
+    variantName: {                               
         type: String, 
         required: true 
     }, 
-    sku: { 
+    sku: {                          // 'sku'(ie 'Stock Keeping Unit')
         type: String, 
         required: true 
     },
@@ -42,6 +42,10 @@ const cartItemSchema = new mongoose.Schema({      // We replaced it in 'cartSche
         min: 1,
         max: 10,
         default: 1
+    },
+    comboOfferId: {                           // 'comboOfferId' field is good for when 'delete' the combo products(ie we should 'delete' both combo products together)
+        type: mongoose.Schema.Types.ObjectId, 
+        default: null 
     }
 }, { _id: true });
 
@@ -52,21 +56,11 @@ const cartSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    items: [cartItemSchema],                        // It created above
+    items: [cartItemSchema],                        
     cartTotal: {
         type: Number,
         default: 0
-    },
-    appliedCoupon: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'Coupon', 
-        default: null 
-    },
-    discountAmount: { 
-        type: Number, 
-        default: 0 
     }
-    
 }, { timestamps: true });
 
 export default mongoose.model('Cart', cartSchema);

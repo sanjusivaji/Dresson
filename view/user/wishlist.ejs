@@ -151,22 +151,33 @@
     // For 'remove' from wishlist
     async function removeFromWishlist(productId) {
         try {
-            const response = await fetch('/wishlist/toggle', {                            // Here we create the '/wishlist/toggle' path and send this data through 'fetch()' and 'body' contains 'productId' that get from 'remove' button(ie '<button type="button" onclick="removeFromWishlist('< %= product._id %>')" ')and this route actually from 'userRoute.js'(ie actually it goes to 'server.js' and route become 'user/whishlist/toggle') in backend and from there calls the 'controller' function and it connect with 'mongodb' and then after retrieve necessary data, the backend send response(ie 'success' message through 'json')
+            const response = await fetch('/wishlist/toggle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ productId })
             });
-            const data = await response.json();                                          // It is the 'response' get from 'backend'
+            const data = await response.json();
             if (data.success) {
-                const row = document.getElementById(`wishlist-row-${productId}`);
+                const wishlistBadge = document.getElementById('wishlist-badge');
+                if (wishlistBadge) {
+                    let currentWishCount = parseInt(wishlistBadge.innerText || '0', 10);
+                    currentWishCount = Math.max(0, currentWishCount - 1);
+                    wishlistBadge.innerText = currentWishCount;
+                    if (currentWishCount > 0) {
+                        wishlistBadge.classList.remove('hidden');
+                    } else {
+                        wishlistBadge.classList.add('hidden');
+                    }
+                }
+             const row = document.getElementById(`wishlist-row-${productId}`);
                 if (row) {
-                    row.style.transition = 'all 0.3s ease';                              // Here 'style' is th built-in 'css' property give 'style'(ie 'transition', 'color' etc)and 'transition' also 'css' property for 'transition' and 'all' for 'animate' all 'visual'(ie 'opacity', '') last '.3' seconds and 'ease' is 'animation' behaviour.
+                    row.style.transition = 'all 0.3s ease';
                     row.style.opacity = '0';
-                    row.style.transform = 'translateX(20px)';                            // 'translate' is 'built-in' 'css' property and it means 'move' in 'X'(ie 'horizontally')direction '20px'.
+                    row.style.transform = 'translateX(20px)';
                     setTimeout(() => {
                         row.remove();
                         const container = document.getElementById('wishlistContainer');
-                        if (container.children.length === 0) window.location.reload();  // This is the case of 'container' element has 'no' children(ie 'row' element)and 'ejs' only display when it get data from 'backend' here 'data'  only get when we 'reload' the 'page'(ie otherwise ie at least one 'row' element, data will get 'fetch()' response)
+                        if (container.children.length === 0) window.location.reload();
                     }, 300);
                 }
                 if (typeof showCustomAlert === 'function') showCustomAlert("Item removed from your Wishlist.", "Success", "success");
@@ -176,60 +187,103 @@
         }
     }
 
+
     // For 'model popup' and 'drop down'
-    function promptVariantSelection(buttonElement) {                                // Here 'buttonElement' means '<button>'(ie pass as 'this')contains data as 'custom data attribute'
+    function promptVariantSelection(buttonElement) {
         const productId = buttonElement.getAttribute('data-product-id');
         const productName = buttonElement.getAttribute('data-product-name');
-        const variants = JSON.parse(buttonElement.getAttribute('data-variants'));   // In 'html'(ie 'ejs')data stored only as 'string' and here we convert data into 'array of object' by using 'json.Parse()'.
-        document.getElementById('modalProductName').textContent = productName;      // For 'display' 'product name' as 'title' of the 'modal'
-        document.getElementById('variantErrorMsg').classList.add('hidden');         // Here we make 'hidden' the 'old' error message and if a user previously clicked "Confirm & Add" 'without' choosing a 'size', this error message would be visible
-        const selectElement = document.getElementById('variantSelect');             // For empty '<select>' 'dropdown' menu from 'modal' so that you can inject the different sizes/colors into it in the next few lines.
-        selectElement.innerHTML = '<option value="" disabled selected>Choose a size/color...</option>';  // It 'removes' all 'old' variant values(ie 'value="" disabled selected')and we put a 'placeholder'(ie 'Choose a size/color...')and 'innerHtml' adds all '<option>' and its 'attributes' into 'html' element.
-        variants.forEach(item => {                                                  // This 'forEach()' loop 'dynamically' builds the 'dropdown' list
+        const variants = JSON.parse(buttonElement.getAttribute('data-variants'));        
+        document.getElementById('modalProductName').textContent = productName;
+        const errorMsg = document.getElementById('variantErrorMsg');
+        const selectElement = document.getElementById('variantSelect');
+        const confirmBtn = document.getElementById('modalAddToCartBtn');      
+        selectElement.innerHTML = '<option value="" disabled selected>Choose a size/color...</option>';
+        const allOutOfStock = variants.every(item => item.stock <= 0);        
+        if (allOutOfStock) {
+            errorMsg.innerText = "Sorry, all variants of this product are currently out of stock.";
+            errorMsg.classList.remove('hidden');
+            confirmBtn.disabled = true;
+            confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            errorMsg.innerText = "Please select a variant to continue.";
+            errorMsg.classList.add('hidden');
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        variants.forEach(item => {
             const isOutOfStock = item.stock <= 0;
             const stockText = isOutOfStock ? ' (Out of Stock)' : ` - ₹${item.price}`;            
-            const option = document.createElement('option');                        // Create a '<option>' element for 'appending'(ie 'appendChild()')into 'selectElement'(ie '<select>' element created in 'ejs').
-            option.value = item._id;                                                // Send 'item._id' as 'value' to 'backend'.
-            option.textContent = `${item.name}${stockText}`;                        // Put inside 'template literals' and value of 'stockText' is 'Out of Stock' or 'item.price'. 
+            const option = document.createElement('option');
+            option.value = item._id;
+            option.textContent = `${item.name}${stockText}`;
             if (isOutOfStock) option.disabled = true;           
             selectElement.appendChild(option);
-        });
-        const confirmBtn = document.getElementById('modalAddToCartBtn');
-        confirmBtn.onclick = () => submitToCart(productId);                         // 'submitToCart()' defined below and when '<button>' click it call the function.
+        });        
+        confirmBtn.onclick = () => submitToCart(productId);        
         const modal = document.getElementById('variantModal');
         const modalContent = document.getElementById('variantModalContent');
-        modal.classList.remove('hidden');                                           // 'modal' has defaultly classes like 'hidden', opacity-0 and scale-95 and here we remove all these classes for display it
+        modal.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             modalContent.classList.remove('scale-95');
         }, 10);
     }
 
+
     // For 'submit variant' to cart
     async function submitToCart(productId) {
         const selectElement = document.getElementById('variantSelect');
         const variantId = selectElement.value;
         const errorMsg = document.getElementById('variantErrorMsg');
+        errorMsg.innerText = "Please select a variant to continue.";       
         if (!variantId) {
-            errorMsg.classList.remove('hidden');                                    // If 'no variantId' display the 'error message'
+            errorMsg.classList.remove('hidden');
             return;
         }
-        errorMsg.classList.add('hidden');
+        errorMsg.classList.add('hidden');    
         try {
-            const formData = new URLSearchParams();                                 // 'URLSearchParams()' is the 'built-in' 'js' method and it used for 'make' string parameter(ie especially messy parameters that have no proper '&&' etc and we get '"color=red&size=M&error=failed" type of parameter) into 'js' object(ie 'color: red', 'size: M' like that)so we can use 'get()', 'set()', 'delete()' like methods with it.
+            const formData = new URLSearchParams();
             formData.append('productId', productId);
             formData.append('variantId', variantId);
             formData.append('quantity', 1);
-            formData.append('actionType', 'cart');
-            const response = await fetch('/cart/add', { 
+            formData.append('actionType', 'cart');            
+            const response = await fetch('/cart/add', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: { 
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json' 
+                },
                 body: formData 
             });
+            let data = {};
+            try { data = await response.json(); } catch(e) {}
             if (response.ok || response.redirected) {                
-                closeVariantModal();                                                // Function created below.
-                if (typeof showCustomAlert === 'function') {
-                    showCustomAlert("Item added to cart successfully!", "Cart Updated", "success");
+                closeVariantModal();
+                const cartBadge = document.getElementById('cart-badge');
+                if (cartBadge) {
+                    let newCount;
+                    if (data.cart && data.cart.items) {
+                        newCount = data.cart.items.reduce((total, item) => total + (item.quantity || 1), 0);
+                    } else {
+                        let currentCartCount = parseInt(cartBadge.innerText || '0', 10);
+                        newCount = currentCartCount + 1; 
+                    }                  
+                    cartBadge.innerText = newCount;
+                    if (newCount > 0) {
+                        cartBadge.classList.remove('hidden');
+                    }
+                }
+                const wishlistBadge = document.getElementById('wishlist-badge');
+                if (wishlistBadge) {
+                    let currentWishCount = parseInt(wishlistBadge.innerText || '0', 10);
+                    currentWishCount = Math.max(0, currentWishCount - 1);
+                    wishlistBadge.innerText = currentWishCount;
+                    if (currentWishCount > 0) {
+                        wishlistBadge.classList.remove('hidden');
+                    } else {
+                        wishlistBadge.classList.add('hidden');
+                    }
                 }
                 const row = document.getElementById('wishlist-row-' + productId);
                 if (row) {
@@ -238,7 +292,9 @@
                     if (container && container.children.length === 0) setTimeout(() => window.location.reload(), 500);
                 }
             } else {
-                if (typeof showCustomAlert === 'function') showCustomAlert("Could not add to cart. Please try again.", "Action Failed", "error");
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert(data.message || "Could not add to cart. Product may be out of stock.", "Action Failed", "error");
+                }
             }
         } catch (error) {
             console.error("Critical Error adding to cart:", error);
@@ -247,7 +303,7 @@
     }
 
 
-     // For 'close'(ie 'X' symbol)model
+    // For 'close'(ie 'X' symbol)model
     function closeVariantModal() {
         const modal = document.getElementById('variantModal');
         const modalContent = document.getElementById('variantModalContent');

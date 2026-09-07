@@ -1,8 +1,7 @@
-
-<!-- This ejs code for display only 'product card'('not' entire home page) -->
 <div class="bg-[#fcfcfc] rounded-xl border border-gray-200/80 overflow-hidden shadow-2xs hover:shadow-md transition flex flex-col justify-between group h-full">
     
-    <!--  Ensures every card is the exact same shape/size -->
+
+    <!-- Image Area -->
     <div class="relative aspect-[3/4] bg-gray-100 overflow-hidden">        
         <% const imageUrl = (product.images && product.images.length > 0) 
                 ? (product.images[0].url || product.images[0]) 
@@ -11,78 +10,103 @@
             <img src="<%= imageUrl %>" alt="<%= product.name %>" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
         </a>
 
-        <!-- Discount Badge -->
+        <!-- Dynamic Offer Calculation -->
         <% 
-            const displayPrice = product.price || (product.variants && product.variants.length > 0 ? product.variants[0].price : 1499);
-            const mrp = product.mrp || product.originalPrice || Math.round(displayPrice * 1.08);
-            const discountPercent = product.discount || Math.max(5, Math.round(((mrp - displayPrice) / mrp) * 100));
-        %>
-        <div class="absolute top-2.5 right-2.5 w-11 h-11 bg-red-600 text-white rounded-full flex flex-col items-center justify-center text-[10px] font-black leading-none shadow-md z-10">
-            <span><%= discountPercent %>%</span>
-            <span class="text-[9px] mt-0.5">Off</span>
-        </div>
+            const basePrice = product.variants && product.variants.length > 0 ? product.variants[0].price : 0;
+            let finalPrice = basePrice;
+            let discountDisplay = null;
+            let bogoDisplay = null; 
 
-        <!-- Wishlist Button -->
-        <button type="button" 
-                onclick="toggleWishlist('<%= product._id %>', this)" 
-                class="absolute top-2.5 left-2.5 w-8 h-8 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition shadow-2xs z-10 cursor-pointer">
+            if (product.appliedOffer) {
+                if (product.appliedOffer.type === 'Percentage') {
+                    finalPrice = Math.floor(basePrice - (basePrice * (product.appliedOffer.discountValue / 100)));
+                    discountDisplay = `${product.appliedOffer.discountValue}%`;
+                } else if (product.appliedOffer.type === 'Flat Discount') {
+                    finalPrice = Math.max(0, basePrice - product.appliedOffer.discountValue);
+                    discountDisplay = `₹${product.appliedOffer.discountValue}`; 
+                } else if (product.appliedOffer.type === 'Buy X, Get Y' || product.appliedOffer.type === 'Buy X Get Y') {
+                    const bQty = product.appliedOffer.buyQuantity || 1;
+                    const gQty = product.appliedOffer.getQuantity || 1;
+                    bogoDisplay = `Buy ${bQty} Get ${gQty}`;
+                }
+            }
+        %>
+
+        <!-- Conditionally render Discount Badge (For Percentage/Flat) -->
+        <% if (discountDisplay) { %>
+            <div class="absolute top-2.5 right-2.5 w-11 h-11 bg-red-600 text-white rounded-full flex flex-col items-center justify-center text-[10px] font-black leading-none shadow-md z-10">
+                <span><%= discountDisplay %></span>
+                <span class="text-[9px] mt-0.5">Off</span>
+            </div>
+        <% } %>
+
+        <!-- NEW: Adjusted Diagonal 'Buy 1 Get 1' Banner -->
+        <% if (bogoDisplay) { %>
+            <!-- Positioned specifically to start under the heart (top-14) and stretch across -->
+            <div class="absolute top-8 -left-2 right-30  z-10 flex items-start justify-center pointer-events-none">
+                <!-- Applied your exact background opacity and a -35 degree rotation -->
+                <div class="bg-white/1 backdrop-blur-sm text-red-500 text-2xl font-black py-1 w-[140%] text-center transform -rotate-[45deg] shadow-sm uppercase tracking-wide border-y border-white/20">
+                    <%= bogoDisplay %>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Wishlist Button (Ensured z-20 so it remains clickable above the banner) -->
+        <button type="button" onclick="toggleWishlist('<%= product._id %>', this)" class="absolute top-2.5 left-2.5 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition shadow-2xs z-20 cursor-pointer pointer-events-auto">
             <i class="far fa-heart text-xs"></i>
         </button>
     </div>
 
-    <!-- Product Details-->
+    <!-- Product Details -->
     <div class="p-4 flex flex-col flex-grow justify-between space-y-3 bg-[#faf9f9]">
         <div>
             <p class="text-[11px] font-bold text-red-700 uppercase tracking-wide truncate"><%= product.brand || 'DRESSON' %></p>        
             <a href="/product/<%= product._id %>" class="block text-xs font-bold text-gray-800 hover:text-red-600 transition truncate mt-0.5" title="<%= product.name %>">
                 <%= product.name %>
             </a>
+            
             <!-- Rating -->
-            <a href="/product/<%= product._id %>#reviews" class="flex items-center space-x-1 text-amber-400 text-[10px] mt-1 font-extrabold cursor-pointer hover:opacity-80 group/rating" title="Read Customer Reviews">
+            <a href="/product/<%= product._id %>#reviews" class="flex items-center space-x-1 text-amber-400 text-[10px] mt-1 font-extrabold cursor-pointer hover:opacity-80 group/rating">
                 <span class="text-gray-700 mr-0.5"><%= product.rating || 4 %></span>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="far fa-star text-gray-300"></i>
-                <!-- Hover underline on the numbers, just like Amazon! -->
-                <span class="text-gray-400 font-normal ml-1 group-hover/rating:text-blue-600 group-hover/rating:underline transition">
-                    (<%= product.numReviews || 3 %>)
-                </span>
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star text-gray-300"></i>
+                <span class="text-gray-400 font-normal ml-1 group-hover/rating:text-blue-600 group-hover/rating:underline transition">(<%= product.numReviews || 3 %>)</span>
             </a>
 
-            <!-- Pricing -->
+            <!-- Dynamic Pricing Display -->
             <div class="mt-2 flex flex-col">
-                <span class="text-base font-black text-gray-900">₹<%= Number(displayPrice).toLocaleString('en-IN') %></span>
-                <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
-                    <span class="text-gray-400 line-through">₹<%= Number(mrp).toLocaleString('en-IN') %></span>
-                    <span class="text-red-600"><%= discountPercent %>% Off</span>
-                </div>
+                <span class="text-base font-black text-gray-900">₹<%= Number(finalPrice).toLocaleString('en-IN') %></span>
+                <% if (finalPrice < basePrice) { %>
+                    <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
+                        <span class="text-gray-400 line-through">₹<%= Number(basePrice).toLocaleString('en-IN') %></span>
+                        <span class="text-red-600"><%= discountDisplay %> Off</span>
+                    </div>
+                <% } else if (bogoDisplay) { %>
+                    <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
+                        <span class="text-red-600"><i class="fas fa-gift mr-1"></i> Offer Eligible</span>
+                    </div>
+                <% } else { %>
+                    <div class="h-4"></div> 
+                <% } %>
             </div>
 
             <!-- Stock Status -->
             <% const isStockAvailable = (product.totalStock !== undefined ? product.totalStock : 10) > 0; %>
             <div class="mt-1.5 text-xs font-extrabold">
                 <% if (isStockAvailable) { %>
-                    <span class="text-green-600 flex items-center gap-1">
-                        <i class="fas fa-check-circle text-[10px]"></i> Instock
-                    </span>
+                    <span class="text-green-600 flex items-center gap-1"><i class="fas fa-check-circle text-[10px]"></i> Instock</span>
                 <% } else { %>
-                    <span class="text-red-500 flex items-center gap-1">
-                        <i class="fas fa-times-circle text-[10px]"></i> Out of Stock
-                    </span>
+                    <span class="text-red-500 flex items-center gap-1"><i class="fas fa-times-circle text-[10px]"></i> Out of Stock</span>
                 <% } %>
             </div>
         </div>
 
-        <!-- Add to Cart, Quantity and Buy Now -->
+        <!-- Add to Cart -->
         <div class="pt-2 border-t border-gray-200/80">
             <% if (isStockAvailable) { %>
                 <form onsubmit="event.preventDefault(); addToCart(this);" class="space-y-2 m-0">
                     <input type="hidden" name="productId" value="<%= product._id %>">
                     <input type="hidden" name="variantId" value="<%= (product.variants && product.variants.length > 0) ? product.variants[0]._id : '' %>">
                     <input type="hidden" name="actionType" value="cart">
-
                     <div class="w-full">
                         <select name="quantity" class="w-full border border-gray-300 rounded-md px-2.5 py-1 text-xs bg-white text-gray-700 font-semibold focus:outline-none focus:border-gray-500 cursor-pointer shadow-2xs">
                             <option value="1">Quantity: 1</option>
@@ -90,17 +114,13 @@
                             <option value="3">Quantity: 3</option>
                         </select>
                     </div>
-
                     <button type="submit" class="w-full py-2 bg-[#facc15] hover:bg-[#eab308] active:scale-[0.99] text-gray-900 text-xs font-black rounded-md shadow-2xs transition cursor-pointer flex items-center justify-center space-x-1.5">
-                        <i class="fas fa-shopping-bag text-[11px]"></i>
-                        <span>Add to Cart</span>
+                        <i class="fas fa-shopping-bag text-[11px]"></i><span>Add to Cart</span>
                     </button>
                 </form>
             <% } else { %>
                 <div class="space-y-2">
-                    <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed">
-                        Sold Out
-                    </button>
+                    <button type="button" disabled class="w-full py-2 bg-gray-200 text-gray-400 text-xs font-black rounded-md cursor-not-allowed">Sold Out</button>
                 </div>
             <% } %>
         </div>

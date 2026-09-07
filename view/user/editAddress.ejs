@@ -1,3 +1,5 @@
+<%- contentFor('body') %>
+
 <div class="w-full max-w-7xl mx-auto px-4 py-10 flex flex-col md:flex-row gap-8">
 
      <%- include('../partial/user/userSidebar') %>
@@ -16,49 +18,53 @@
                     <p><%= error %></p>
                 </div>
             <% } %>
-           <form action="/profile/address/edit/<%= address._id %>" method="POST" class="space-y-6">    
+           
+           <!-- Added ID to form for strict JS targeting -->
+           <form id="editAddressForm" action="/profile/address/edit/<%= address._id %>" method="POST" class="space-y-6" novalidate>    
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input type="text" name="fullName" id="fullName" 
                     value="<%= locals.formData && formData.fullName ? formData.fullName : address.fullName %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="fullNameError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="fullNameError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input type="text" name="phone" id="phone" 
+                <!-- Maxlength added for phone -->
+                <input type="text" name="phone" id="phone" maxlength="10"
                     value="<%= locals.formData && formData.phone ? formData.phone : address.phone %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="phoneError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="phoneError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">Street Address</label>
                 <input type="text" name="streetAddress" id="streetAddress" 
                     value="<%= locals.formData && formData.streetAddress ? formData.streetAddress : address.addressLine %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="streetAddressError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="streetAddressError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">City</label>
                 <input type="text" name="city" id="city" 
                     value="<%= locals.formData && formData.city ? formData.city : address.city %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="cityError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="cityError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">State</label>
                 <input type="text" name="state" id="state" 
                     value="<%= locals.formData && formData.state ? formData.state : address.state %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="stateError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="stateError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
 
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">Pin Code</label>
-                <input type="text" name="pinCode" id="pinCode" 
+                <!-- Maxlength added for pincode -->
+                <input type="text" name="pinCode" id="pinCode" maxlength="6"
                     value="<%= locals.formData && formData.pinCode ? formData.pinCode : address.pincode %>" 
                     class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8b3d3d] transition">
-                <div id="pinCodeError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="pinCodeError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex flex-col">
                 <label class="text-sm font-medium text-gray-700 mb-1">Country</label>
@@ -70,7 +76,7 @@
                         <option value="<%= c %>" <%= isSelected ? 'selected' : '' %>><%= c %></option>
                     <% }); %>
                 </select>
-                <div id="countryError" class="hidden text-red-600 text-xs mt-1 font-medium"></div>
+                <p id="countryError" class="inline-error text-red-500 text-[10px] font-bold mt-1 hidden"></p>
             </div>
             <div class="flex justify-start gap-4 pt-2">
                 <% const currentType = locals.formData && formData.type ? formData.type : address.type; %>
@@ -120,11 +126,44 @@ function hideError(elementId) {
         errorDiv.classList.add('hidden');
     }
 }
+const textOnlyFields = ['fullName', 'city', 'state'];
+textOnlyFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-Z\s]/g, ''); // Instantly removes numbers/special chars
+            hideError(id + 'Error');
+        });
+    }
+});
 
-document.querySelector('form').addEventListener('submit', function(e) {
-    const errorElements = ['fullNameError', 'phoneError', 'streetAddressError', 'cityError', 'stateError', 'pinCodeError'];
+// Block letters in Phone and Pincode
+const numberOnlyFields = ['phone', 'pinCode'];
+numberOnlyFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, ''); // Instantly removes letters/special chars
+            hideError(id + 'Error');
+        });
+    }
+});
+
+// Address allows alphanumeric, just clear error on type
+document.getElementById('streetAddress').addEventListener('input', function() {
+    hideError('streetAddressError');
+});
+
+// Country dropdown, clear error on change
+document.getElementById('country').addEventListener('change', function() {
+    hideError('countryError');
+});
+
+
+// For 'validation' when '<form>' submission
+document.getElementById('editAddressForm').addEventListener('submit', function(e) {
+    const errorElements = ['fullNameError', 'phoneError', 'streetAddressError', 'cityError', 'stateError', 'pinCodeError', 'countryError'];
     errorElements.forEach(id => hideError(id));
-
     let isValid = true;
     const fullName = document.getElementById('fullName').value.trim();
     const phone = document.getElementById('phone').value.trim();
@@ -132,12 +171,11 @@ document.querySelector('form').addEventListener('submit', function(e) {
     const city = document.getElementById('city').value.trim();
     const state = document.getElementById('state').value.trim();
     const pinCode = document.getElementById('pinCode').value.trim();
-
+    const country = document.getElementById('country').value;
     const nameRegex = /^[a-zA-Z\s]{3,50}$/; 
     const phoneRegex = /^[0-9]{10}$/;       
     const pinRegex = /^[0-9]{6}$/;          
     const cityStateRegex = /^[a-zA-Z\s]+$/; 
-
     if (!fullName || !nameRegex.test(fullName)) {
         showError('fullNameError', 'Must be 3-50 characters and contain only letters.');
         isValid = false;
@@ -162,16 +200,13 @@ document.querySelector('form').addEventListener('submit', function(e) {
         showError('pinCodeError', 'Please enter a valid 6-digit Pincode.');
         isValid = false;
     }
+    if (!country) {
+        showError('countryError', 'Please select a country.');
+        isValid = false;
+    }
 
     if (!isValid) {
         e.preventDefault(); 
     }
-});
-
-const inputs = ['fullName', 'phone', 'streetAddress', 'city', 'state', 'pinCode'];
-inputs.forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
-        hideError(id + 'Error');
-    });
 });
 </script>

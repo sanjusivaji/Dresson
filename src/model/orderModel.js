@@ -19,7 +19,16 @@ const orderSchema = new mongoose.Schema({
         variantSku: { type: String, required: true },  
         quantity: { type: Number, required: true, default: 1, min: 1 },
         price: { type: Number, required: true },
-        taxRate: { type: Number, required: true, default: 0 } 
+        taxRate: { type: Number, required: true, default: 0 },
+        comboId: { type: String, default: null },       
+        itemStatus: {                                                       // Here 'itemStatus' for individual item/product, so users can 'cancel' like action for 'individual' products.
+            type: String, 
+            enum: ['Active', 'Cancelled', 'Return Pending', 'Returned','Return Rejected'], 
+            default: 'Active' 
+        },
+        cancellationReason: { type: String },
+        returnReason: { type: String },
+        adminMessage: { type: String }
     }],    
     totalAmount: { type: Number, required: true },
     appliedCoupon: { 
@@ -33,7 +42,7 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['COD', 'Credit Card', 'Wallet', 'Razorpay', 'razorpay'],     // We added lowercase 'razorpay' just to be safe!
+        enum: ['COD', 'Credit Card', 'Wallet', 'Razorpay', 'razorpay'],     
         required: true
     },
     paymentStatus: { 
@@ -41,7 +50,7 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'Paid', 'Failed', 'Completed', 'Refunded'], 
         default: 'Pending' 
     },
-   deliveryStatus: {
+   deliveryStatus: {                                                         // Here 'deliveryStatus' we provides for 'overall' 'order' and it helps when 'return' activate only after 'Delivered' the 'order'. 
         type: String,
         enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],
         default: 'Pending'

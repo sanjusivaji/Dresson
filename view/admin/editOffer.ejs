@@ -1,0 +1,407 @@
+<%- contentFor('body') %>
+
+<!-- Include Custom Warning/Alert Partial -->
+<%- include('../partial/shared/warning') %>
+
+<% 
+    // Helper to format Date objects to YYYY-MM-DD for HTML input fields
+    const formatDate = (date) => {
+        if (!date) return '';
+        return new Date(date).toISOString().split('T')[0];
+    };
+    
+    // Safely convert ObjectIds to strings for accurate comparisons in EJS
+    const targetIdsStr = offer.targetIds ? offer.targetIds.map(id => id.toString()) : [];
+    const freeTargetIdsStr = offer.freeTargetIds ? offer.freeTargetIds.map(id => id.toString()) : [];
+%>
+
+<main class="flex-1 p-8 bg-white min-h-screen">
+    <div class="max-w-2xl mx-auto">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-bold text-gray-900">Edit Offer</h1>
+            <a href="/admin/offers" class="px-4 py-2 bg-gray-100 border border-gray-200 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-200 transition">
+                Back To Offers
+            </a>
+        </div>
+
+        <!-- Edit Offer Form (novalidate added to disable browser native tooltips) -->
+        <form action="/admin/offers/edit/<%= offer._id %>" method="POST" class="space-y-6" id="editOfferForm" novalidate>
+            
+            <!-- Offer Title -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Offer Title</label>
+                <input type="text" name="title" id="offerTitle" value="<%= offer.title %>" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                <p id="offerTitleError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select name="type" id="offerType" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                    <option value="" disabled>Select Offer Type</option>
+                    <% offerTypes.forEach(type => { %>
+                        <option value="<%= type %>" <%= offer.type === type ? 'selected' : '' %>><%= type %></option>
+                    <% }) %>
+                </select>
+                <p id="offerTypeError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- REWARD PRODUCT (Only visible for Buy X Get Y) -->
+            <div id="freeProductWrapper" class="hidden mt-6 pt-6 border-t border-gray-200">
+                <div class="flex gap-4 mb-6">
+                    <div class="w-1/2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Buy Quantity</label>
+                        <input type="number" name="buyQuantity" id="buyQuantity" value="<%= offer.buyQuantity || '' %>" min="1" placeholder="e.g. 2" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                        <p id="buyQuantityError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Get Quantity (Free)</label>
+                        <input type="number" name="getQuantity" id="getQuantity" value="<%= offer.getQuantity || '' %>" min="1" placeholder="e.g. 1" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                        <p id="getQuantityError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+                    </div>
+                </div>
+
+                <label class="block text-sm font-medium text-blue-700 mb-2">
+                    <i class="fas fa-gift mr-1"></i> Reward: Select Free Products
+                </label>
+                <p class="text-xs text-gray-500 mb-2">Check the products the customer will receive for free when they buy the items above.</p>
+                
+                <div class="w-full border border-blue-200 rounded-md p-3 max-h-48 overflow-y-auto bg-blue-50/30" id="freeProductCheckboxes">
+                    <% products.forEach(product => { %>
+                        <label class="flex items-center space-x-3 py-1.5 hover:bg-blue-50 cursor-pointer rounded px-2 transition-colors">
+                            <input type="checkbox" name="freeProductId" value="<%= product._id %>" <%= freeTargetIdsStr.includes(product._id.toString()) ? 'checked' : '' %> class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-600">
+                            <span class="text-sm text-gray-700 font-medium"><%= product.name %></span>
+                        </label>
+                    <% }) %>
+                </div>
+                <p id="freeProductError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+            
+            <!-- Discount / Final Price Field (Wrapped for toggling) -->
+            <div id="discountWrapper">
+                <label id="discountLabel" class="block text-sm font-medium text-gray-700 mb-2">Discount Value</label>
+                <input type="number" name="discountValue" id="discountValue" value="<%= offer.discountValue || '' %>" placeholder="Only applicable for 'flat' and 'Percentage' Type" class="w-full border border-gray-300 rounded-md p-3 text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-black">
+                <p id="discountValueError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Start Date -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                <input type="date" name="startDate" id="startDate" value="<%= formatDate(offer.startDate) %>" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                <p id="startDateError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- End Date -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                <input type="date" name="endDate" id="endDate" value="<%= formatDate(offer.endDate) %>" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                <p id="endDateError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Apply Offer To (Wrapped so it can be hidden for Free Shipping) -->
+            <div id="targetTypeWrapper">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Apply Offer To</label>
+                <select name="targetType" id="targetType" class="w-full border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-1 focus:ring-black">
+                    <option value="" disabled>Select Target Type</option>
+                    <% targetTypes.forEach(target => { %>
+                        <option value="<%= target %>" <%= offer.targetType === target ? 'selected' : '' %>><%= target %></option>
+                    <% }) %>
+                </select>
+                <p id="targetTypeError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Category Dropdown with Search -->
+            <div id="categoryWrapper" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Category</label>
+                <input type="text" id="categorySearch" placeholder="Search categories..." class="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:outline-none focus:ring-1 focus:ring-black">
+                <select name="categoryId" id="categorySelect" class="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-black">
+                    <option value="" disabled selected>Select a Category...</option>
+                    <option value="GENDER_Men" class="font-bold text-black"> Men</option>
+                    <option value="GENDER_Women" class="font-bold text-black">Women</option>
+                    <option value="GENDER_Kids" class="font-bold text-black"> Kids</option>
+                    <option disabled>─────────────────────────</option> 
+                    <% categories.forEach(category => { %>
+                        <option value="<%= category._id %>" <%= targetIdsStr.includes(category._id.toString()) ? 'selected' : '' %>>
+                            <%= category.gender ? category.gender + ' - ' : '' %><%= category.parentName ? category.parentName + ' > ' : '' %><%= category.categoryName %>
+                        </option>
+                    <% }) %>
+                </select>
+                <p id="categorySelectError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Product Dropdown with Search -->
+            <div id="productWrapper" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Products</label>
+                <p class="text-xs text-gray-500 mb-2">Hold Ctrl (Windows) or Command (Mac) to select multiple products.</p>
+                <input type="text" id="productSearch" placeholder="Search products..." class="w-full border border-gray-300 rounded-md p-2 mb-2 text-sm focus:outline-none focus:ring-1 focus:ring-black">
+                <select name="productId" id="productSelect" multiple size="5" class="w-full border border-gray-300 rounded-md p-3 text-sm text-gray-600 focus:outline-none focus:ring-1 focus:ring-black">
+                    <% products.forEach(product => { %>
+                        <option value="<%= product._id %>" <%= targetIdsStr.includes(product._id.toString()) ? 'selected' : '' %> class="py-1"><%= product.name %></option>
+                    <% }) %>
+                </select>
+                <p id="productSelectError" class="error-msg text-red-500 text-xs font-bold mt-1.5 hidden"></p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-end items-center gap-4 pt-6">
+                <button type="submit" class="px-8 py-3 bg-[#D4B5B5] text-white rounded-md text-sm font-semibold hover:bg-[#c4a1a1] transition">Update Offer</button>
+                <a href="/admin/offers" class="px-8 py-3 bg-black text-white rounded-md text-sm font-semibold hover:bg-gray-800 transition">Cancel</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    const targetTypeWrapper = document.getElementById('targetTypeWrapper');
+    const targetTypeSelect = document.getElementById('targetType');
+    const categoryWrapper = document.getElementById('categoryWrapper');
+    const productWrapper = document.getElementById('productWrapper');
+    const categorySelect = document.getElementById('categorySelect');
+    const productSelect = document.getElementById('productSelect');
+    const discountWrapper = document.getElementById('discountWrapper'); 
+
+    targetTypeSelect.addEventListener('change', function(e) {
+        const val = e.target.value;
+        
+        if (val === 'Entire Category') {
+            categoryWrapper.classList.remove('hidden');
+        } else {
+            categoryWrapper.classList.add('hidden');
+            // Do NOT clear categorySelect.value here, to preserve pre-filled data on initial load
+        }
+
+        if (val === 'Specific Product') {
+            productWrapper.classList.remove('hidden');
+        } else {
+            productWrapper.classList.add('hidden');
+            // Do NOT clear productSelect.selectedIndex here, to preserve pre-filled data on initial load
+        }
+    });
+
+    const form = document.getElementById('editOfferForm');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const offerTypeSelect = document.getElementById('offerType');
+    const offerTitleInput = document.getElementById('offerTitle');
+
+    const today = new Date().toISOString().split('T')[0];
+    endDateInput.setAttribute('min', today);
+
+    // Helper functions for Inline Errors
+    function clearErrors() {
+        document.querySelectorAll('.error-msg').forEach(el => {
+            el.textContent = '';
+            el.classList.add('hidden');
+        });
+    }
+
+    function showError(fieldId, msg) {
+        const errorEl = document.getElementById(fieldId + 'Error');
+        if (errorEl) {
+            errorEl.textContent = msg;
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    // 100% Custom JavaScript Inline Validation
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        clearErrors(); // Reset errors on every submission attempt
+        
+        const titleVal = offerTitleInput.value.trim();
+        const typeVal = offerTypeSelect.value;
+        const startVal = startDateInput.value;
+        const endVal = endDateInput.value;
+        const targetVal = targetTypeSelect.value;
+        const offerTypeLower = (typeVal || '').toLowerCase();
+
+        // 1. Title Validation
+        if (!titleVal) {
+            showError('offerTitle', 'Please enter a valid Offer Title.');
+            isValid = false;
+        }
+
+        // 2. Type Validation
+        if (!typeVal) {
+            showError('offerType', 'Please select an Offer Type.');
+            isValid = false;
+        }
+
+        // 3. Conditional Fields Validation 
+        if (offerTypeLower === 'buy x, get y' || offerTypeLower === 'buy x get y') {
+            const buyQty = parseInt(document.getElementById('buyQuantity').value) || 0;
+            const getQty = parseInt(document.getElementById('getQuantity').value) || 0;
+            const selectedTriggerProducts = productSelect.selectedOptions.length;
+            const selectedRewardProducts = document.querySelectorAll('input[name="freeProductId"]:checked').length;
+            
+            if (buyQty < 1) {
+                showError('buyQuantity', 'Buy Quantity must be at least 1.');
+                isValid = false;
+            }
+            if (getQty < 1) {
+                showError('getQuantity', 'Get Quantity must be at least 1.');
+                isValid = false;
+            }
+            if (buyQty >= 1 && selectedTriggerProducts !== buyQty) {
+                showError('productSelect', `You must select exactly ${buyQty} product(s) to match the Buy Quantity.`);
+                isValid = false;
+            }
+            if (getQty >= 1 && selectedRewardProducts !== getQty) {
+                showError('freeProduct', `You must check exactly ${getQty} reward product(s).`);
+                isValid = false;
+            }
+        } 
+        else if (offerTypeLower === 'free shipping') {
+            const threshold = document.getElementById('discountValue').value;
+            if (threshold === '') {
+                showError('discountValue', 'Please specify a Minimum Order Threshold for Free Shipping.');
+                isValid = false;
+            }
+        } 
+        else if (typeVal) {
+            // Standard Discount / Bundle checks
+            const discountVal = document.getElementById('discountValue').value;
+            if (discountVal === '') {
+                showError('discountValue', 'Please enter a value for this field.');
+                isValid = false;
+            }
+            if (!targetVal) {
+                showError('targetType', 'Please select what target type this offer applies to.');
+                isValid = false;
+            }
+            if (targetVal === 'Entire Category' && !categorySelect.value) {
+                showError('categorySelect', 'Please select a target category.');
+                isValid = false;
+            }
+            if (targetVal === 'Specific Product' && productSelect.selectedOptions.length === 0) {
+                showError('productSelect', 'Please select at least one target product.');
+                isValid = false;
+            }
+            // Bundle Check
+            if (offerTypeLower === 'fixed bundle price' && targetVal === 'Specific Product' && productSelect.selectedOptions.length < 2) {
+                showError('productSelect', 'You must select at least 2 products for a Fixed Bundle Price offer.');
+                isValid = false;
+            }
+        }
+
+        // 4. Date Validation
+        if (!startVal) {
+            showError('startDate', 'Please provide a Start Date.');
+            isValid = false;
+        }
+        if (!endVal) {
+            showError('endDate', 'Please provide an End Date.');
+            isValid = false;
+        }
+        if (startVal && endVal && new Date(startVal) > new Date(endVal)) {
+            showError('endDate', 'End Date must be after or equal to the Start Date.');
+            isValid = false;
+        }
+
+        // Block form submission if any errors were found
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
+    const freeProductWrapper = document.getElementById('freeProductWrapper');
+    const discountLabel = document.getElementById('discountLabel');
+    const discountInput = document.getElementById('discountValue');
+    const buyQtyInput = document.getElementById('buyQuantity');
+    const getQtyInput = document.getElementById('getQuantity');
+
+    offerTypeSelect.addEventListener('change', function(e) {
+        const val = e.target.value.toLowerCase();
+        
+        clearErrors(); 
+
+        // Reset fields visibility
+        freeProductWrapper.classList.add('hidden');
+        discountWrapper.classList.remove('hidden'); 
+        targetTypeWrapper.classList.remove('hidden');
+
+        // Update Target Type Dropdown Options
+        Array.from(targetTypeSelect.options).forEach(opt => {
+            if (opt.value !== '') {
+                if (val === 'buy x, get y' || val === 'buy x get y') {
+                    opt.disabled = (opt.value !== 'Specific Product');
+                } else if (val === 'fixed bundle price') {
+                    opt.disabled = (opt.value === 'Entire Category' || opt.value === 'Category');
+                } else {
+                    opt.disabled = false;
+                }
+            }
+        });
+
+        if (val === 'buy x, get y' || val === 'buy x get y') {
+            freeProductWrapper.classList.remove('hidden');
+            discountWrapper.classList.add('hidden'); 
+            
+            // Auto-select Specific Product for BOGO if not already set
+            if (targetTypeSelect.value !== 'Specific Product') {
+                targetTypeSelect.value = 'Specific Product';
+                targetTypeSelect.dispatchEvent(new Event('change'));
+            }
+
+        } else if (val === 'fixed bundle price') {
+            discountLabel.textContent = "Final Bundle Price (₹)";
+            discountInput.placeholder = "e.g. 1500 (Customer pays this for the whole bundle)";
+
+        } else if (val === 'percentage') {
+            discountLabel.textContent = "Discount Percentage (%)";
+            discountInput.placeholder = "e.g. 20";
+            
+        } else if (val === 'flat discount') {
+            discountLabel.textContent = "Flat Discount Amount (₹)";
+            discountInput.placeholder = "e.g. 500";
+            
+        } else if (val === 'free shipping') {
+            discountLabel.textContent = "Minimum Order Threshold (₹)";
+            discountInput.placeholder = "e.g. 1500 (Enter 0 for unconditional free shipping)";
+            
+            targetTypeWrapper.classList.add('hidden');
+            categoryWrapper.classList.add('hidden');
+            productWrapper.classList.add('hidden');
+        }
+    });
+
+    // --- NEW SEARCH LOGIC ---
+    const categorySearch = document.getElementById('categorySearch');
+    const productSearch = document.getElementById('productSearch');
+
+    // Filter Categories
+    categorySearch.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = categorySelect.options;
+        
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === '' || options[i].disabled) continue; // Skip placeholders/dividers
+            
+            const text = options[i].text.toLowerCase();
+            options[i].style.display = text.includes(searchTerm) ? '' : 'none';
+        }
+    });
+
+    // Filter Products
+    productSearch.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const options = productSelect.options;
+        
+        for (let i = 0; i < options.length; i++) {
+            const text = options[i].text.toLowerCase();
+            options[i].style.display = text.includes(searchTerm) ? '' : 'none';
+        }
+    });
+
+    // Run the change events on page load to initialize the dynamic UI correctly with the pre-filled data
+    document.addEventListener("DOMContentLoaded", () => {
+        if (offerTypeSelect.value) {
+            offerTypeSelect.dispatchEvent(new Event('change'));
+        }
+        if (targetTypeSelect.value) {
+            targetTypeSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>

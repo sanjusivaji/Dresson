@@ -42,7 +42,10 @@
                         <option value="Shipped" <%= locals.filterStatus === 'Shipped' ? 'selected' : '' %>>Shipped</option>
                         <option value="Delivered" <%= locals.filterStatus === 'Delivered' ? 'selected' : '' %>>Delivered</option>
                         <option value="Cancelled" <%= locals.filterStatus === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                        <option value="Returned" <%= locals.filterStatus === 'Returned' ? 'selected' : '' %>>Returned</option>
+                        <!-- Added Granular Return Filters for Users -->
+                        <option value="Return Pending" <%= locals.filterStatus === 'Return Pending' ? 'selected' : '' %>>Return Pending</option>
+                        <option value="Return Refunded" <%= locals.filterStatus === 'Return Refunded' ? 'selected' : '' %>>Return Refunded</option>
+                        <option value="Return Rejected" <%= locals.filterStatus === 'Return Rejected' ? 'selected' : '' %>>Return Rejected</option>
                     </select>
 
                     <!-- Submit Button -->
@@ -50,7 +53,7 @@
                         Filter
                     </button>
                     
-                    <!-- Clear Filters (Optional: shows only if a filter/search is active) -->
+                    <!-- Clear Filters -->
                     <% if (locals.searchQuery || locals.filterStatus) { %>
                         <a href="/profile/orders" class="text-xs font-bold text-red-600 hover:text-red-800 transition whitespace-nowrap">
                             Clear
@@ -67,7 +70,7 @@
                                 <th class="pb-4 font-bold text-left pl-4 w-[15%]">Order ID</th>
                                 <th class="pb-4 font-bold text-left w-[35%]">Product</th>
                                 <th class="pb-4 font-bold w-[15%]">Price</th>
-                                <th class="pb-4 font-bold w-[20%]">Status</th>
+                                <th class="pb-4 font-bold w-[20%] text-left">Status</th>
                                 <th class="pb-4 font-bold text-center w-[15%]">Actions</th>
                             </tr>
                         </thead>                       
@@ -82,27 +85,32 @@
                                             productSummary += ` (+${order.items.length - 1} more)`;
                                         }
                                     }
-                                    
-                                    // Handle Dynamic Colors
-                                    let statusColor = 'text-gray-800'; 
-                                    switch(order.deliveryStatus) {
-                                        case 'Delivered':
-                                            statusColor = 'text-green-600';
-                                            break;
-                                        case 'Cancelled':
-                                            statusColor = 'text-red-600';
-                                            break;
-                                        case 'Pending':
-                                        case 'Processing':
-                                            statusColor = 'text-amber-500';
-                                            break;
-                                        case 'Shipped':
-                                            statusColor = 'text-blue-500';
-                                            break;
-                                        case 'Returned':
-                                            statusColor = 'text-gray-500';
-                                            break;
+                                    let displayStatuses = new Set();                                    
+                                    if (order.returnRequest?.isRequested) {
+                                        if (order.returnRequest.status === 'Pending') displayStatuses.add('Return Pending');
+                                        else if (order.returnRequest.status === 'Rejected') displayStatuses.add('Return Rejected');
+                                        else if (order.returnRequest.status === 'Refunded') displayStatuses.add('Return Refunded');
                                     }
+                                    if (order.items && order.items.length > 0) {
+                                        let hasActiveItems = false;
+                                        order.items.forEach(item => {
+                                            if (item.itemStatus === 'Cancelled') displayStatuses.add('Cancelled');
+                                            else if (item.itemStatus === 'Return Pending') displayStatuses.add('Return Pending');
+                                            else if (item.itemStatus === 'Return Rejected') displayStatuses.add('Return Rejected');
+                                            else if (item.itemStatus === 'Returned') displayStatuses.add('Return Refunded');
+                                            else hasActiveItems = true; 
+                                        });
+                                       if (hasActiveItems || displayStatuses.size === 0) {
+                                            if (order.deliveryStatus === 'Returned') {
+                                                displayStatuses.add('Return Refunded');
+                                            } else {
+                                                displayStatuses.add(order.deliveryStatus);
+                                            }
+                                        }
+                                    } else {
+                                        displayStatuses.add(order.deliveryStatus);
+                                    }
+                                  const statusArray = Array.from(displayStatuses);
                                 %>
                                 <tr class="border-b border-gray-200 hover:bg-red-100 transition">                                    
                                     <td class="py-5 pl-4 align-middle text-left font-medium text-gray-600">
@@ -117,14 +125,47 @@
                                         ₹<%= Math.round(order.totalAmount) %>
                                     </td>
                                     
-                                    <!-- Dynamic Color Applied Here -->
-                                    <td class="py-5 pr-4 align-middle font-black tracking-wide <%= statusColor %>">
-                                        <%= order.deliveryStatus === 'Delivered' ? 'RECEIVED' : order.deliveryStatus.toUpperCase() %>
+                                    <!-- Dynamic Stacked Status Array -->
+                                    <td class="py-5 pr-4 align-middle text-left font-black tracking-wide">
+                                        <div class="flex flex-col gap-1 items-start">
+                                            <% statusArray.forEach(status => { 
+                                                let statusColor = 'text-gray-800'; 
+                                                let displayText = status.toUpperCase();
+                                                
+                                                switch(status) {
+                                                    case 'Delivered':
+                                                        statusColor = 'text-green-600';
+                                                        displayText = 'RECEIVED';
+                                                        break;
+                                                    case 'Cancelled':
+                                                        statusColor = 'text-red-600';
+                                                        break;
+                                                    case 'Pending':
+                                                    case 'Processing':
+                                                        statusColor = 'text-amber-500';
+                                                        break;
+                                                    case 'Shipped':
+                                                        statusColor = 'text-blue-500';
+                                                        break;
+                                                    case 'Return Pending':
+                                                        statusColor = 'text-yellow-600';
+                                                        break;
+                                                    case 'Return Rejected':
+                                                        statusColor = 'text-orange-600';
+                                                        break;
+                                                    case 'Return Refunded':
+                                                    case 'Returned':
+                                                        statusColor = 'text-purple-600';
+                                                        break;
+                                                }
+                                            %>
+                                                <span class="block text-[11px] <%= statusColor %>"><%= displayText %></span>
+                                            <% }) %>
+                                        </div>
                                     </td>
                                     
                                     <td class="py-5 align-middle">
                                         <div class="flex items-center justify-center">
-                                            <!-- Details Button matching the pill style of the address actions -->
                                             <a href="/profile/orders/<%= order._id %>" class="bg-gray-400 hover:bg-gray-500 text-white text-[10px] font-bold px-5 py-1.5 rounded-full transition shadow-sm">
                                                 Details
                                             </a>

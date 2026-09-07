@@ -1,0 +1,86 @@
+<%- contentFor('body') %>
+
+<div class="w-full bg-white min-h-screen p-6 md:p-8 font-sans">
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">General Settings</h1>
+    </div>
+
+    <form action="/admin/settings/update" method="POST" class="max-w-4xl">
+        
+        <!-- Store Information -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Store Name</label>
+                <input type="text" name="storeName" value="<%= locals.settings?.storeName || 'Dresson' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Store Email</label>
+                <input type="email" name="storeEmail" value="<%= locals.settings?.storeEmail || 'support@dresson.com' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Store Phone</label>
+                <input type="text" name="storePhone" value="<%= locals.settings?.storePhone || '6289384999' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+        </div>
+
+        <!-- Store Address -->
+        <div class="flex flex-col mb-6">
+            <label class="text-[11px] font-bold text-gray-500 mb-1">Store Address</label>
+            <input type="text" name="storeAddress" value="<%= locals.settings?.storeAddress || 'Dresson, 123, Fashion Street, Kochi, Kerala, India - 3241534' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+        </div>
+
+        <!-- Shipping & Tax -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Shipping Charge</label>
+                <input type="number" name="shippingCharge" value="<%= locals.settings?.shippingCharge || 100 %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Free Shipping Above</label>
+                <input type="number" name="freeShippingThreshold" value="<%= locals.settings?.freeShippingThreshold || 1000 %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Tax Percentage</label>
+                <input type="number" name="taxPercentage" value="<%= locals.settings?.taxPercentage || 12 %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Tax Label</label>
+                <input type="text" name="taxLabel" value="<%= locals.settings?.taxLabel || 'GST' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+        </div>
+
+        <!-- Invoice Details -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Invoice Prefix</label>
+                <input type="text" name="invoicePrefix" value="<%= locals.settings?.invoicePrefix || 'DRE' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Next Invoice Number</label>
+                <input type="number" name="nextInvoiceNumber" value="<%= locals.settings?.nextInvoiceNumber || 1001 %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5]">
+            </div>
+        </div>
+
+        <!-- Localization -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Currency</label>
+                <input type="text" name="currency" value="<%= locals.settings?.currency || 'INR' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5] uppercase">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-[11px] font-bold text-gray-500 mb-1">Timezone</label>
+                <input type="text" name="timezone" value="<%= locals.settings?.timezone || 'ASIA/KOLKATA' %>" class="border border-gray-300 text-gray-700 text-xs px-3 py-2.5 rounded focus:outline-none focus:border-[#6b66f5] uppercase">
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex gap-4">
+            <button type="submit" class="bg-[#e97d68] hover:bg-[#d66b56] text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm transition">
+                Save Changes
+            </button>
+            <a href="/admin/dashboard" class="bg-black hover:bg-gray-800 text-white text-xs font-bold px-6 py-2.5 rounded shadow-sm transition flex items-center">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>

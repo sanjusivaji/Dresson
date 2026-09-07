@@ -1,7 +1,8 @@
+// This code is for handle  'google authentication'
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../model/userModel.js';
-import dotenv from 'dotenv';
+import dotenv from 'dotenv';                                                 // For configeration of '.env' files credentials
 
 dotenv.config();
 passport.use(new GoogleStrategy({
@@ -9,7 +10,7 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback",     
 },
-async (accessToken, refreshToken, profile, done) => {
+async (accessToken, refreshToken, profile, done) => {                         // We should keep 'accessToken', 'refreshToken' because it is 'syntax' and 'profile' contains all data about 'user' ie 'email', 'name', 'displayName'/ 'firstName' and 'familyName' or 'second name' etc) are passed automatically and came from 'Google' and 'done' is the 'callback' function calls only after 'process' finished.
     try {
         const email = profile.emails?.[0]?.value;
         if (!email) {
@@ -25,14 +26,14 @@ async (accessToken, refreshToken, profile, done) => {
             const givenName = profile.name?.givenName || profile.displayName.split(' ')[0];
             const familyName = profile.name?.familyName || profile.displayName.split(' ').slice(1).join(' ') || '';
 
-            user = new User({
+            user = new User({                                                   // Create a new 'user' document in 'Users' collection and then it 'save' below.
                 firstName: givenName,
                 lastName: familyName,
                 email: email,
-                password: Math.random().toString(36).slice(-8) + "Aa1@", // Regex compliant
-                isVerified: true,     // Bypass OTP requirement
-                googleId: profile.id, // Permanent Google Profile Link
-                role: "user",         // Default access level
+                password: Math.random().toString(36).slice(-8) + "Aa1@",        // Here it creates 'password' and '.toString(36)' converts that decimal into a 'Base36'(ie a 'decimal' number convert like '"0.q8wj2zpq") string and '.slice(-8)' extracts only the last 8 characters of that string and the 'string' ended with "Aa1@"(ie 'uppercase', lowercase', 'number', 'character') ensure passing the 'strict password validation'.
+                isVerified: true,    
+                googleId: profile.id, 
+                role: "user",       
                 isBlocked: false
             });
             await user.save();
@@ -44,7 +45,7 @@ async (accessToken, refreshToken, profile, done) => {
         return done(error, null);
     }
 }));
-passport.serializeUser((user, done) => {
+passport.serializeUser((user, done) => {                                    
     done(null, user.id);
 });
 passport.deserializeUser(async (id, done) => {

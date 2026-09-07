@@ -11,10 +11,9 @@
   <!-- Search & Filter Controls -->
     <form action="/admin/returns" method="GET" class="flex flex-col md:flex-row gap-4 mb-8 w-full max-w-5xl items-center">
         
-        <!-- 1. Search Box with Embedded Icons (Using focus-within trick) -->
+        <!-- 1. Search Box with Embedded Icons -->
         <div class="flex items-center w-full md:w-[400px] bg-white border border-gray-300 rounded-md focus-within:ring-1 focus-within:ring-[#8a7aee] focus-within:border-[#8a7aee] shadow-sm overflow-hidden transition-all">
             
-            <!-- The actual input is transparent and has no borders -->
             <input 
                 type="text" 
                 name="search"
@@ -23,10 +22,7 @@
                 class="flex-1 w-full pl-4 py-2.5 text-sm bg-transparent outline-none border-none focus:ring-0"
             >
             
-            <!-- Icon Container (Always pinned to the right inside the box) -->
             <div class="flex items-center pr-2 shrink-0">
-                
-                <!-- Clear Search 'X' (Only displays if there is an active search) -->
                 <% if (locals.searchQuery) { %>
                     <a href="/admin/returns?status=<%= locals.filterStatus || '' %>" class="p-1.5 text-red-400 hover:text-red-600 transition" title="Clear Search">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
@@ -34,25 +30,22 @@
                         </svg>
                     </a>
                 <% } %>
-
-                <!-- Submit Search Button (Magnifying Glass Icon) -->
                 <button type="submit" class="p-1.5 text-gray-400 hover:text-[#8a7aee] transition" title="Search">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                     </svg>
                 </button>
-
             </div>
         </div>
         
-        <!-- 2. Filter Dropdown & Apply Button (Unchanged) -->
+        <!-- 2. Filter Dropdown & Apply Button -->
         <div class="flex items-center gap-2 w-full md:w-auto">
             <select name="status" class="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-[13px] font-semibold rounded-md shadow-sm outline-none cursor-pointer focus:ring-1 focus:ring-[#d6c4c5] transition">
                 <option value="">All Statuses</option>
-                <option value="Pending" <%= locals.filterStatus === 'Pending' ? 'selected' : '' %>>Pending</option>
-                <option value="Approved" <%= locals.filterStatus === 'Approved' ? 'selected' : '' %>>Approved</option>
-                <option value="Refunded" <%= locals.filterStatus === 'Refunded' ? 'selected' : '' %>>Refunded</option>
-                <option value="Rejected" <%= locals.filterStatus === 'Rejected' ? 'selected' : '' %>>Rejected</option>
+                <!-- Values match the backend logic, Text matches your UI request -->
+                <option value="Pending" <%= locals.filterStatus === 'Pending' ? 'selected' : '' %>>Return Pending</option>
+                <option value="Approved" <%= locals.filterStatus === 'Approved' ? 'selected' : '' %>>Return Refunded</option>
+                <option value="Rejected" <%= locals.filterStatus === 'Rejected' ? 'selected' : '' %>>Return Rejected</option>
             </select>
 
             <button type="submit" class="px-6 py-2.5 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[13px] font-bold rounded-md shadow-sm transition whitespace-nowrap">
@@ -93,44 +86,82 @@
                             
                             <!-- Return ID -->
                             <td class="px-6 py-5 text-[13px] font-medium text-gray-600">
-                                <%= order.returnId %>
+                                <%= order.returnId || order.orderId %>
                             </td>
                             
                             <!-- Customer -->
                             <td class="px-6 py-5 text-[13px]">
-                                <div class="font-medium text-gray-800"><%= order.shippingAddress.fullName %></div>
-                                <div class="text-[11px] text-gray-500 font-medium mt-0.5"><%= order.user ? order.user.email : 'N/A' %></div>
+                                <div class="font-medium text-gray-800"><%= order.shippingAddress ? order.shippingAddress.fullName : 'N/A' %></div>
+                                <div class="text-[11px] text-gray-500 font-medium mt-0.5"><%= order.user && order.user.email ? order.user.email : 'N/A' %></div>
                             </td>
                             
                             <!-- Product Summary -->
                             <td class="px-6 py-5 text-[13px] font-medium text-gray-600">
-                                <%= order.productSummary %>
+                                <%= order.productSummary || 'View details for products' %>
                             </td>
                             
                             <!-- Refund Amount -->
                             <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
-                                ₹<%= order.totalAmount.toLocaleString('en-IN') %>
+                                ₹<%= (order.totalAmount || 0).toLocaleString('en-IN') %>
                             </td>
+
+                            <!-- ✨ NEW LOGIC: Extract all returning items and their unique statuses -->
+                            <% 
+                                const returningItems = (order.items || []).filter(i => ['Return Pending', 'Returned', 'Return Rejected'].includes(i.itemStatus));
+                                
+                                // Get unique statuses to handle mixed-status orders
+                                let displayStatuses = [];
+                                if (returningItems.length > 0) {
+                                    displayStatuses = [...new Set(returningItems.map(i => i.itemStatus))];
+                                } else {
+                                    displayStatuses = [order.returnRequest?.status || 'Pending'];
+                                }
+
+                                // Handle the reason text
+                                let displayReason = returningItems.length > 0 ? returningItems[0].returnReason : (order.returnRequest?.reason || 'N/A');
+                                if (returningItems.length > 1) {
+                                    displayReason = returningItems.length + ' Items (See details)';
+                                }
+                            %>
 
                             <!-- Reason -->
                             <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
-                                <%= order.returnRequest.reason || 'N/A' %>
+                                <%= displayReason %>
                             </td>
                             
-                            <!-- Return Status -->
-                            <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
-                                <%= order.returnRequest.status %>
+                            <!-- Return Status Badge(s) -->
+                            <td class="px-6 py-5 text-[13px] font-bold">
+                                <div class="flex flex-col gap-1.5 items-start">
+                                    <% displayStatuses.forEach(status => { 
+                                        let badgeClass = 'bg-gray-100 text-gray-700';
+                                        let displayText = status;
+
+                                        if (status === 'Returned' || status === 'Refunded' || status === 'Approved') {
+                                            badgeClass = 'bg-purple-100 text-purple-700';
+                                            displayText = 'Return Refunded';
+                                        } else if (status === 'Return Pending' || status === 'Pending') {
+                                            badgeClass = 'bg-yellow-100 text-yellow-700 animate-pulse';
+                                            displayText = 'Return Pending';
+                                        } else if (status === 'Return Rejected' || status === 'Rejected') {
+                                            badgeClass = 'bg-orange-100 text-orange-800';
+                                            displayText = 'Return Rejected';
+                                        }
+                                    %>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap <%= badgeClass %>">
+                                            <%= displayText %>
+                                        </span>
+                                    <% }) %>
+                                </div>
                             </td>
                             
                             <!-- Requested Date -->
                             <td class="px-6 py-5 text-[13px] font-medium text-gray-700">
-                                <%= order.requestedDate %>
+                                <%= order.requestedDate || (order.returnRequest?.requestedAt ? new Date(order.returnRequest.requestedAt).toLocaleDateString('en-GB') : 'N/A') %>
                             </td>
                             
                             <!-- Action Button -->
-                            <td class="px-6 py-5">
-                                <!-- Will point to the specific return details page -->
-                                <a href="/admin/returns/<%= order._id %>" class="px-5 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-white text-[11px] font-bold rounded shadow-sm transition">
+                            <td class="px-6 py-5 text-right">
+                                <a href="/admin/returns/<%= order._id %>" class="inline-block px-5 py-2 bg-[#d6c4c5] hover:bg-[#c9b5b7] text-gray-900 text-[11px] font-bold rounded shadow-sm transition">
                                     View
                                 </a>
                             </td>
@@ -153,8 +184,8 @@
         
         <%- include('../partial/admin/pagination', { 
             baseUrl: '/admin/returns', 
-            currentPage: currentPage, 
-            totalPages: totalPages,
+            currentPage: typeof currentPage !== 'undefined' ? currentPage : 1, 
+            totalPages: typeof totalPages !== 'undefined' ? totalPages : 1,
             extraQuery: additionalQueries
         }) %>
     </div>

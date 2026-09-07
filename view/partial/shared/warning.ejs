@@ -1,4 +1,4 @@
-<!-- This 'warning' file is replace 'alert()', 'confirm()' like methods and it display 'warning' messages in different scenario ie it can display if 'type' is 'error' (red), 'success' (green), 'warning' (yellow) 'info' (blue). -->
+<!-- This 'warning' file display 'warning' messages in different scenario ie it can display if 'type' is 'error' (red), 'success' (green), 'warning' (yellow) 'info' (blue) and display box for 'Delete' check and replace 'alert()', 'confirm()' like methods. -->
 <div id="customModalOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl transform transition-all text-center border border-gray-100">
         <div id="customModalIconContainer" class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4 shadow-inner">
@@ -47,7 +47,7 @@ function showCustomAlert(message, title = 'Notice', type = 'info') {
     document.getElementById('customModalCancelBtn').classList.add('hidden');
     confirmBtn.textContent = 'OK';                                            // After make 'cancel' button 'invisible' here display 'OK'.
     confirmBtn.onclick = () => overlay.classList.add('hidden');               // Here 'onclick' is the 'html' element property normally attatched with a 'function'(here 'arrow' function)and it value is 'overlay.classList.add('hidden')'(ie make 'overlay' element 'invisible')
-    overlay.classList.remove('hidden');                                       // Here 'above' operation is 'asynchronous' ie it works only when click 'confirm button' but here we make invisible/hidden 'overlay' instantly, ie 'overlay' already hidden.
+    overlay.classList.remove('hidden');                                       // Here 'above' operation works only when click 'confirm button' and then 'overlay' make 'visible'(ie 'remove' the 'tailwind.css' 'class name'(ie 'hidden') from 'overlay' element)
 }
 // For display 'confirm' message
 function showCustomConfirm(message, onConfirm, title = 'Are you sure?') {      // We call this 'function' from 'address.ejs' like files with 'path'

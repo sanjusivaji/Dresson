@@ -43,7 +43,7 @@ export const findReturns = async (query, skip, limit) => {
     return await Order.find(query)
         .populate('user', 'email name')
         .populate('items.product', 'name productName images')
-        .sort({ "returnRequest.requestedAt": -1 })
+        .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean();

@@ -1,5 +1,5 @@
 import express from 'express';
-import passport from '../config/passport.js';
+import passport from '../config/passport.js';                                                    // For 'login' by 'Google'
 import * as authController from '../controller/userController/authController.js';
 import * as userProfileController from '../controller/userController/userProfileController.js'; 
 import * as userAddressController from '../controller/userController/userAddressController.js';
@@ -10,7 +10,7 @@ import * as productController from '../controller/userController/productControll
 import * as cartController from '../controller/userController/cartController.js';
 import * as wishlistController from '../controller/userController/wishlistController.js';
 import * as checkoutController from '../controller/userController/checkoutController.js';
-import * as orderController from '../controller/userController/userOrderController.js.js'
+import * as orderController from '../controller/userController/userOrderController.js'
 import * as walletController from '../controller/userController/walletController.js';
 
 
@@ -50,7 +50,7 @@ router.get('/logout', authController.processLogout);
 
 // Route for 'sign up' by 'google'
 router.get('/auth/google', 
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    passport.authenticate('google', { scope: ['profile', 'email'] })       // 'scope' data send 'google' for 'inform' what data need from 'google' to 'application'
 );
 
 // Route for 'login' by 'Google' 
@@ -115,13 +115,44 @@ router.post('/profile/address/delete/:id', userAddressController.deleteAddress);
 // Route for 'wallet'
 router.get('/profile/wallet', requireActiveUser, walletController.getWalletPage);
 
+
+router.post('/profile/orders/item-action', requireActiveUser, orderController.processItemAction)
+
+
+// Route for 'display' 'order success'
+router.get('/order-success',requireActiveUser, checkoutController.getOrderSuccessPage);
+
+// Route for 'verify payment'
+router.post('/checkout/verify-payment', requireActiveUser, checkoutController.verifyPayment);
+
+// Route for 'display' orders
+router.get('/profile/orders', requireActiveUser, orderController.getUserOrdersPage);
+
+
+// Router chaining for 'display' 'return' orders page and 'return process', only after 'delivered'
+router.route('/profile/orders/:id/return')
+      .get( requireActiveUser, orderController.getReturnDetailsPage)
+      .post(requireActiveUser, orderController.processReturnRequest );
+
+
+
+router.post('/profile/orders/item-action', requireActiveUser, orderController.processItemAction);
+
 // Route for 'orders' in user side
 router.get('/profile/orders/:id', requireActiveUser, orderController.getOrderDetailsPage);
+
+// Route for 'cancel order' in user side
+router.post('/profile/orders/:id/cancel', requireActiveUser, orderController.cancelOrder);
+
+// Route for 'display' and 'download' invoice
+router.get('/profile/orders/:id/invoice', requireActiveUser, orderController.downloadInvoice);
+
 
 // Route for 'cart' operations
 router.get('/cart', requireActiveUser, cartController.getCartPage);
 router.post('/cart/add', requireActiveUser, cartController.postAddToCart);
 router.patch('/cart/update-quantity', requireActiveUser, cartController.patchUpdateQuantity);
+router.post('/cart/add-combo', requireActiveUser, cartController.postAddComboToCart);
 router.delete('/cart/remove/:itemId', requireActiveUser, cartController.deleteRemoveItem);
 
 // Route for display 'wishlist' 
@@ -133,31 +164,12 @@ router.post('/wishlist/toggle', requireActiveUser, wishlistController.toggleWish
 // Route for display 'checkout' page
 router.get('/checkout', requireActiveUser, checkoutController.getCheckoutPage);
 
+// Route for 'apply coupon' and 'remove' coupon during 'checkout'
+router.post('/checkout/apply-coupon', requireActiveUser, checkoutController.applyCoupon);
+router.post('/checkout/remove-coupon', requireActiveUser, checkoutController.removeCoupon); 
+
 // This will handle the final "Place Order" button on the checkout page
 router.post('/checkout/place-order', requireActiveUser, checkoutController.placeOrder);
-
-// Route for 'apply coupon' in 'checkout'
-router.post('/checkout/apply-coupon',  requireActiveUser, checkoutController.applyCoupon);
-
-// Route for 'display' 'order success'
-router.get('/order-success',requireActiveUser, checkoutController.getOrderSuccessPage);
-
-// Route for 'verify payment'
-router.post('/checkout/verify-payment', requireActiveUser, checkoutController.verifyPayment);
-
-// Route for 'display' orders
-router.get('/profile/orders', requireActiveUser, orderController.getUserOrdersPage);
-
-// Route for 'cancel order' in user side
-router.post('/profile/orders/:id/cancel', requireActiveUser, orderController.cancelOrder);
-
-// Route for 'display' and 'download' invoice
-router.get('/profile/orders/:id/invoice', requireActiveUser, orderController.downloadInvoice);
-
-// Router chaining for 'display' 'return' orders page and 'return process', only after 'delivered'
-router.route('/profile/orders/:id/return')
-      .get( requireActiveUser, orderController.getReturnDetailsPage)
-      .post(requireActiveUser, orderController.processReturnRequest );
 
 
 // Route for 'send' 'payment details' like 'razor pay key', 'razor pay id' , 'currency', 'created date' etc and also send 'status' 'success'   
