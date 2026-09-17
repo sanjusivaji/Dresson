@@ -1,29 +1,35 @@
 import Order from '../../model/orderModel.js';
+import Product from '../../model/productModel.js';
+import User from '../../model/userModel.js';
+import WalletTransaction from '../../model/walletTransactions.js'; 
+import Coupon from '../../model/couponModel.js'
 
 
-// Here we populating in 'User' model from 'Order' model and retrieve 'name' and 'email' under 'User' 
+// Finds orders and attaches the user's name and email to them
 export const findOrders = async (query, skip, limit) => {
     return await Order.find(query)
-        .populate('user', 'email name')                        // Here we retrieve data of 'user' from 'user' model and here we use 'shortcut' for 'select' return 'fields' ie after 'population' we need only 'name' and 'email' fields and we can also write it like '.populate('path: user', 'select:email name')'. 
+        .populate('user', 'email name')                                                              // Pulls just the email and name from the user profile
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean();
 };
 
-// Retrieve number of 'orders' based on 'query'
+
+// Counts how many orders match our search
 export const countOrders = async (query) => {
     return await Order.countDocuments(query);
 };
 
-// Retrieve order data and 'name' and 'email' from 'user' model and 'name', 'images','category' from 'items.product'
-export const findOrderDetailsById  = async (orderId) => {         // In this function we retrieve all data of 'Order' model and also retrieve data like 'name' and 'email' of 'User' by using 'populate'. 
+
+// Gets full order details including user and product info
+export const findOrderDetailsById  = async (orderId) => {         
     return await Order.findById(orderId)
         .populate({
             path: 'user',
             select: 'firstName lastName email'
         })
-        .populate({                                              // In 'second' 'population' we retrieve 'items.product' data from 'Product' model(ie only 'name', 'images', 'subCategory' etc fields)and we 'populated' again 'inside' 'items.product' ie 'retrieve data from 'subCategory' field that is in 'Category' model and we get the name of category as 'categoryName' with all data of 'Orders' model.
+        .populate({                                                                                  // Pulls product details and looks up its specific category name
             path: 'items.product',
             select: 'name images subCategory', 
             populate: {
@@ -33,12 +39,14 @@ export const findOrderDetailsById  = async (orderId) => {         // In this fun
         });
 };
 
-// For 'find' the 'order' by 'orderId' and 'update' the 'deliveryStatus' with value 'newStatus
+
+// Updates the delivery status of a specific order
 export const updateOrderDeliveryStatus = async (orderId, newStatus) => {
-    return await Order.findByIdAndUpdate(orderId, { deliveryStatus: newStatus }); // For 'find' the 'order' by 'orderId' and 'update' the 'deliveryStatus' with value 'newStatus' and currently it 'return' 'previous status' but if we want to 'return' 'new'(ie 'changed')status we should use '{new:true}' or '{document: after}'(ie 'return await Order.findByIdAndUpdate(orderId, { deliveryStatus: newStatus }, { document:after })')  
+    return await Order.findByIdAndUpdate(orderId, { deliveryStatus: newStatus });
 };
 
-// For retrieve 'order' details and 'sort' the data 'new to old' 
+
+// Finds returned orders and sorts them from newest to oldest
 export const findReturns = async (query, skip, limit) => {
     return await Order.find(query)
         .populate('user', 'email name')
@@ -49,7 +57,49 @@ export const findReturns = async (query, skip, limit) => {
         .lean();
 };
 
-// Retrieve all 'Order' data only based on 'orderId'
+
+// Gets the raw order document by its ID
 export const findOrderDocumentById = async (orderId) => {
     return await Order.findById(orderId);
+};
+
+
+// Adds returned items back into the product stock
+export const restoreProductStock = async (productId, variantSku, variantName, returnQuantity) => {
+    return await Product.updateOne(
+        { 
+            _id: productId, 
+            "variants": { 
+                $elemMatch: { 
+                    sku: variantSku, 
+                    name: variantName
+                } 
+            } 
+        },
+        { 
+            $inc: { 
+                "variants.$.stock": returnQuantity,
+                "totalStock": returnQuantity        
+            } 
+        }
+    );
+};
+
+
+// Finds a user by their ID
+export const findUserById = async (userId) => {
+    return await User.findById(userId);
+};
+
+
+// Creates a record for a wallet refund transaction
+export const createRefundTransaction = async (transactionData) => {
+    const transaction = new WalletTransaction(transactionData);
+    return await transaction.save();
+};
+
+
+// Attaches coupon details to an order
+export const populateOrderCoupon = async (orderDoc) => {
+    return await Coupon.populate(orderDoc, { path: 'appliedCoupon' });
 };

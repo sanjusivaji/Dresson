@@ -1,15 +1,15 @@
-// src/controller/userController/walletController.js
 import * as walletService from '../../services/user/walletService.js';
 import { WALLET_CONSTANTS } from '../../constants/walletConstants.js';
 
-// Load the Wallet Page
+
+//  For 'display' 'wallet' page
 export const getWalletPage = async (req, res) => {
     try {
         const userId = req.session.user;
         if (!userId) return res.redirect('/login');        
         const currentType = req.query.type || WALLET_CONSTANTS.TYPES.ALL;
         const currentPage = parseInt(req.query.page) || 1;         
-        const walletData = await walletService.getWalletPageData(userId, currentType, currentPage); // For calculates 'current balance', 'transactions', 'total pages' etc
+        const walletData = await walletService.getWalletPageData(userId, currentType, currentPage);
         res.render('user/wallet', {
             layout: 'layout/user', 
             pageTitle: 'My Wallet - Dresson',
@@ -27,11 +27,12 @@ export const getWalletPage = async (req, res) => {
     }
 };
 
- // For 'send' 'payment details' like 'razor pay key', 'razor pay id' , 'currency', 'created date' etc and also send 'status' 'success'  
+
+// For 'send' 'payment details' like 'razor pay key', 'razor pay id' , 'currency', 'created date' etc and also send 'status' 'success'  
 export const createWalletOrder = async (req, res) => {
     try {
         const { amount } = req.body;
-        const order = await walletService.generateWalletOrder(amount);                                // For 'send' 'payment details' like 'razor pay key', 'razor pay id' , 'currency', 'created date' etc        
+        const order = await walletService.generateWalletOrder(amount);
         res.status(200).json({ success: true, order });
     } catch (error) {
         console.error("Razorpay Order Error:", error);
@@ -39,12 +40,13 @@ export const createWalletOrder = async (req, res) => {
     }
 };
 
+
 // For 'verify payment' and 'update' 'walletTransaction' collection(ie through 'verifyAndRechargeWallet()')and 'send' 'success' message
 export const verifyWalletPayment = async (req, res) => {
     try {
         const userId = req.session.user._id || req.session.user; 
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
-        await walletService.verifyAndRechargeWallet(userId, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount);    // For 'verify payment' and 'create' a new document in 'walletTransaction' collection
+        await walletService.verifyAndRechargeWallet(userId, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount);
         return res.status(200).json({ success: true, message: WALLET_CONSTANTS.MESSAGES.RECHARGE_SUCCESS });
     } catch (error) {
         console.error("Payment Verification Error:", error);

@@ -46,6 +46,14 @@ const cartItemSchema = new mongoose.Schema({
     comboOfferId: {                           // 'comboOfferId' field is good for when 'delete' the combo products(ie we should 'delete' both combo products together)
         type: mongoose.Schema.Types.ObjectId, 
         default: null 
+    },
+    bogoGroupId: {                            // Links the paid product and the free product together so they delete together
+        type: String, 
+        default: null 
+    },
+    isFreeGift: {                             // Tells the frontend to hide the quantity +/- buttons and show ₹0
+        type: Boolean, 
+        default: false 
     }
 }, { _id: true });
 

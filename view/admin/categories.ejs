@@ -163,14 +163,12 @@
 <script>
     function triggerCategoryDelete(categoryId, categoryName) {
         const message = `Are you sure you want to delete "${categoryName}"? This action cannot be undone and may affect sub-categories nested beneath it.`;
-        
         showCustomConfirm(
             message, 
             function() {
-                // Execute when user clicks "Yes, Continue" inside the custom modal
-                const form = document.getElementById('deleteForm');
-                form.action = `/admin/category/delete/${categoryId}`;
-                form.submit();
+                const form = document.getElementById('deleteForm');                                                                   // Finds the hidden form to process the delete action
+                form.action = `/admin/category/delete/${categoryId}`;                                                                 // Connects the unique category ID to the form URL
+                form.submit();                                                                                                        // Sends the request to the server to delete it
             }, 
             "Delete Category?"
         );
@@ -182,9 +180,8 @@
 <% if (activeWarning) { %>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Triggers your custom popup overlay automatically on reload!
             if (typeof showCustomAlert === "function") {
-                showCustomAlert("<%= activeWarning %>", "Action Blocked", "error");
+                showCustomAlert("<%= activeWarning %>", "Action Blocked", "error");                                                   // Shows a clean error box popup directly on the screen if something failed
             }
         });
     </script>

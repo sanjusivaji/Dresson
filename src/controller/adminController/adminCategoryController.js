@@ -1,3 +1,4 @@
+
 import * as adminCategoryService from '../../services/admin/adminCategoryService.js';
 import logger from '../../utilities/logger.js';
 import Category from '../../model/categoryModel.js';
@@ -12,41 +13,42 @@ const buildInfiniteCategoryTree = (categories, parentId = null, currentDepth = 1
     let tree = [];
     const children = categories.filter(item => {
         if (!parentId) return !item.parentCategory || item.parentCategory === 'none' || item.parentCategory === null;
-        return item.parentCategory && item.parentCategory.toString() === parentId.toString();                          // Here '3' 'if condition' wrote in 'single' line ie there is 'no' 'parentId'(ie '!parentId'), and 'item' has no 'parentCategory' and also check 'item.parentCategory.toString() === parentId.toString()' ie both are in 'objectId' format so for comparisn we shoudl convert into 'string'
+        return item.parentCategory && item.parentCategory.toString() === parentId.toString();                                         // Checks if item has no parent, or if its parent matches the given parentId exactly
     });
     for (let item of children) {
-        if (visited.has(item._id.toString())) continue;                            // Here 'visited' is 'Set' object and we can create 'Shirt' under 'Top wear' but without 'Set' we can create subcategory as 'reversly'(ie 'Top wear' under 'Shirt' and it cause the 'stack overflow' crash) and 'countinue' skip particular iteration, ie here we just prevent 'display' same category('not' about adding)
+        if (visited.has(item._id.toString())) continue;                                                                               // Skips this category if already checked to avoid an endless loop that crashes the app
         visited.add(item._id.toString());
-        const currentPath = [...parentPath, item.categoryName];                    // 'Spread' operator creates 'combined array'.
-        tree.push({                                                                //  Here all items in the object added into 'tree' array,(ie created above) by using 'push()'. 
+        const currentPath = [...parentPath, item.categoryName];                                                                       // Combines the parent's path with the current category name to make a full path
+        tree.push({                                                                                                                   // Adds all item details into the new tree array
             ...item,
             _id: item._id,
             categoryName: item.categoryName,
             gender: item.gender,
             depth: currentDepth,
             lineage: currentPath,
-            breadcrumb: currentPath.join(' > '),                                   // Here convert 'array' to 'human readable(ie '["Men", "Topwear", "T-Shirts"]' into '"Men > Topwear > T-Shirts")
-            displayName: ('— '.repeat(currentDepth - 1)) + item.categoryName       // This if for 'visual indication' of 'levels' ie initial value of 'currentDepth' is '1' and it increase each recursion, and 'repeat()' is the 'string' method and 'string.repeat(count)' is the 'syntax'(ie '-.repeat(2)' means '- -') and it added to 'category name'.
+            breadcrumb: currentPath.join(' > '),                                                                                      // Converts the array into readable text like "Men > Topwear > Shirts"
+            displayName: ('— '.repeat(currentDepth - 1)) + item.categoryName                                                          // Adds dashes before the name based on depth for visual spacing (e.g., "-- Shirts")
         });
-        const subChildren = buildInfiniteCategoryTree(categories, item._id, currentDepth + 1, currentPath, new Set(visited)); // This is 'recursion' and when we call 'new Set(visited)' it creates a 'new' 'Set' object with value of 'visited' ie when we use 'visited' inside it, passes the reference and it is good when 'recursion' other wise if use 'visited' itself, make 'missing data'.
+        const subChildren = buildInfiniteCategoryTree(categories, item._id, currentDepth + 1, currentPath, new Set(visited));         // Calls itself (recursion) to find sub-categories, passing a fresh copy of 'visited'
         tree = tree.concat(subChildren);
     }
     return tree;
 };
 
 
+
 // For display 'categories' page
 export const getCategoriesList = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;                                       // We can retrieve 'page' value through 'req.query.page' from 'https://localhost:3000/admin/categories?page=2' and if 'no' value captures , we 'defaultly' put '1' for prevent 'crash' the app.                             
-        const limit = PAGINATION.ADMIN_TABLE_LIMIT;                                       // From 'src/constants/pagination.js' file and its value '5'.                                                                               
+        const page = parseInt(req.query.page) || 1;                                                                                   // Gets the page number from the URL, defaulting to 1 to prevent app crashes
+        const limit = PAGINATION.ADMIN_TABLE_LIMIT;                                                                                   // Maximum number of items per page, taken from constants (e.g., 5)
         const searchQuery = req.query.search ? req.query.search.trim() : '';
-        const allCategories = await categoryRepository.getAllCategoriesSorted();          //  Retrieve 'all' 'category' item data 'sorted' based on 'date'.               
-        let categoryTree = buildInfiniteCategoryTree(allCategories, null, 1);             // Created just 'above' and it returns a flat 'array of objects'(ie named 'tree'),and perfectly sorted in 'parent-to-child' order         
+        const allCategories = await categoryRepository.getAllCategoriesSorted();                                                      // Fetches all categories sorted by date
+        let categoryTree = buildInfiniteCategoryTree(allCategories, null, 1);                                                         // Builds the parent-to-child nested array using the function above
         if (searchQuery) {
-            const searchLower = searchQuery.toLowerCase();                                
-            categoryTree = categoryTree.filter(item =>                                    //  Here 'categoryName', 'gender', 'description' etc makes to 'lower case'(ie 'toLowerCase()') and checks if it 'include' in  'search query'.
-                (item.categoryName && item.categoryName.toLowerCase().includes(searchLower)) ||  // Here '&&' operator return 'first' 'false' value and if 'item.categoryName' is 'null/undefined' code return 'falsy' value and it 'prevents' 'crashing' the app when 'categoryName'(ie if it is 'null') trying to 'lower case'(ie 'item.categoryName.toLowerCase()')
+            const searchLower = searchQuery.toLowerCase();
+            categoryTree = categoryTree.filter(item =>                                                                                // Filters the list if the user typed something in the search box
+                (item.categoryName && item.categoryName.toLowerCase().includes(searchLower)) ||                                       // Checks if category name includes the search word securely without crashing on null
                 (item.gender && item.gender.toLowerCase().includes(searchLower)) ||
                 (item.description && item.description.toLowerCase().includes(searchLower))
             );
@@ -56,13 +58,13 @@ export const getCategoriesList = async (req, res) => {
         const skip = (page - 1) * limit;
         const paginatedCategories = categoryTree.slice(skip, skip + limit);
         res.render('admin/categories', {
-            categories: paginatedCategories, 
+            categories: paginatedCategories,
             currentPage: page,
             totalPages: totalPages,
             totalCategories: totalCategories,
             errorMessage: req.query.error || null,
-            pageTitle: "Categories - Dresson",   
-            activePage: 'categories',                                                       // For 'side bar' 'violet' color in 'admin' page.       
+            pageTitle: "Categories - Dresson",
+            activePage: 'categories',                                                                                                 // Highlights the 'categories' tab in violet on the admin sidebar
             searchQuery: searchQuery
         });
     } catch (error) {
@@ -72,22 +74,24 @@ export const getCategoriesList = async (req, res) => {
 };
 
 
+
 // For 'display' 'add categories' page
 export const getAddCategory = async (req, res) => {
     try {
-        const allCategories = await categoryRepository.getCategoriesForDropdown();           // Retrieve 'category' collection with only 'fields' that '_id','categoryName', 'gender', 'parentCategory'
-        const nestedCategories = buildInfiniteCategoryTree(allCategories, null, 1);          // 'buildInfiniteCategoryTree()' created above.    
-        res.render('admin/addCategory', { 
+        const allCategories = await categoryRepository.getCategoriesForDropdown();                                                    // Gets limited category data (just ID, name, gender, parent) to keep it fast
+        const nestedCategories = buildInfiniteCategoryTree(allCategories, null, 1);                                                   // Organizes them into the parent-child tree format
+        res.render('admin/addCategory', {
             categories: nestedCategories,
-            mainCategories: nestedCategories, 
+            mainCategories: nestedCategories,
             errorMessage: null,
-            activePage: 'categories' 
+            activePage: 'categories'
         });
     } catch (error) {
         logger.error("Error displaying add category workspace form:", error);
         res.status(500).send("Internal Server Error");
     }
 };
+
 
 
 // For 'save' new 'category' document
@@ -97,79 +101,81 @@ export const postAddCategory = async (req, res) => {
         const cleanName = categoryName.trim();
         const cleanDescription = description ? description.trim() : '';
         const generatedSlug = `${gender.toLowerCase()}-${cleanName.toLowerCase()}`
-            .replace(/[^a-z0-9]+/g, '-')                                                          // except 'a to z' and '0 to 9' all others like 'special characters' etc 'replace' with '-'. 
-            .replace(/(^-|-$)+/g, '');                                                            // Here it 'removes'/ 'replaces' the 'startiing hiphen'(ie '^-') 'OR'(ie '|')'ending hiphen'('-$')and at least 'one' or 'more'(ie '+'), Eg, '-mens-shirts-' output: 'mens-shirts'.
-        const newCategory = new Category({                                                        // It creates 'new document' adn later it saved by 'save()'
+            .replace(/[^a-z0-9]+/g, '-')                                                                                              // Replaces any spaces or special characters with a hyphen
+            .replace(/(^-|-$)+/g, '');                                                                                                // Removes extra hyphens at the very beginning or end of the text
+        const newCategory = new Category({                                                                                            // Prepares the new category data before saving to the database
             gender,
             parentCategory: (!parentCategory || parentCategory === 'none') ? null : parentCategory,
             categoryName: cleanName,
             slug: generatedSlug,
             description: cleanDescription,
             isListed: isListed === 'true' || isListed === 'on' || isListed === true
-        });    
+        });
         await newCategory.save();
         logger.info(`[CATEGORY CREATION] Successfully created category "${cleanName}" (${gender}) with slug: "${generatedSlug}"`);
         res.redirect('/admin/categories');
-        } catch (error) {
-            logger.error("Category Creation Failed:", error);
-            let cleanErrorMessage = 'Failed to create category. Please check your inputs.';        
-            if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {                                      // 'E11000' is 'built-in' error code created by 'mongodb' when violating 'unique: true' index.
-                if (error.message.includes('categoryName') || error.message.includes('gender_1_parentCategory_1_categoryName_1')) { //  If 'categoryName' already there
-                    const matchedName = req.body.categoryName || 'This category';
-                    cleanErrorMessage = `Action Blocked: The category "${matchedName}" already exists under this exact gender section!`; 
-                } else if (error.message.includes('slug')) {
-                    cleanErrorMessage = 'Action Blocked: A category with this URL slug already exists in your catalog.';
-                } else {
-                    cleanErrorMessage = 'Action Blocked: A duplicate category entry already exists in your hierarchy.';
-                }
-            } else if (error.message) {
-                cleanErrorMessage = error.message;
+    } catch (error) {
+        logger.error("Category Creation Failed:", error);
+        let cleanErrorMessage = 'Failed to create category. Please check your inputs.';
+        if (error.code === 11000 || (error.message && error.message.includes('E11000'))) {                                            // MongoDB throws 'E11000' if we try to save a duplicate name where it must be unique
+            if (error.message.includes('categoryName') || error.message.includes('gender_1_parentCategory_1_categoryName_1')) {       // Specific check if the category name is already taken
+                const matchedName = req.body.categoryName || 'This category';
+                cleanErrorMessage = `Action Blocked: The category "${matchedName}" already exists under this exact gender section!`;
+            } else if (error.message.includes('slug')) {
+                cleanErrorMessage = 'Action Blocked: A category with this URL slug already exists in your catalog.';
+            } else {
+                cleanErrorMessage = 'Action Blocked: A duplicate category entry already exists in your hierarchy.';
             }
-            try {
-                const allCategories = await categoryRepository.getAllCategoriesSorted();      // Retrieve all 'sorted' categories.
-                const treeCategories = buildInfiniteCategoryTree(allCategories, null, 1);
-                res.render('admin/addCategory', {                                             // This is 'rendering' in 'catch' case ie if 'cannot' save document, still page 'remain' what already 'typed' data.
-                    categories: treeCategories,
-                    formData: req.body,               
-                    error: cleanErrorMessage,
-                    errorMessage: cleanErrorMessage,            
-                    pageTitle: "Add Category - Dresson",
-                    activePage: 'categories'
-                });
-            } catch (fallbackError) {
-                logger.error("Critical failure recovering Add Category fallback view:", fallbackError);
-                res.status(500).send("Internal Server Error while attempting to recover from category creation failure.");
-            }
+        } else if (error.message) {
+            cleanErrorMessage = error.message;
+        }
+        try {
+            const allCategories = await categoryRepository.getAllCategoriesSorted();                                                  // Fetches categories again so the form dropdown still works
+            const treeCategories = buildInfiniteCategoryTree(allCategories, null, 1);
+            res.render('admin/addCategory', {                                                                                         // Re-renders the page with the previous typed data so the user doesn't lose their work
+                categories: treeCategories,
+                formData: req.body,
+                error: cleanErrorMessage,
+                errorMessage: cleanErrorMessage,
+                pageTitle: "Add Category - Dresson",
+                activePage: 'categories'
+            });
+        } catch (fallbackError) {
+            logger.error("Critical failure recovering Add Category fallback view:", fallbackError);
+            res.status(500).send("Internal Server Error while attempting to recover from category creation failure.");
+        }
     }
 };
+
 
 
 // For 'toggle' category 'list' and 'unlist'
 export const toggleCategoryStatus = async (req, res) => {
-    const page = req.query.page || 1;                                 // It tells which 'page' the user is currently on
+    const page = req.query.page || 1;                                                                                                 // Tracks which page the user was on before clicking toggle
     try {
-        const categoryId = req.params.id;        
-        await adminCategoryService.toggleCategoryListing(categoryId);// For change the 'toggle' staus and 'save' new status in 'collection'
-        res.redirect(`/admin/categories?page=${page}`);              // It used for send the user back to the 'exact' page they were on after the 'backend' unlist or list
+        const categoryId = req.params.id;
+        await adminCategoryService.toggleCategoryListing(categoryId);                                                                 // Flips the visibility status and saves it
+        res.redirect(`/admin/categories?page=${page}`);                                                                               // Sends the user back to the exact page they were on
     } catch (error) {
-        logger.error("Toggle Blocked:", error.message);        
-        const encodedMessage = encodeURIComponent(error.message);   //  'encodeURIComponent()' is the 'built-in' 'js' method and 'error' passes through 'url' but it should not have 'white space', 'commas' etc so 'Product is not defined" becomes 'Product%20is%20not%20defined'.
-        res.redirect(`/admin/categories?page=${page}&error=${encodedMessage}`); 
+        logger.error("Toggle Blocked:", error.message);
+        const encodedMessage = encodeURIComponent(error.message);                                                                     // Converts text with spaces (like error messages) into a safe URL format
+        res.redirect(`/admin/categories?page=${page}&error=${encodedMessage}`);
     }
 };
+
 
 
 // For 'edit' category
 export const getEditCategory = async (req, res) => {
     try {
-        const editData = await adminCategoryService.fetchEditCategoryData(req.params.id); // It returns both 'categories' and 'main categories' based on 'id'
-        const allCategories = await Category.find({}).lean();                             // Return all categories data.
-        const treeCategories = buildInfiniteCategoryTree(allCategories, null, 1);         // Created just above for build 'infinitive' categories.
-        res.render('admin/editCategory', { 
-            ...editData, 
+        const editData = await adminCategoryService.fetchEditCategoryData(req.params.id);                                             // Gets the data for the category we want to edit
+        const allCategories = await Category.find({}).lean();                                                                         // Gets all categories as simple objects to build the dropdown
+        const treeCategories = buildInfiniteCategoryTree(allCategories, null, 1);                                                     // Builds the parent-to-child nested array
+        res.render('admin/editCategory', {
+            ...editData,
             mainCategories: treeCategories,
             errorMessage: null,
-            activePage: 'categories'                                                     // For 'side bar' 'violet' color in 'admin' page.           
+            activePage: 'categories'                                                                                                  // Highlights the 'categories' tab in violet on the admin sidebar
         });
     } catch (error) {
         logger.error("Failure pulling targeted edit category form template data sets:", error);
@@ -177,17 +183,19 @@ export const getEditCategory = async (req, res) => {
     }
 };
 
+
+
 // For 'upload' the 'edit' category
 export const postEditCategory = async (req, res) => {
     try {
-        const { gender, categoryName } = req.body;                                                 // Retrieve through 'req.body' data get from '<form>  <input>'
+        const { gender, categoryName } = req.body;                                                                                    // Grabs data typed into the form by the user
         const cleanName = categoryName.trim();
         const generatedSlug = `${gender.toLowerCase()}-${cleanName.toLowerCase()}`
-             .replace(/[^a-z0-9]+/g, '-')                                                          // except 'a to z' and '0 to 9' all others like 'special characters' etc 'replace' with '-'. 
-             .replace(/(^-|-$)+/g, '');                                                            // Here it 'removes'/ 'replaces' the 'startiing hiphen'(ie '^-') 'OR'(ie '|')'ending hiphen'('-$')and at least 'one' or 'more'(ie '+'), Eg, '-mens-shirts-' output: 'mens-shirts'.
+             .replace(/[^a-z0-9]+/g, '-')                                                                                             // Replaces spaces and symbols with a hyphen
+             .replace(/(^-|-$)+/g, '');                                                                                               // Cleans up stray hyphens at the start or end
         req.body.categoryName = cleanName;
         req.body.slug = generatedSlug;
-        await adminCategoryService.executeCategoryUpdate(req.params.id, req.body);                 // For 'update' category 
+        await adminCategoryService.executeCategoryUpdate(req.params.id, req.body);                                                    // Sends the updated data to save in the database
         res.redirect('/admin/categories');
     } catch (error) {
         logger.error("Critical failure executing category compilation edits sequence operations:", error);
@@ -202,15 +210,15 @@ export const postEditCategory = async (req, res) => {
             cleanErrorMessage = error.message;
         } else if (error.message) {
             cleanErrorMessage = error.message;
-        }    
+        }
         try {
-            const fallbackData = await adminCategoryService.fetchEditCategoryData(req.params.id);         // For retrieve both 'categories' and 'main categories' based on 'id'
-            const allCategories = await Category.find({}).lean();                                         // For retrieve all categories.
-            const treeCategories = adminCategoryService.buildInfiniteCategoryTree(allCategories, null, 1);// For create infinite tree 
+            const fallbackData = await adminCategoryService.fetchEditCategoryData(req.params.id);                                     // Refetches data if saving fails
+            const allCategories = await Category.find({}).lean();                                                                     // Refetches the full list for dropdowns
+            const treeCategories = adminCategoryService.buildInfiniteCategoryTree(allCategories, null, 1);                            // Rebuilds the nested tree structure
             res.render('admin/editCategory', {
                 ...fallbackData,
-                mainCategories: treeCategories,  
-                errorMessage: cleanErrorMessage, 
+                mainCategories: treeCategories,
+                errorMessage: cleanErrorMessage,
                 activePage: 'categories'
             });
         } catch (fallbackError) {
@@ -220,20 +228,22 @@ export const postEditCategory = async (req, res) => {
     }
 };
 
+
+
 // For 'delete' category
 export const deleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        logger.info(`[DELETE WORKFLOW] Attempting to delete category ID: ${id}`);        
+        logger.info(`[DELETE WORKFLOW] Attempting to delete category ID: ${id}`);
         const categoryToDelete = await Category.findById(id);
         if (!categoryToDelete) {
             return res.redirect('/admin/categories');
         }
-        const childCount = await Category.countDocuments({ parentCategory: id });                             //  In 'category' collection each category is 'stores' in seperate 'array of object' and each 'child' has its own 'gender' and 'parentCategory', so if we count 'parentCategory', then it return 'total' documents that contains certain 'parentCategory'.
+        const childCount = await Category.countDocuments({ parentCategory: id });                                                     // Counts how many sub-categories belong to this exact category
         if (childCount > 0) {
-            logger.warn(`[DELETE WORKFLOW] Blocked: "${categoryToDelete.categoryName}" contains ${childCount} child categories.`);            
+            logger.warn(`[DELETE WORKFLOW] Blocked: "${categoryToDelete.categoryName}" contains ${childCount} child categories.`);
             const childWarningMsg = `Cannot delete "${categoryToDelete.categoryName}" because it contains ${childCount} nested sub-categories. Please delete or move the child categories first!`;
-            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);          // For retrieve data of 'categories'
+            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);                                 // Gets the latest categories data to display the page safely again
             return res.render('admin/categories', {
                 ...dashboardData,
                 pageTitle: "Categories - Dresson",
@@ -242,16 +252,16 @@ export const deleteCategory = async (req, res) => {
                 errorMessage: childWarningMsg
             });
         }
-        const productCount = await Product.countDocuments({                        
+        const productCount = await Product.countDocuments({
             $or: [
-                { subCategory: id }, 
-                { category: id } 
-            ] 
+                { subCategory: id },
+                { category: id }
+            ]
         });
         if (productCount > 0) {
-            logger.warn(`[DELETE WORKFLOW] Blocked: "${categoryToDelete.categoryName}" is currently assigned to ${productCount} active products.`);            
+            logger.warn(`[DELETE WORKFLOW] Blocked: "${categoryToDelete.categoryName}" is currently assigned to ${productCount} active products.`);
             const productWarningMsg = `Action Blocked: Cannot delete "${categoryToDelete.categoryName}" because it is currently assigned to ${productCount} product(s)! Please reassign or remove those products before deleting this category.`;
-            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);          // For retrieve data of 'categories'
+            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);                                 // Gets the latest categories data to display the page safely again
             return res.render('admin/categories', {
                 ...dashboardData,
                 pageTitle: "Categories - Dresson",
@@ -260,13 +270,13 @@ export const deleteCategory = async (req, res) => {
                 errorMessage: productWarningMsg
             });
         }
-        await Category.findByIdAndDelete(id);                                                               // If above '2' 'if conditions' not catch, here 'delete' the 'category' successfully.
-        logger.info(`[DELETE WORKFLOW] Successfully deleted category "${categoryToDelete.categoryName}".`);        
+        await Category.findByIdAndDelete(id);                                                                                         // Successfully deletes if it has no child categories or products attached
+        logger.info(`[DELETE WORKFLOW] Successfully deleted category "${categoryToDelete.categoryName}".`);
         res.redirect('/admin/categories');
     } catch (error) {
         logger.error("Error deleting category:", error);
         try {
-            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);       // For retrieve data of 'categories'
+            const dashboardData = await adminCategoryService.buildCategoriesListDashboard(req.query);                                 // Recovers the page if a server error happens
             res.render('admin/categories', {
                 ...dashboardData,
                 pageTitle: "Categories - Dresson",

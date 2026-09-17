@@ -43,7 +43,7 @@
                         <i class="fas fa-edit"></i>
                     </a>
                     
-                    <!-- For 'delete' button, when click it appears a popup modal  -->
+                    <!-- Form handling deletion to ensure a safe POST request instead of a simple link -->
                     <form id="deleteForm-<%= offer._id %>" action="/admin/offers/delete/<%= offer._id %>" method="POST" class="inline">
                         <button type="button" onclick="triggerDelete('<%= offer._id %>', '<%= offer.title %>')" class="text-gray-500 hover:text-red-500 transition-colors">
                             <i class="fas fa-trash"></i>
@@ -71,9 +71,10 @@
 
 
 <script>
+    // Shows a warning popup box to ask the admin if they are sure before permanently deleting the offer
     function triggerDelete(offerId, offerTitle) {
         const message = `You are about to permanently delete '${offerTitle}'. This will remove the discount from all associated products. Do you wish to continue?`;
-        showCustomConfirm(message, function() {                               // Here 'showCustomConfirm()' created in 'view/partial/shared/warning.ejs' file and we can 'call' this function because '< %- include('../partial/shared/warning') %>'
+        showCustomConfirm(message, function() {                                                                        // Opens the custom popup box and waits for the user to click 'Yes' before running the submit command
             document.getElementById(`deleteForm-${offerId}`).submit();
         }, "Delete Offer?");
     }

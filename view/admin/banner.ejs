@@ -117,21 +117,22 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>   <!-- For slide the corousel-->
-<script src="/js/shared/imageCropper.js"></script>                    <!-- For image cropping-->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>                                          <!-- Brings in the library used for popups -->
+<script src="/js/shared/imageCropper.js"></script>                                                           <!-- Loads the custom tool for cropping images -->
 
 <script>
     const bannerInput = document.getElementById('bannerImagesInput');
     const fileError = document.getElementById('fileError');
     const submitBtn = document.querySelector('#addBannerModal button[type="submit"]');
     
-    // Variables to handle sequential cropping
+    // Setup variables to track how many images are being cropped
     let dataTransfer = new DataTransfer(); 
     let selectedFiles = [];
     let currentFileIndex = 0;
+    
+    // Runs automatically whenever the admin chooses photos from their computer
     bannerInput.addEventListener('change', function(e) {
         selectedFiles = Array.from(this.files);    
-        //  Validate File Count
         if (selectedFiles.length > 5) {
             fileError.classList.remove('hidden');
             submitBtn.disabled = true;
@@ -142,63 +143,51 @@
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
-
         if (selectedFiles.length === 0) return;
         dataTransfer = new DataTransfer();
         currentFileIndex = 0;        
         submitBtn.disabled = true; 
         submitBtn.innerText = 'Cropping...';
-        
         processNextImage();
     });
 
-    //  Recursive function to crop one image after another
+
+
+    // Opens the cropping tool for each image one by one
     function processNextImage() {
-        // If we have cropped all files, update the input and re-enable submit!
-        if (currentFileIndex >= selectedFiles.length) {
-            bannerInput.files = dataTransfer.files;
-            submitBtn.disabled = false;
+        if (currentFileIndex >= selectedFiles.length) {                                                      // Checks if all chosen photos have been cropped
+            bannerInput.files = dataTransfer.files;                                                          // Packs the finished cropped photos into the form to be uploaded
+            submitBtn.disabled = false;                                                                      // Turns the submit button back on
             submitBtn.innerText = 'Upload Banners';
             return;
         }
-
         let file = selectedFiles[currentFileIndex];
-        
-        // Get the selected placement to determine aspect ratio
         const placement = document.querySelector('select[name="placement"]').value;
-        // Hero banners are usually wide (16:9), Category banners might be narrower
-        const dynamicRatio = (placement === 'Home Hero' || placement === 'Home Mid') ? 16 / 9 : NaN;
-
+        const dynamicRatio = (placement === 'Home Hero' || placement === 'Home Mid') ? 16 / 9 : NaN;         // Forces a wide rectangle crop if the banner belongs on the homepage
         window.ImageCropper.openCropper({
             file: file,
             aspectRatio: dynamicRatio, 
             onCrop: (blob) => {
-                // Convert the cropped Blob back into a File object
                 let croppedFile = new File([blob], file.name, { 
                     type: 'image/jpeg', 
                     lastModified: Date.now() 
                 });
-                
-                // Add to our invisible holding area
-                dataTransfer.items.add(croppedFile);
-                
-                // Move to the next image in the queue
-                currentFileIndex++;
-                processNextImage(); 
+                dataTransfer.items.add(croppedFile);                                                         // Saves the cropped picture in the background memory
+                currentFileIndex++;                                                                          // Moves to the next picture in line
+                processNextImage();                                                                          // Re-runs the function for the next picture
             }
         });
     }
 
 
 
-    // File selection limit validation
+    // Checks to make sure the user didn't select too many images at once
     document.getElementById('bannerImagesInput').addEventListener('change', function(e) {
         const fileError = document.getElementById('fileError');
         const submitBtn = document.querySelector('#addBannerModal button[type="submit"]');
-        
         if (this.files.length > 5) {
-            fileError.classList.remove('hidden');
-            submitBtn.disabled = true;
+            fileError.classList.remove('hidden');                                                            // Shows error text
+            submitBtn.disabled = true;                                                                       // Stops user from clicking upload
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
         } else {
             fileError.classList.add('hidden');
@@ -207,29 +196,33 @@
         }
     });
     
+
+
+    // Opens or closes the popup box by hiding/showing it
     function toggleModal(modalID) {
         document.getElementById(modalID).classList.toggle("hidden");
     }
 
+
+
+    // Asks the admin for confirmation before permanently deleting a banner
     async function deleteBanner(bannerId) {
         const result = await Swal.fire({
             title: 'Delete this banner?',
             text: "This will remove the banner from your storefront.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#000', // Matches your black theme
+            confirmButtonColor: '#000', 
             cancelButtonColor: '#d33',
             confirmButtonText: 'Yes, delete it!'
         });
-
         if (result.isConfirmed) {
             try {
                 const response = await fetch(`/admin/banner/delete/${bannerId}`, { 
                     method: 'DELETE' 
                 });
-                
                 if (response.ok) {
-                    window.location.reload(); 
+                    window.location.reload();                                                                // Refreshes the page if deletion worked
                 } else {
                     Swal.fire('Error', 'Could not delete banner', 'error');
                 }

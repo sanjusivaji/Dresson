@@ -1,10 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./views/**/*.ejs",           // Better than ./**/*
+    "./views/**/*.ejs",                      
     "./public/**/*.html",
     "./src/**/*.js",
-    "./**/*.ejs",                 // keep as fallback
+    "./**/*.ejs",                     
   ],
  theme: {
     extend: {

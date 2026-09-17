@@ -3,6 +3,8 @@ import { CATEGORY_PAGINATION } from '../../constants/adminCategoryConstants.js';
 import Category from '../../model/categoryModel.js';
 import Product from '../../model/productModel.js'
 
+
+
 // For create 'slug' and use inside the file
 const generateSlug = (name) => {
     return name.toLowerCase()
@@ -11,18 +13,21 @@ const generateSlug = (name) => {
                .trim();
 };
 
+
+
 // For retrieve 'main' categories
 export const fetchAddCategoryOptions = async () => {
-    return await categoryRepository.findMainCategories();  // `it return 'array' of 'main' 'categories' only(ie like "Men", "Women", or "Kids")
+    return await categoryRepository.findMainCategories();                                                                             // Returns an array of only top-level categories like "Men" or "Women"
 };
+
 
 
 // For retrieve data of 'categories'
 export const buildCategoriesListDashboard = async (query) => {
-    const page = parseInt(query.page) || 1;                //  Here 'query' is the 'object' will send from 'controller'(ie we capture 'page' data from 'req.query.page' in 'controller' and we send this 'page' data from 'controller' to 'service' through 'query' object and in 'service' we do 'not' use 'req' object ie we do 'not' directly contact with 'browser' api)
+    const page = parseInt(query.page) || 1;                                                                                           // Reads the page number from the request, defaults to 1 if none is provided
     const limit = CATEGORY_PAGINATION.LIMIT;
     const skip = (page - 1) * limit;
-    const searchQuery = query.search || '';                // 'search' is the 'name' attribute in '<input>'(ie '<input type="text" name="search">')and it retrieve in 'controller' and send it from 'controller' to 'service' through 'query' object. 
+    const searchQuery = query.search || '';                                                                                           // Captures what the user typed in the search bar
     const error_msg = query.error || null;
     let filterQuery = {};
     if (searchQuery) {
@@ -34,8 +39,8 @@ export const buildCategoriesListDashboard = async (query) => {
             ]
         };
     }
-    const categories = await categoryRepository.findCategoriesWithFilter(filterQuery, skip, limit);  // 'findCategoriesWithFilter()' return all parent categories.
-    const totalMatchingCategories = await categoryRepository.countCategories(filterQuery);           //  It retrieve 'total' no.of categories for find 'total pages'
+    const categories = await categoryRepository.findCategoriesWithFilter(filterQuery, skip, limit);                                   // Gets the matching parent categories based on search
+    const totalMatchingCategories = await categoryRepository.countCategories(filterQuery);                                            // Counts total matches to calculate how many pages are needed
     return {
         categories,
         searchQuery,
@@ -45,32 +50,35 @@ export const buildCategoriesListDashboard = async (query) => {
     };
 };
 
+
+
 // For 'toggling' ie 'list' and 'unlisting' category
 export const toggleCategoryListing = async (categoryId) => {
-    const category = await categoryRepository.findCategoryById(categoryId);                        // Retrieve only one 'category' based on 'id'     
+    const category = await categoryRepository.findCategoryById(categoryId);                                                           // Finds the specific category to hide or show
     if (!category) {
         throw new Error("Category not found inside registry logs.");
     }
-    if (category.isListed === true) {                                                              // Here it checks 'category' contains 'isListed:true' and then if we want to turn 'isListed: false' we should check the category contains other 'subcaterories' or 'products' is it, we 'cannot' turn into 'isListed:false' also send an 'error' message to display in 'front end'. 
-        const hasActiveSubcategories = await Category.exists({                                     // Here 'exists()' is 'built-in' 'mongoose' method and it used for check whether ‘document’ is ‘exists’ or ‘not’ ie if ‘document’ exists it return ‘id’ and other wise return ‘null’   and if we use 'Category.findOne()’(ie ‘Category’ is ‘collection’/‘model’ name) it return entire 'document' but 'exists()' return only 'true' or 'false’.   
+    if (category.isListed === true) {                                                                                                 // Checks if we are trying to hide a category that is currently visible
+        const hasActiveSubcategories = await Category.exists({                                                                        // Checks if there are any active child categories attached to this one
             parentCategory: categoryId,
             isListed: true
-        });        
+        });
         if (hasActiveSubcategories) {
             throw new Error("Action Blocked: Please unlist all subcategories before unlisting this parent category.");
         }
-        const hasActiveProducts = await Product.exists({ 
+        const hasActiveProducts = await Product.exists({
             category: categoryId,
-            isListed: true 
-        }); 
+            isListed: true
+        });
         if (hasActiveProducts) {
             throw new Error("Action Blocked: Please unlist all attached products before unlisting this category.");
         }
     }
-    category.isListed = !category.isListed;                                                       // For 'toggling' and after it, we 'save' the 'toggle' status of 'category' in model(ie 'category.save()').             
-    await category.save();    
+    category.isListed = !category.isListed;                                                                                           // Flips the visibility (true becomes false, false becomes true)
+    await category.save();
     return category;
 };
+
 
 
 // For create infinite category also uses in 'productController.js' 
@@ -78,36 +86,38 @@ export const buildInfiniteCategoryTree = (categories, parentId = null, currentDe
     let tree = [];
     const children = categories.filter(item => {
         if (!parentId) return !item.parentCategory || item.parentCategory === 'none' || item.parentCategory === null;
-        return item.parentCategory && item.parentCategory.toString() === parentId.toString();                          // Here '3' 'if condition' wrote in 'single' line ie there is 'no' 'parentId'(ie '!parentId'), and 'item' has no 'parentCategory' and also check 'item.parentCategory.toString() === parentId.toString()' ie both are in 'objectId' format so for comparisn we shoudl convert into 'string'
+        return item.parentCategory && item.parentCategory.toString() === parentId.toString();                                         // Checks if item has no parent, or if its parent matches the exact given parentId
     });
     for (let item of children) {
-        if (visited.has(item._id.toString())) continue;                            // Here 'visited' is 'Set' object and we can create 'Shirt' under 'Top wear' but without 'Set' we can create subcategory as 'reversly'(ie 'Top wear' under 'Shirt' and it cause the 'stack overflow' crash) and 'countinue' skip particular itertion, ie here we just prevent 'display' same category('not' about adding)
+        if (visited.has(item._id.toString())) continue;                                                                               // Skips to prevent the app from looping endlessly and crashing
         visited.add(item._id.toString());
-        const currentPath = [...parentPath, item.categoryName];                    // 'Spread' operator creates 'combined array'.
-        tree.push({                                                                //  Here all items in the object added into 'tree' array,(ie created above) by using 'push()'. 
+        const currentPath = [...parentPath, item.categoryName];                                                                       // Connects the parent path with the current category name
+        tree.push({                                                                                                                   // Saves all the details into our organized tree array
             ...item,
             _id: item._id,
             categoryName: item.categoryName,
             gender: item.gender,
             depth: currentDepth,
             lineage: currentPath,
-            breadcrumb: currentPath.join(' > '),                                   // Here convert 'array' to 'human readable(ie '["Men", "Topwear", "T-Shirts"]' into '"Men > Topwear > T-Shirts")
-            displayName: ('— '.repeat(currentDepth - 1)) + item.categoryName       // This if for 'visual indication' of 'levels' ie initial value of 'currentDepth' is '1' and it increase each recursion, and 'repeat()' is the 'string' method and 'string.repeat(count)' is the 'syntax'(ie '-.repeat(2)' means '- -') and it added to 'category name'.
+            breadcrumb: currentPath.join(' > '),                                                                                      // Makes it easy to read, like "Men > Topwear > T-Shirts"
+            displayName: ('— '.repeat(currentDepth - 1)) + item.categoryName                                                          // Adds visual dashes to show category level, like "-- T-Shirts"
         });
-        const subChildren = buildInfiniteCategoryTree(categories, item._id, currentDepth + 1, currentPath, new Set(visited)); // This is 'recursion' and when we call 'new Set(visited)' it creates a 'new' 'Set' object with value of 'visited' ie when we use 'visited' inside it, passes the reference and it is good when 'recursion' other wise if use 'visited' itself, make 'missing data'.
+        const subChildren = buildInfiniteCategoryTree(categories, item._id, currentDepth + 1, currentPath, new Set(visited));         // Restarts the process to find deeper levels (recursion)
         tree = tree.concat(subChildren);
     }
     return tree;
 };
 
 
+
 // For retrieve both 'categories' and 'main categories' based on 'id'
 export const fetchEditCategoryData = async (categoryId) => {
-    const category = await categoryRepository.findCategoryById(categoryId);            // For retrieve 'category' based only on 'id'
+    const category = await categoryRepository.findCategoryById(categoryId);                                                           // Gets just the requested category object
     if (!category) throw new Error("Target data directory record not found.");
-    const mainCategories = await categoryRepository.findMainCategories(categoryId);    // For retrieve 'array' of 'main' 'categories' only(ie like "Men", "Women", or "Kids")
+    const mainCategories = await categoryRepository.findMainCategories(categoryId);                                                   // Gets top-level categories, excluding this one so it can't be its own parent
     return { category, mainCategories };
 };
+
 
 
 // For 'update' category
@@ -117,11 +127,11 @@ export const executeCategoryUpdate = async (categoryId, bodyData) => {
     const isSubCategory = parentCategory && parentCategory !== 'none';
     const parentId = isSubCategory ? parentCategory : null;
     const structuralSlug = generateSlug(standardizedName);
-    const conflict = await categoryRepository.findCategoryConflict(standardizedName, gender, parentId, categoryId);  // For retrieve 'one' 'category'(because of 'category.findOne()') based on 'category name', 'gender','parent category', 'except' contains 'categoryId' document, and if 'category' with that exact value, 'repository' returns that document (ie 'conflict' has a 'value'), and the 'service' layer blocks the 'edit'.
+    const conflict = await categoryRepository.findCategoryConflict(standardizedName, gender, parentId, categoryId);                   // Checks if another category already has this same name and parent setup
     if (conflict) {
         throw new Error(`Modification Collision Rejected: A classification listing named "${standardizedName}" already exists.`);
     }
-    return await categoryRepository.updateCategoryById(categoryId, {                   // For 'update' data based on 'id'
+    return await categoryRepository.updateCategoryById(categoryId, {                                                                  // Updates the database document with the fresh data
         categoryName: standardizedName,
         gender: gender,
         parentCategory: parentId,

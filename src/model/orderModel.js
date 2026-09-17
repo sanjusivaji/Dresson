@@ -14,7 +14,8 @@ const orderSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     shippingAddress: checkoutAddressSnapshotSchema,     
     items: [{
-        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true }, 
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        variantId: { type: mongoose.Schema.Types.ObjectId, required: false }, 
         variantName: { type: String, required: true },
         variantSku: { type: String, required: true },  
         quantity: { type: Number, required: true, default: 1, min: 1 },
@@ -50,6 +51,19 @@ const orderSchema = new mongoose.Schema({
         enum: ['Pending', 'Paid', 'Failed', 'Completed', 'Refunded'], 
         default: 'Pending' 
     },
+    razorpayOrderId: {
+        type: String,
+        default: null
+    },
+    razorpayPaymentId: {
+        type: String,
+        default: null
+    },
+    paymentId: { 
+        type: String,
+        default: null
+    },
+
    deliveryStatus: {                                                         // Here 'deliveryStatus' we provides for 'overall' 'order' and it helps when 'return' activate only after 'Delivered' the 'order'. 
         type: String,
         enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],

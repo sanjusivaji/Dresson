@@ -1,4 +1,4 @@
-// For logging purpose
+// We use 'winston' as 'logger'
 import winston from 'winston';
 const logger = winston.createLogger({
     level: 'info',             

@@ -1,129 +1,144 @@
 import * as cartRepository from '../../repository/user/cartRepository.js';
 import { CART_CONFIG, CART_MESSAGES } from '../../constants/cartConstants.js';
+import crypto from 'crypto'; 
 
 
-const applyBuyXGetYOffer = (item, liveProduct, quantity, activeOffers = []) => {
-    let effectivePrice = item.livePrice !== undefined ? item.livePrice : item.price;
-    let freeQuantity = 0;
-
-    // Find active 'Buy X, Get Y' offer from the separate offers collection matching this product
-    const matchingOffer = activeOffers.find(offer => 
-        offer.type === 'Buy X, Get Y' && 
-        offer.isManuallyActive &&
-        offer.targetIds.some(id => id.toString() === liveProduct._id.toString())
-    );
-
-    if (matchingOffer) {
-        // Assuming standard Buy 1 Get 1 or configured via offer fields (defaulting to Buy 1 Get 1 if parameters are implicit)
-        const buyQty = matchingOffer.buyQty || 1;
-        const getQty = matchingOffer.getQty || 1;
-        
-        if (quantity >= (buyQty + getQty)) {
-            // Calculate how many sets of the offer are achieved
-            const sets = Math.floor(quantity / (buyQty + getQty));
-            const totalFreeItems = sets * getQty;
-            freeQuantity = totalFreeItems;
-        }
-    }
-    return { effectivePrice, freeQuantity };
-};
-
-// For 'cross checking' the data in 'cart' and 'recreate' it
+// Looks through the cart to make sure all items are still available, in stock, and priced correctly
 export const getUserCartData = async (userId) => {
-    const cart = await cartRepository.getCartPopulatedForDisplay(userId);                                    // In 'cart' contains 'cartId', 'userId', 'items' array(ie it contains all details about 'product' in object, 'product name', 'id', 'quantity','image', 'price', 'sku' etc).
+    const cart = await cartRepository.getCartPopulatedForDisplay(userId);
     if (!cart) {
         return { items: [], cartTotal: 0, hasInvalidItems: false };
     }
-
-    // Fetch active offers from database to properly evaluate collection-based offers
     const activeOffers = typeof cartRepository.getActiveOffers === 'function' 
         ? await cartRepository.getActiveOffers() 
         : [];
-
     let calculatedTotal = 0;
     let hasInvalidItems = false;
-    const reconciledItems = [];                                                                                // Array declared 'outside' forloop.
-    
+    const reconciledItems = [];
+    const now = new Date();
     for (const item of cart.items) {
-        const liveProduct = item.product;                                                                    // Here we iterate 'cart.items'(ie 'items' is the array inside 'cart' object)and inside 'items' array contains 'product' named object and inside 'product' have 'name',brand', 'variants'(it contains 'size', 'color', 'sku' etc) array, 'total stock' etc.
+        const liveProduct = item.product;
         const isUnlisted = !liveProduct || !liveProduct.isListed;   
-        
-        let liveStock = 0;
-        let savedPrice = item.price; // The price currently saved in the cart document (crucial for pro-rated combo prices)
+        const isFreeGift = !!item.isFreeGift; 
+        let liveStock = 0; 
+        let savedPrice = item.price; 
         let retailPrice = item.price; 
-        
-        if (liveProduct && liveProduct.variants) {                                                             // Here we check is 'product'(ie 'liveProduct')and 'product' has 'variant'(ie 'liveProduct.variants')
+        let originalVariantPrice = item.price;
+        if (liveProduct && liveProduct.variants) {
             const liveVariant = liveProduct.variants.find(v => v._id.toString() === item.variantId.toString());
             if (liveVariant) {
                 liveStock = liveVariant.stock;
+                originalVariantPrice = liveVariant.price;
                 retailPrice = liveVariant.price;
-                if (liveProduct.discount > 0) {
-                    retailPrice = Math.round(liveVariant.price * (1 - (liveProduct.discount / 100)));
+                let directDiscountPrice = originalVariantPrice;
+                if (typeof liveProduct.discount === 'number' && liveProduct.discount > 0) {
+                    directDiscountPrice = Math.round(originalVariantPrice * (1 - (liveProduct.discount / 100)));
+                }
+                if (activeOffers.length > 0) {
+                    const prodIdStr = liveProduct._id.toString();
+                    const catIdStr = liveProduct.category ? (liveProduct.category._id || liveProduct.category).toString() : '';
+                    const subCatIdStr = liveProduct.subCategory ? (liveProduct.subCategory._id || liveProduct.subCategory).toString() : '';
+                    const matchingOffers = activeOffers.filter(offer => {
+                        if (!offer.isManuallyActive) return false;
+                        if (now < new Date(offer.startDate) || now > new Date(offer.endDate)) return false;
+                        if (offer.targetType === 'Specific Product') {
+                            return offer.targetIds && offer.targetIds.some(id => id.toString() === prodIdStr);
+                        } else if (offer.targetType === 'Entire Category') {
+                            return offer.targetIds && offer.targetIds.some(id => {
+                                const tId = id.toString();
+                                return tId === catIdStr || tId === subCatIdStr;
+                            });
+                        }
+                        return false;
+                    });
+                    let bestOffer = null;
+                    let maxScore = -1;
+                    matchingOffers.forEach(offer => {
+                        let score = 0;
+                        if (offer.type === 'Fixed Bundle Price') {
+                            score = 50000; 
+                        } else if (offer.type === 'Buy X, Get Y' || offer.type === 'Buy X Get Y') {
+                            score = 10000; 
+                        } else if (offer.type === 'Percentage') {
+                            score = originalVariantPrice * (offer.discountValue / 100); 
+                        } else if (offer.type === 'Flat Discount') {
+                            score = offer.discountValue;
+                        } else if (offer.type === 'Free Shipping' || offer.type === 'Free shipping') {
+                            score = 100; 
+                        }
+                        if (score > maxScore) {
+                            maxScore = score;
+                            bestOffer = offer;
+                        }
+                    });
+                    if (bestOffer && (bestOffer.type === 'Buy X, Get Y' || bestOffer.type === 'Buy X Get Y' || bestOffer.type === 'Free Shipping' || bestOffer.type === 'Free shipping')) {
+                        retailPrice = originalVariantPrice; 
+                    } else if (bestOffer && bestOffer.type === 'Fixed Bundle Price') {
+                        retailPrice = bestOffer.discountValue; 
+                    } else if (bestOffer) {
+                        retailPrice = Math.min(directDiscountPrice, originalVariantPrice - maxScore);
+                    } else {
+                        retailPrice = directDiscountPrice;
+                    }
+                } else {
+                    retailPrice = directDiscountPrice;
                 }
             }
         }
-
-        // NEW: Create a bulletproof combo flag (checks for the ID OR if the saved price is heavily discounted compared to retail)
-        const isComboItem = !!item.comboOfferId || (savedPrice < retailPrice && savedPrice > 0);
-        
-        // If it's a combo item, lock in the saved prorated price. Otherwise, update to current retail price.
+        if (isFreeGift) {
+            retailPrice = 0;
+        }
+        const isComboItem = !!item.comboOfferId || (savedPrice < retailPrice && savedPrice > 0 && !isFreeGift);
         let currentLivePrice = isComboItem ? savedPrice : retailPrice;
-        
-        // Apply Buy X Get Y Offer calculation adjustments on pricing/quantities using database offers
         let adjustedPrice = currentLivePrice;
-        let freeQty = 0;
-        
-        if (!isComboItem) {
-            const matchingOffer = activeOffers.find(offer => 
+        let freeQty = 0;      
+        if (!isComboItem && !isFreeGift && !item.bogoGroupId && liveProduct) {
+            const prodIdStr = liveProduct._id.toString();
+            const matchingBogoOffer = activeOffers.find(offer => 
                 offer.type === 'Buy X, Get Y' && 
                 offer.isManuallyActive &&
-                offer.targetIds.some(id => id.toString() === liveProduct._id.toString())
+                now >= new Date(offer.startDate) &&
+                now <= new Date(offer.endDate) &&
+                offer.targetIds &&
+                offer.targetIds.some(id => id.toString() === prodIdStr)
             );
-
-            if (matchingOffer) {
-                const buyQty = matchingOffer.buyQty || 1;
-                const getQty = matchingOffer.getQty || 1;
+            if (matchingBogoOffer) {
+                const buyQty = matchingBogoOffer.buyQuantity || 1;
+                const getQty = matchingBogoOffer.getQuantity || 1;
                 if (item.quantity >= (buyQty + getQty)) {
                     const sets = Math.floor(item.quantity / (buyQty + getQty));
                     freeQty = sets * getQty;
-                    // Total price is calculated only for the paid items (quantity minus free promotional items)
                     const paidQuantity = item.quantity - freeQty;
                     adjustedPrice = Math.round((currentLivePrice * paidQuantity) / item.quantity);
                 }
             }
         }
-
         const isOutOfStock = liveStock === 0;
         const isExceedingStock = item.quantity > liveStock;
-        
-        // NEW: Determine which price to actually charge the user
         const effectivePrice = isComboItem ? savedPrice : adjustedPrice;
-        
         if (isUnlisted || isOutOfStock || isExceedingStock) {
             hasInvalidItems = true;
         } else {
-            // FIX: Charge the effectivePrice, not the standard livePrice
             calculatedTotal += (effectivePrice * (item.quantity - freeQty)); 
         }
-        
-        // Safely extract document data if it's a mongoose object to allow spreading
         const itemData = item.toObject ? item.toObject() : item;
-
         reconciledItems.push({
             ...itemData,
-            livePrice: retailPrice, // Send the true retail price for the EJS strikethrough visual
-            effectivePrice,         // The actual price to display in green and charge
-            isComboItem,            // Explicit flag for EJS to use for badges/locking
-            adjustedPrice,          // Include offer-adjusted price per unit or weighted average
-            freeQuantity: freeQty,  // Track free items granted via Buy X Get Y
+            originalPrice: originalVariantPrice,
+            livePrice: retailPrice,
+            effectivePrice,
+            hasDiscount: originalVariantPrice > retailPrice,
+            discountPerUnit: originalVariantPrice - retailPrice,
+            isComboItem,            
+            adjustedPrice,          
+            freeQuantity: freeQty,  
             liveStock,
             isUnlisted,
             isOutOfStock,
             isExceedingStock,
             isValid: !isUnlisted && !isOutOfStock && !isExceedingStock
         });
-    }
-    
+    }    
     return {
         _id: cart._id,
         items: reconciledItems,
@@ -132,138 +147,86 @@ export const getUserCartData = async (userId) => {
     };
 };
 
-// export const getUserCartData = async (userId) => {
-//     const cart = await cartRepository.getCartPopulatedForDisplay(userId);                                    // In 'cart' contains 'cartId', 'userId', 'items' array(ie it contains all details about 'product' in object, 'product name', 'id', 'quantity','image', 'price', 'sku' etc).
-//     if (!cart) {
-//         return { items: [], cartTotal: 0, hasInvalidItems: false };
-//     }
-//     let calculatedTotal = 0;
-//     let hasInvalidItems = false;
-//     const reconciledItems = [];                                                                                // Array declared 'outside' forloop.
-//     for (const item of cart.items) {
-//         const liveProduct = item.product;                                                                    // Here we iterate 'cart.items'(ie 'items' is the array inside 'cart' object)and inside 'items' array contains 'product' named object and inside 'product' have 'name',brand', 'variants'(it contains 'size', 'color', 'sku' etc) array, 'total stock' etc.
-//         const isUnlisted = !liveProduct || !liveProduct.isListed;   
-//         let liveStock = 0;
-//         let livePrice = item.price;
-//         if (liveProduct && liveProduct.variants) {                                                             // Here we check is 'product'(ie 'liveProduct')and 'product' has 'variant'(ie 'liveProduct.variants')
-//             const liveVariant = liveProduct.variants.find(v => v._id.toString() === item.variantId.toString());
-//             if (liveVariant) {
-//                 liveStock = liveVariant.stock;
-//                 livePrice = liveVariant.price;
-//                 if (liveProduct.discount > 0) {
-//                     livePrice = Math.round(liveVariant.price * (1 - (liveProduct.discount / 100)));
-//                 }
-//             }
-//         }
-        
-//         // Apply Buy X Get Y Offer calculation adjustments on pricing/quantities
-//         let adjustedPrice = livePrice;
-//         let freeQty = 0;
-//         if (liveProduct && liveProduct.buyXGetYOffer && liveProduct.buyXGetYOffer.isActive) {
-//             const { buyQty, getQty } = liveProduct.buyXGetYOffer;
-//             if (buyQty > 0 && getQty > 0 && item.quantity >= (buyQty + getQty)) {
-//                 const sets = Math.floor(item.quantity / (buyQty + getQty));
-//                 freeQty = sets * getQty;
-//                 // Total price is calculated only for the paid items (quantity minus free promotional items)
-//                 const paidQuantity = item.quantity - freeQty;
-//                 adjustedPrice = Math.round((livePrice * paidQuantity) / item.quantity);
-//             }
-//         }
 
-//         const isOutOfStock = liveStock === 0;
-//         const isExceedingStock = item.quantity > liveStock;
-//         if (isUnlisted || isOutOfStock || isExceedingStock) {
-//             hasInvalidItems = true;
-//         } else {
-//             calculatedTotal += (livePrice * (item.quantity - freeQty)); // Charge only for non-free items in Buy X Get Y
-//         }
-//         reconciledItems.push({
-//             ...item,
-//             livePrice,
-//             adjustedPrice, // Include offer-adjusted price per unit or weighted average
-//             freeQuantity: freeQty, // Track free items granted via Buy X Get Y
-//             liveStock,
-//             isUnlisted,
-//             isOutOfStock,
-//             isExceedingStock,
-//             isValid: !isUnlisted && !isOutOfStock && !isExceedingStock
-//         });
-//     }
-//     return {
-//         _id: cart._id,
-//         items: reconciledItems,
-//         cartTotal: calculatedTotal,
-//         hasInvalidItems 
-//     };
-// };
-
-
-
-// // For get single 'cart' document,create a 'empty' cart document, add 'new' quantity , calculate 'final price' and 'save' this into 'data base' and 'remove' product from 'wishlist'. 
+// Adds a new product to the cart, calculates its exact price with offers, and removes it from the wishlist
 export const addItemToCart = async (userId, productId, variantId, requestedQty = 1) => {
-    const product = await cartRepository.getActiveProductById(productId);                     // Retrieve 'single' product(ie it is an array contains 'name', 'variants' like data) based on 'productId' and 'isListed: true'
+    const product = await cartRepository.getActiveProductById(productId);                     
     if (!product) throw new Error(CART_MESSAGES.PRODUCT_UNAVAILABLE);                         
     const variant = product.variants.find(item => item._id.toString() === variantId.toString());
     if (!variant) throw new Error(CART_MESSAGES.VARIANT_NOT_FOUND);   
     if (variant.stock === 0) throw new Error(CART_MESSAGES.SOLD_OUT);   
-    
     let finalPrice = variant.price;
     if (product.discount > 0) {
         finalPrice = Math.round(variant.price * (1 - (product.discount / 100)));
     }   
-
     let qtyToAdd = parseInt(requestedQty) || 1;   
-
-    // NEW: Fetch offers and check for automatic quantity bump
+    let cart = await cartRepository.getCartDocument(userId);                                   
+    if (!cart) cart = await cartRepository.createEmptyCart(userId);                                   
     const activeOffers = typeof cartRepository.getActiveOffers === 'function' ? await cartRepository.getActiveOffers() : [];
-    const matchingOffer = activeOffers.find(offer => 
+    const bogoOffer = activeOffers.find(offer => 
+        offer.type === 'Buy X, Get Y' && 
         offer.targetIds.some(id => id.toString() === productId.toString())
     );
-
-    if (matchingOffer) {
-        const buyQty = matchingOffer.buyQuantity || 1;
-        const getQty = matchingOffer.getQuantity || 1;
-        // If the user adds enough to trigger the offer, inject the free items automatically
-        if (qtyToAdd >= buyQty) {
-            const sets = Math.floor(qtyToAdd / buyQty);
-            qtyToAdd += (sets * getQty);
+    if (bogoOffer && bogoOffer.freeTargetIds && bogoOffer.freeTargetIds.length > 0 && qtyToAdd >= (bogoOffer.buyQuantity || 1)) {
+        const freeProductId = bogoOffer.freeTargetIds[0];
+        const freeProduct = await cartRepository.getActiveProductById(freeProductId);
+        if (freeProduct && freeProduct.variants && freeProduct.variants.length > 0) {
+            const freeVariant = freeProduct.variants.find(v => v.stock >= (bogoOffer.getQuantity || 1));
+            if (freeVariant) {
+                const uniqueBogoGroupId = `BOGO-${crypto.randomBytes(4).toString('hex')}`;
+                const mainImage = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
+                cart.items.push({
+                    product: product._id,
+                    variantId: variant._id,
+                    name: product.name,
+                    variantName: variant.name || `${variant.size} / ${variant.color}`,
+                    sku: variant.sku,
+                    price: finalPrice,
+                    taxRate: product.taxRate || 0,
+                    image: mainImage,
+                    quantity: qtyToAdd,
+                    bogoGroupId: uniqueBogoGroupId,
+                    isFreeGift: false
+                });
+                const freeImage = freeProduct.images && freeProduct.images.length > 0 ? freeProduct.images[0].url : '/images/default-dress.jpg';
+                cart.items.push({
+                    product: freeProduct._id,
+                    variantId: freeVariant._id,
+                    name: freeProduct.name,
+                    variantName: freeVariant.name || `${freeVariant.size} / ${freeVariant.color}`,
+                    sku: freeVariant.sku,
+                    price: 0,
+                    taxRate: 0,
+                    image: freeImage,
+                    quantity: bogoOffer.getQuantity || 1,
+                    bogoGroupId: uniqueBogoGroupId,
+                    isFreeGift: true
+                });
+                await cartRepository.saveCartDocument(cart);                                               
+                await cartRepository.removeProductFromWishlist(userId, productId);                           
+                return cart;
+            }
         }
     }
-
-    let cart = await cartRepository.getCartDocument(userId);                                   // Retrieve single 'cart' based on 'userId'
-    if (!cart) {
-        cart = await cartRepository.createEmptyCart(userId);                                   // For create 'new' document based on 'userId' with 'items' array as 'initial value'. 
-    }   
-    
     const existingItemIndex = cart.items.findIndex(item =>                                     
         item.product.toString() === productId.toString() && 
-        item.variantId.toString() === variantId.toString()
-    );   
-    
+        item.variantId.toString() === variantId.toString() &&
+        !item.isFreeGift
+    );       
     if (existingItemIndex > -1) {                                                              
-        const currentQty = cart.items[existingItemIndex].quantity;                     
-        let newQty = currentQty + qtyToAdd;                                                  
-        
-        if (newQty > variant.stock) {
-            throw new Error(`Only ${variant.stock} units available in stock.`);
-        }
-        if (newQty > CART_CONFIG.MAX_QTY_PER_ITEM) {
-            throw new Error(`You can purchase a maximum of ${CART_CONFIG.MAX_QTY_PER_ITEM} units per item.`);
-        }        
+        let newQty = cart.items[existingItemIndex].quantity + qtyToAdd;                                                  
+        if (newQty > variant.stock) throw new Error(`Only ${variant.stock} units available.`);
+        if (newQty > CART_CONFIG.MAX_QTY_PER_ITEM) throw new Error(`Max limit is ${CART_CONFIG.MAX_QTY_PER_ITEM}.`);
         cart.items[existingItemIndex].quantity = newQty;
         cart.items[existingItemIndex].price = finalPrice;
-        cart.items[existingItemIndex].taxRate = product.taxRate || 0;
     } else {
-        if (qtyToAdd > variant.stock || qtyToAdd > CART_CONFIG.MAX_QTY_PER_ITEM) {
-            throw new Error(`Quantity exceeds available stock or maximum order limits.`);
-        }                    
+        if (qtyToAdd > variant.stock) throw new Error(`Quantity exceeds stock.`);
         const displayImage = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
-        const constructedVariantName = variant.name || `${variant.size} / ${variant.color}`;        
         cart.items.push({
             product: product._id,
             variantId: variant._id,
             name: product.name,
-            variantName: constructedVariantName,
+            variantName: variant.name || `${variant.size} / ${variant.color}`,
             sku: variant.sku,
             price: finalPrice,
             taxRate: product.taxRate || 0,
@@ -277,87 +240,22 @@ export const addItemToCart = async (userId, productId, variantId, requestedQty =
 };
 
 
-
-
-
-// export const addItemToCart = async (userId, productId, variantId, requestedQty = 1) => {
-//     const product = await cartRepository.getActiveProductById(productId);                     // Retrieve 'single' product(ie it is an array contains 'name', 'variants' like data) based on 'productId' and 'isListed: true'
-//     if (!product) throw new Error(CART_MESSAGES.PRODUCT_UNAVAILABLE);                         // Here 'PRODUCT_UNAVAILABLE' stores in 'src/constants/cartConstants.js' file and its value is 'This product is currently unlisted or unavailable.',
-//     const variant = product.variants.find(item => item._id.toString() === variantId.toString());
-//     if (!variant) throw new Error(CART_MESSAGES.VARIANT_NOT_FOUND);   
-//     if (variant.stock === 0) throw new Error(CART_MESSAGES.SOLD_OUT);   
-//     let finalPrice = variant.price;
-//     if (product.discount > 0) {
-//         finalPrice = Math.round(variant.price * (1 - (product.discount / 100)));
-//     }   
-//     let cart = await cartRepository.getCartDocument(userId);                                   // Retrieve single 'cart' based on 'userId'
-//     if (!cart) {
-//         cart = await cartRepository.createEmptyCart(userId);                                   // For create 'new' document based on 'userId' with 'items' array as 'initial value'. 
-//     }   
-//     const existingItemIndex = cart.items.findIndex(item =>                                     // 'findIndex()' is the 'built-in' array method of 'js' and here it iterate through 'cart.items' array and if '2' conditions ie 'item.product.toString()'(ie from 'cart.items' array from 'database) equal to 'productId.toString()'(ie from 'argument') and 'item.variantId.toString() === variantId.toString()' it return 'index' of the 'object'/'product' data from 'items' array and we should convert into string by using 'toString()' because 'two' 'ObjectId' is never identical.
-//         item.product.toString() === productId.toString() && 
-//         item.variantId.toString() === variantId.toString()
-//     );   
-//     const qtyToAdd = parseInt(requestedQty) || 1;   
-//     if (existingItemIndex > -1) {                                                              // If 'findIndex()' 'not' find the 'item', it automatically return '-1', so here we check is 'not' -1.
-//         const currentQty = cart.items[existingItemIndex].quantity;                     // Here we retrieve value of 'existingItemIndex' and it is '0' then we get 'cart.items[0].quantity' ie we retrieving 'quantity' of '0'th index product.   
-//         const newQty = currentQty + qtyToAdd;                                                  // 'qtyToAdd'(ie 'requestedQty') get through 'argument'
-//         if (newQty > variant.stock) {
-//             throw new Error(`Only ${variant.stock} units available in stock.`);
-//         }
-//         if (newQty > CART_CONFIG.MAX_QTY_PER_ITEM) {
-//             throw new Error(`You can purchase a maximum of ${CART_CONFIG.MAX_QTY_PER_ITEM} units per item.`);
-//         }        
-//         cart.items[existingItemIndex].quantity = newQty;
-//         cart.items[existingItemIndex].price = finalPrice;
-//         cart.items[existingItemIndex].taxRate = product.taxRate || 0;
-//     } else {
-//         if (qtyToAdd > variant.stock || qtyToAdd > CART_CONFIG.MAX_QTY_PER_ITEM) {
-//             throw new Error(`Quantity exceeds available stock or maximum order limits.`);
-//         }                    
-//         const displayImage = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
-//         const constructedVariantName = variant.name || `${variant.size} / ${variant.color}`;        
-//         cart.items.push({
-//             product: product._id,
-//             variantId: variant._id,
-//             name: product.name,
-//             variantName: constructedVariantName,
-//             sku: variant.sku,
-//             price: finalPrice,
-//             taxRate: product.taxRate || 0,
-//             image: displayImage,
-//             quantity: qtyToAdd
-//         });
-//     }
-//     await cartRepository.saveCartDocument(cart);                                               // For 'save' 'carDoc' to database
-//     await cartRepository.removeProductFromWishlist(userId, productId);                           // For find one 'wishlist' document based on 'userId' and 'pull' or 'delete' 'product' array
-//     return cart;
-// };
-
-
-
-// NEW: For 'Buy Now' to bypass the main database cart
+// Sets up a temporary cart that bypasses the database when a user clicks 'Buy Now'
 export const getDirectBuyItem = async (productId, variantId, requestedQty = 1) => {
     const product = await cartRepository.getActiveProductById(productId);
-    if (!product) throw new Error(CART_MESSAGES.PRODUCT_UNAVAILABLE);                         
-    
+    if (!product) throw new Error(CART_MESSAGES.PRODUCT_UNAVAILABLE);                             
     const variant = product.variants.find(item => item._id.toString() === variantId.toString());
     if (!variant) throw new Error(CART_MESSAGES.VARIANT_NOT_FOUND);   
-    if (variant.stock === 0) throw new Error(CART_MESSAGES.SOLD_OUT);   
-    
+    if (variant.stock === 0) throw new Error(CART_MESSAGES.SOLD_OUT);      
     let finalPrice = variant.price;
     if (product.discount > 0) {
         finalPrice = Math.round(variant.price * (1 - (product.discount / 100)));
     }   
-
     let qtyToAdd = parseInt(requestedQty) || 1;   
-
-    // Apply active offers if available
     const activeOffers = typeof cartRepository.getActiveOffers === 'function' ? await cartRepository.getActiveOffers() : [];
     const matchingOffer = activeOffers.find(offer => 
         offer.targetIds.some(id => id.toString() === productId.toString())
     );
-
     if (matchingOffer) {
         const buyQty = matchingOffer.buyQuantity || 1;
         const getQty = matchingOffer.getQuantity || 1;
@@ -366,14 +264,11 @@ export const getDirectBuyItem = async (productId, variantId, requestedQty = 1) =
             qtyToAdd += (sets * getQty);
         }
     }
-
     if (qtyToAdd > variant.stock || qtyToAdd > CART_CONFIG.MAX_QTY_PER_ITEM) {
         throw new Error(`Quantity exceeds available stock or maximum order limits.`);
-    }                    
-    
+    }                       
     const displayImage = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
     const constructedVariantName = variant.name || `${variant.size} / ${variant.color}`;        
-    
     const item = {
         product: product._id,
         variantId: variant._id,
@@ -385,8 +280,6 @@ export const getDirectBuyItem = async (productId, variantId, requestedQty = 1) =
         image: displayImage,
         quantity: qtyToAdd
     };
-
-    // Return a temporary, structured cart object for the session
     return {
         items: [item],
         cartTotal: finalPrice * qtyToAdd
@@ -394,170 +287,132 @@ export const getDirectBuyItem = async (productId, variantId, requestedQty = 1) =
 };
 
 
-// Add Combo Offer to Cart with Pro-rated Pricing
+// Splits the price of a Fixed Bundle Offer across all products evenly and adds them to the cart
 export const addComboOfferToCart = async (userId, offerId, productIds) => {
-    // 1. Fetch the active offer document
-    const offer = await cartRepository.getOfferById(offerId); // You will need this repo method
+    const offer = await cartRepository.getOfferById(offerId); 
     if (!offer || !offer.isManuallyActive || offer.type !== 'Fixed Bundle Price') {
         throw new Error("This combo offer is no longer valid or active.");
     }
-
-    // 2. Fetch all products in the bundle
     const products = await Promise.all(
         productIds.map(id => cartRepository.getActiveProductById(id))
     );
-
-    // 3. Validation: Ensure all products exist and have stock
     let totalOriginalPrice = 0;
     const itemsToAdd = [];
-
     for (const product of products) {
         if (!product) {
             throw new Error(CART_MESSAGES.PRODUCT_UNAVAILABLE);
         }
-
-        // Assuming default variant [0] since UI didn't specify variant selection for combo
-        const variant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-        
+        const variant = product.variants && product.variants.length > 0 ? product.variants[0] : null;        
         if (!variant) throw new Error(`Variant not found for product ${product.name}`);
         if (variant.stock < 1) throw new Error(`Combo unavailable: ${product.name} is out of stock.`);
-
         totalOriginalPrice += variant.price;
-
         const displayImage = product.images && product.images.length > 0 ? product.images[0].url : '/images/default-dress.jpg';
         const constructedVariantName = variant.name || `${variant.size} / ${variant.color}`;
-
         itemsToAdd.push({
             product: product._id,
             variantId: variant._id,
             name: product.name,
             variantName: constructedVariantName,
             sku: variant.sku,
-            originalPrice: variant.price, // Storing this temporarily for math
+            originalPrice: variant.price, 
             taxRate: product.taxRate || 0,
             image: displayImage,
-            quantity: 1, // Combos usually add 1 set at a time
-            comboOfferId: offer._id // Tagging the item so frontend knows it belongs to a combo
+            quantity: 1,
+            comboOfferId: offer._id
         });
     }
-
-    // 4. Pro-rata calculation for the Fixed Bundle Price
     const comboPrice = offer.discountValue;
     let accumulatedComboPrice = 0;
-
     itemsToAdd.forEach((item, index) => {
         if (index === itemsToAdd.length - 1) {
-            // Last item gets the remainder to avoid decimal rounding issues (e.g., 1999.99 vs 2000)
             item.price = comboPrice - accumulatedComboPrice;
         } else {
-            // Distribute price proportionally: (Item Price / Total Original Price) * Combo Price
             const proportion = item.originalPrice / totalOriginalPrice;
             item.price = Math.round(proportion * comboPrice);
             accumulatedComboPrice += item.price;
         }
-        delete item.originalPrice; // Cleanup before saving
+        delete item.originalPrice; 
     });
-
-    // 5. Retrieve or create cart
     let cart = await cartRepository.getCartDocument(userId);
     if (!cart) {
         cart = await cartRepository.createEmptyCart(userId);
     }
     itemsToAdd.forEach(item => {
         cart.items.push(item);
-        // Clean up wishlist concurrently
         cartRepository.removeProductFromWishlist(userId, item.product).catch(err => console.error("Wishlist cleanup err:", err));
     });
-
     await cartRepository.saveCartDocument(cart);
     return cart;
 };
 
 
-// For 'update' item quantity(ie '+' and '-' button)
+// Increases or decreases the item amount when the plus or minus buttons are clicked
 export const updateItemQuantity = async (userId, itemId, newQty) => {
     const qty = parseInt(newQty);
     if (isNaN(qty) || qty < 1) throw new Error(CART_MESSAGES.QTY_MINIMUM);   
     if (qty > CART_CONFIG.MAX_QTY_PER_ITEM) {
         throw new Error(`Maximum limit is ${CART_CONFIG.MAX_QTY_PER_ITEM} units per item.`);
     }
-    const cart = await cartRepository.getCartDocumentPopulated(userId);                         // For retrieve 'one' cart document and 'populated' based on 'product' field
+    const cart = await cartRepository.getCartDocumentPopulated(userId);
     if (!cart) throw new Error(CART_MESSAGES.CART_NOT_FOUND);
     const item = cart.items.id(itemId);
     if (!item) throw new Error(CART_MESSAGES.ITEM_NOT_FOUND);
-    const liveProduct = await cartRepository.getProductById(item.product._id);                // For retrieve 'one' 'product' 'document' based on 'productId'
-    if (!liveProduct || !liveProduct.isListed) {                                               // Checks 'product' is 'listed' or 'not'
+    if (item.isFreeGift) {
+        throw new Error("Quantities of free promotional gifts cannot be modified directly.");
+    }
+    const liveProduct = await cartRepository.getProductById(item.product._id);
+    if (!liveProduct || !liveProduct.isListed) {
         throw new Error(CART_MESSAGES.PRODUCT_INACTIVE);
     }
-    const liveVariant = liveProduct.variants.find(v => v._id.toString() === item.variantId.toString());  // Here we retrieve 'all' 'variants' from retrieved 'product'(ie 'liveProduct') for checking the 'retrieved' variant and given 'argument' variant are same, and 'stock' is the property in 'variant'.
+    const liveVariant = liveProduct.variants.find(v => v._id.toString() === item.variantId.toString());
     if (!liveVariant || liveVariant.stock < qty) {
         throw new Error(`Only ${liveVariant ? liveVariant.stock : 0} units left in stock.`);
     }
     item.quantity = qty;
-    await cartRepository.saveCartDocument(cart);                                               // Here 'save' document into 'database'
-    return await getUserCartData(userId);                                                      // For 'cross checking' the data in 'cart' and 'recreate' it
+    await cartRepository.saveCartDocument(cart);
+    return await getUserCartData(userId);
 };
 
 
-
-// export const updateItemQuantity = async (userId, itemId, newQty) => {
-//     const qty = parseInt(newQty);
-//     if (isNaN(qty) || qty < 1) throw new Error(CART_MESSAGES.QTY_MINIMUM);   
-//     if (qty > CART_CONFIG.MAX_QTY_PER_ITEM) {
-//         throw new Error(`Maximum limit is ${CART_CONFIG.MAX_QTY_PER_ITEM} units per item.`);
-//     }
-//     const cart = await cartRepository.getCartDocumentPopulated(userId);                         // For retrieve 'one' cart document and 'populated' based on 'product' field
-//     if (!cart) throw new Error(CART_MESSAGES.CART_NOT_FOUND);
-//     const item = cart.items.id(itemId);
-//     if (!item) throw new Error(CART_MESSAGES.ITEM_NOT_FOUND);
-//     const liveProduct = await cartRepository.getProductById(item.product._id);                // For retrieve 'one' 'product' 'document' based on 'productId'
-//     if (!liveProduct || !liveProduct.isListed) {                                               // Checks 'product' is 'listed' or 'not'
-//         throw new Error(CART_MESSAGES.PRODUCT_INACTIVE);
-//     }
-//     const liveVariant = liveProduct.variants.find(v => v._id.toString() === item.variantId.toString());  // Here we retrieve 'all' 'variants' from retrieved 'product'(ie 'liveProduct') for checking the 'retrieved' variant and given 'argument' variant are same, and 'stock' is the property in 'variant'.
-//     if (!liveVariant || liveVariant.stock < qty) {
-//         throw new Error(`Only ${liveVariant ? liveVariant.stock : 0} units left in stock.`);
-//     }
-//     item.quantity = qty;
-//     await cartRepository.saveCartDocument(cart);                                               // Here 'save' document into 'database'
-//     return await getUserCartData(userId);                                                      // For 'cross checking' the data in 'cart' and 'recreate' it
-// };
-
-
-// For 'remove' item from cart and 'save' that data.
+// Deletes an item from the cart, making sure to remove any linked free gifts or combo bundles
 export const removeItemFromCart = async (userId, itemId) => {
     const cart = await cartRepository.getCartDocument(userId);
     if (!cart) throw new Error(CART_MESSAGES.CART_NOT_FOUND);
-
-    // 1. Find the specific item the user is trying to delete
     const itemToRemove = cart.items.find(item => item._id.toString() === itemId.toString());
-    
-    // If the item doesn't exist, just return the current cart
     if (!itemToRemove) return await getUserCartData(userId);
-
-    // 2. Check if this item is part of a Combo Offer
     if (itemToRemove.comboOfferId) {
-        const comboIdString = itemToRemove.comboOfferId.toString();
-        
-        // Remove ALL items from the cart that share this exact comboOfferId
+        if (itemToRemove.comboGroupId) {
+            const groupIdString = itemToRemove.comboGroupId.toString();
+            cart.items = cart.items.filter(item => 
+                !item.comboGroupId || item.comboGroupId.toString() !== groupIdString
+            );
+        } else {
+            const comboIdString = itemToRemove.comboOfferId.toString();
+            const clickedProductId = itemToRemove.product.toString();
+            const removedProducts = new Set();
+            removedProducts.add(clickedProductId);
+            cart.items = cart.items.filter(item => {
+                if (item._id.toString() === itemId.toString()) {
+                    return false; 
+                }
+                if (item.comboOfferId && item.comboOfferId.toString() === comboIdString) {
+                    const prodIdStr = item.product.toString();
+                    if (!removedProducts.has(prodIdStr)) {
+                        removedProducts.add(prodIdStr);
+                        return false; 
+                    }
+                }
+                return true;
+            });
+        }
+    } else if (itemToRemove.bogoGroupId) {
+        const bogoIdString = itemToRemove.bogoGroupId.toString();
         cart.items = cart.items.filter(item => 
-            !item.comboOfferId || item.comboOfferId.toString() !== comboIdString
+            !item.bogoGroupId || item.bogoGroupId.toString() !== bogoIdString
         );
     } else {
-        // Normal behavior: remove just the single item based on its unique _id
         cart.items = cart.items.filter(item => item._id.toString() !== itemId.toString());   
     }
-
-    await cartRepository.saveCartDocument(cart);                                         // For 'save' 'cartDoc' to database
-    return await getUserCartData(userId);                                                // For 'cross checking' the data in 'cart' and 'recreate' it
+    await cartRepository.saveCartDocument(cart);                                         
+    return await getUserCartData(userId);                                                
 };
-
-
-
-// export const removeItemFromCart = async (userId, itemId) => {
-//     const cart = await cartRepository.getCartDocument(userId);
-//     if (!cart) throw new Error(CART_MESSAGES.CART_NOT_FOUND);
-//     cart.items = cart.items.filter(item => item._id.toString() !== itemId.toString());   // Here 'item._id' is the 'unique' id that automatically creates when we add a 'new' 'product variant' into the 'cart', and 'itemId' is the unique id,ie when click the 'delete' button in 'ejs' and 'item._id' send from 'ejs' to 'backend' and in 'backend' it 'rename' it into 'name it 'itemId' and here we check both are 'not' equal and if it is 'true', 'filter()' return an 'array' contains all data of that 'product' based 'item._id'. 
-//     await cartRepository.saveCartDocument(cart);                                         // For 'save' 'cartDoc' to database
-//     return await getUserCartData(userId);                                                // For 'cross checking' the data in 'cart' and 'recreate' it
-// };

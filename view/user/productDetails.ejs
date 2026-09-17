@@ -123,6 +123,41 @@
                     </div>
                 </div>
 
+                <!-- --- NEW: Dynamic Promotional Offer Display --- -->
+                <% if (product.appliedOffer) { %>
+                    <div class="mt-4 p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 shadow-sm animate-fade-in-up">
+                        <div class="flex items-start gap-3">
+                            <div class="bg-emerald-100 w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+                                <i class="fas fa-gift text-sm"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black text-emerald-800 uppercase tracking-wider">
+                                    <%= product.appliedOffer.title || 'Special Offer Applied' %>
+                                </h4>
+                                <p class="text-xs font-medium text-emerald-700 mt-1 leading-relaxed">
+                                    <!-- Dynamic text based on the exact offer type -->
+                                    <% if (product.appliedOffer.type === 'Buy X, Get Y' || product.appliedOffer.type === 'Buy X Get Y') { %>
+                                        Buy <%= product.appliedOffer.buyQuantity %> Get <%= product.appliedOffer.getQuantity %> FREE! 
+                                        <% if (product.appliedOffer.freeTargetIds && product.appliedOffer.freeTargetIds.length > 0) { %>
+                                            <span class="block mt-0.5 font-bold text-emerald-900">
+                                                <i class="fas fa-plus text-[9px] mr-1"></i> 
+                                                <%= product.appliedOffer.freeTargetIds[0].name || 'Free Gift' %> will be auto-added to your cart!
+                                            </span>
+                                        <% } %>
+                                    <% } else if (product.appliedOffer.type === 'Flat Discount') { %>
+                                        Save an extra <strong>₹<%= product.appliedOffer.discountValue %></strong> instantly at checkout.
+                                    <% } else if (product.appliedOffer.type === 'Percentage') { %>
+                                        Get an extra <strong><%= product.appliedOffer.discountValue %>% OFF</strong> applied automatically in your cart.
+                                    <% } else if (product.appliedOffer.type === 'Free Shipping' || product.appliedOffer.type === 'Free shipping') { %>
+                                        This item qualifies for <strong>100% Free Shipping</strong> on your entire order!
+                                    <% } %>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+                <!-- -------------------------------------------- -->
+
                 <!-- '<form>' used for select 'variant', 'Quantity', 'Add To Cart', 'Buy Now' etc   -->
                 <hr class="my-6 border-gray-200">
                 <!--  Added onsubmit handler to intercept standard form submission -->
@@ -511,7 +546,6 @@
         }
     }
 
-
     // For 'wishlist'
     async function toggleWishlist(productId, btnElement) {
         try {
@@ -551,5 +585,4 @@
             console.error("Wishlist sync error:", error);
         }
     }
-
 </script>

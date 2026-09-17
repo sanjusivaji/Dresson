@@ -106,18 +106,15 @@
                             </td>
 
                             <!-- ✨ NEW LOGIC: Extract all returning items and their unique statuses -->
+                            <!-- Gathers all items from the order that have a return status, and decides what reason or status text to show -->
                             <% 
                                 const returningItems = (order.items || []).filter(i => ['Return Pending', 'Returned', 'Return Rejected'].includes(i.itemStatus));
-                                
-                                // Get unique statuses to handle mixed-status orders
                                 let displayStatuses = [];
                                 if (returningItems.length > 0) {
                                     displayStatuses = [...new Set(returningItems.map(i => i.itemStatus))];
                                 } else {
                                     displayStatuses = [order.returnRequest?.status || 'Pending'];
                                 }
-
-                                // Handle the reason text
                                 let displayReason = returningItems.length > 0 ? returningItems[0].returnReason : (order.returnRequest?.reason || 'N/A');
                                 if (returningItems.length > 1) {
                                     displayReason = returningItems.length + ' Items (See details)';

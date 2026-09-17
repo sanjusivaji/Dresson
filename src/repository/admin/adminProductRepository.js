@@ -1,14 +1,13 @@
-// Up two levels to 'src', then into 'model'
 import Product from '../../model/productModel.js';
 import Category from '../../model/categoryModel.js';
 
-
-// For retrieve 'total products count' based on the 'filter'(ie 'search or category')
+// Counts how many products match the search or category filter
 export const countFilteredProducts = async (filter) => {
     return await Product.countDocuments(filter);
 };
 
-// Fetch the actual products with pagination, sorting, and population
+
+// Gets the actual list of products based on the filter and page number
 export const getFilteredProducts = async (filter, skip, limit) => {
     return await Product.find(filter)
         .populate('subCategory') 
@@ -18,49 +17,55 @@ export const getFilteredProducts = async (filter, skip, limit) => {
         .lean(); 
 };
 
-// For retrieve all 'categories' details and place data/document of 'parent category' if 'category' have 'parentCategory' 'id'.
+
+// Gets all active categories and connects them to their parent category data
 export const findActiveCategoriesWithParents = async () => {
-    return await Category.find({ isListed: true }).populate('parentCategory').sort({ categoryName: 1 });  //  It return 'all'(because of 'find()')categories based on 'isListed : true' and 'populate('parentCategory')' 'joins' 'parentCategory' ie here we 'populate' from all category and those 'category' has 'id' of 'parentCategory' it retrieve that 'parentCategory' data and display it instead that 'id' and finally sorted based on 'categoryName' in ascending order
+    return await Category.find({ isListed: true }).populate('parentCategory').sort({ categoryName: 1 });                       // Swaps out the parent ID with the full parent details
 };
 
-// For save a new Product
+
+// Saves a new product to the database
 export const createProduct = async (payload) => {
     const product = new Product(payload);
     return await product.save();
 };
 
-//  For 'retrieve' document based on 'product Name'
+
+// Finds a product matching the exact name ignoring uppercase/lowercase
 export const findProductByName = async (productName) => {
     return await Product.findOne({ 
-        name: { $regex: new RegExp(`^${productName}$`, 'i') }              // It return 'first' matching 'document' from 'Product' category based on 'productName' without 'case sensitive' and '`^${productName}$` ensures 'start'(ie '^') 'exact' name and it put in 'template literals'.
+        name: { $regex: new RegExp(`^${productName}$`, 'i') }                                                                 // Matches the whole name from start to finish
     });
 };
 
 
-// For return product document based on 'id'
-export const findProductById = async (id) => {                             // It returns only 'one' 'document' from the 'Product' model that matches the given '_id'.
+// Finds one specific product using its ID number
+export const findProductById = async (id) => {                                                    
     return await Product.findById(id);
 };
 
 
-// For check and return same 'name' of product 'exist'
+// Checks if a different product is already using a specific name
 export const productNameCheck = async(productId, cleanProductName) => {
- return await Product.findOne({                                            // When create a product we already 'blocked' to create 'two' product with 'same' 'name', but when 'edit' time our product name is 'Blue shirt' and another product name is 'Red shirt' but we try to change 'Blue' to 'Red' without this code it possible and both product have same name, and when we retrieve product name for 'edit' this same code block all products,even 'editing' product so we should use '$ne: productId' for avoid current product.  
+ return await Product.findOne({                                                                                               // Ignores the current product so it doesn't clash with itself during an edit
         name: { $regex: new RegExp(`^${cleanProductName}$`, 'i') },_id: { $ne: productId } 
     });
 }
 
 
-// For 'update' the 'data' based on 'id'(uses for 'edit' purpose)
+// Updates a specific product's data based on its ID
 export const updateProductById = async (id, updateData) => {
-    return await Product.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });  // '{ returnDocument: 'after' }' used for 'return' 'document' after updation 
+    return await Product.findByIdAndUpdate(id, updateData, { returnDocument: 'after' });                                      // Returns the product data after it has been updated
 };
 
-// Category Operations (Needed for dropdowns in Product views)
+
+// Gets active categories that have a parent category
 export const findActiveCategories = async () => {
     return await Category.find({ parentCategory: { $ne: null }, isListed: true }).sort({ categoryName: 1 });
 };
 
+
+// Counts total products based on a filter
 export const countProducts = async (filter) => {
     return await Product.countDocuments(filter);
 };

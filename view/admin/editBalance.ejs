@@ -1,3 +1,8 @@
+<!-- Includes shared alert popups for success, errors, and warnings -->
+<%- include('../partial/shared/alertSuccess') %>
+<%- include('../partial/shared/alertError') %>
+<%- include('../partial/shared/warning') %>
+
 <div class="flex justify-center items-start w-full">
     <div class="bg-white w-full max-w-xl p-10 rounded-xl shadow-sm border border-gray-200 relative">
         
@@ -13,7 +18,7 @@
             <p class="text-2xl font-bold text-black">₹<%= user.walletBalance %></p>
         </div>
 
-        <form action="/admin/users/<%= user._id %>/balance" method="POST" onsubmit="return confirm('Are you sure you want to change this balance?');">
+        <form id="balanceForm" action="/admin/users/<%= user._id %>/balance" method="POST" onsubmit="handleBalanceUpdate(event)">
             
             <div class="flex flex-col mb-5">
                 <label class="text-sm font-bold text-black mb-2">Adjustment Type</label>
@@ -49,3 +54,24 @@
         </form>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Checks if the form is filled correctly and asks for final confirmation before sending money
+    function handleBalanceUpdate(event) {
+        event.preventDefault();                                                                        // Stops the form from sending immediately
+        const form = document.getElementById('balanceForm');                                           // Finds the form element on the page
+        const amountInput = document.getElementsByName('amount')[0].value;                             // Reads the number typed in the amount box
+        const reasonInput = document.getElementsByName('reason')[0].value.trim();                      // Reads the reason typed and removes extra spaces
+        if (!amountInput || amountInput <= 0) {
+            showCustomAlert('Please enter a valid amount greater than zero.', 'Invalid Amount', 'warning'); // Shows an alert if the amount is missing or negative
+            return;                                                                                    // Stops the code from continuing
+        }
+        if (!reasonInput) {
+            showCustomAlert('Please provide a mandatory reason for this balance change.', 'Reason Required', 'warning'); // Shows an alert if the reason box is completely empty
+            return;                                                                                    // Stops the code from continuing
+        }
+        showCustomConfirm('Are you sure you want to update this user\'s wallet balance? This action will directly affect their funds.', function() { form.submit(); }, 'Confirm Balance Change'); // Shows the custom popup asking the admin to confirm, then submits if they say yes
+    }
+</script>

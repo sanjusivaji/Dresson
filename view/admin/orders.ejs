@@ -107,30 +107,23 @@
                             
                            <!-- Status -->
                             <td class="px-6 py-4 text-[12px] font-bold uppercase tracking-wider align-top">
+                                <!-- Collects all the different statuses of the order and its items into one list -->
                                 <% 
-                                    // Set to collect unique statuses
                                     let displayStatuses = new Set();
-                                    
-                                    // 1. Check legacy whole-order return status
                                     if (order.returnRequest?.isRequested) {
                                         if (order.returnRequest.status === 'Pending') displayStatuses.add('Return Pending');
                                         else if (order.returnRequest.status === 'Rejected') displayStatuses.add('Return Rejected');
                                         else if (order.returnRequest.status === 'Refunded') displayStatuses.add('Return Refunded');
                                     }
-
-                                    // 2. Check individual item statuses
                                     if (order.items && order.items.length > 0) {
                                         let hasActiveItems = false;
-                                        
                                         order.items.forEach(item => {
                                             if (item.itemStatus === 'Cancelled') displayStatuses.add('Cancelled');
                                             else if (item.itemStatus === 'Return Pending') displayStatuses.add('Return Pending');
                                             else if (item.itemStatus === 'Return Rejected') displayStatuses.add('Return Rejected');
                                             else if (item.itemStatus === 'Returned') displayStatuses.add('Return Refunded');
-                                            else hasActiveItems = true; // Items that are just progressing normally
+                                            else hasActiveItems = true; 
                                         });
-
-                                        // If there are normal items, OR if no special statuses exist, show the overarching order delivery status
                                         if (hasActiveItems || displayStatuses.size === 0) {
                                             if (order.deliveryStatus === 'Returned') {
                                                 displayStatuses.add('Return Refunded');
@@ -141,7 +134,6 @@
                                     } else {
                                         displayStatuses.add(order.deliveryStatus);
                                     }
-
                                     const statusArray = Array.from(displayStatuses);
                                 %>
 
@@ -193,8 +185,8 @@
     </div>
 
     <!-- Pagination Controls -->
+    <!-- Sets up the active filters so the pagination buttons know what search to remember -->
     <% 
-        // Build the query object dynamically so the pagination partial knows which filters to keep
         const activeQuery = {};
         if (typeof searchQuery !== 'undefined' && searchQuery) activeQuery.search = searchQuery;
         if (typeof statusFilter !== 'undefined' && statusFilter) activeQuery.status = statusFilter;

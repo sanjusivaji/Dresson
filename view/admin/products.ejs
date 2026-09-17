@@ -19,6 +19,7 @@
             <input type="text" name="search" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search products by name or brand..." 
                    class="w-full pl-10 pr-16 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 bg-gray-50/50 shadow-inner">
             
+            <!-- Shows a clear button if a search is currently active -->
             <% if (typeof searchQuery !== 'undefined' && searchQuery !== '') { %>
                 <button type="button" onclick="clearSearchFilter()" class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-red-400 hover:text-red-600 font-bold transition">
                     Clear
@@ -42,7 +43,6 @@
         </select>
     </div>
 </div>
-
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
     <table class="w-full text-left border-collapse">
@@ -187,35 +187,41 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-    // Category Dropdown Filter (Preserves active search queries)
+    // Updates the page URL to show products for the chosen category
     function applyCategoryFilter(categoryId) {
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(window.location.search); // Get current link details
         if (categoryId) {
-            urlParams.set('category', categoryId);
+            urlParams.set('category', categoryId); // Save category to link
         } else {
-            urlParams.delete('category');
+            urlParams.delete('category'); // Remove category from link
         }
-        urlParams.set('page', '1');
-        window.location.search = urlParams.toString();
+        urlParams.set('page', '1'); // Always go back to page 1
+        window.location.search = urlParams.toString(); // Reload page
     }
 
-    // Clear Search Button (Preserves active category filter)
+
+
+    // Removes the search text from the URL and goes to page 1
     function clearSearchFilter() {
-        const urlParams = new URLSearchParams(window.location.search);
-        urlParams.delete('search');
-        urlParams.set('page', '1');
-        window.location.search = urlParams.toString();
+        const urlParams = new URLSearchParams(window.location.search); // Get current link details
+        urlParams.delete('search'); // Remove search word
+        urlParams.set('page', '1'); // Always go back to page 1
+        window.location.search = urlParams.toString(); // Reload page
     }
 
-    // Search Form Interceptor: Ensure search submissions reset to Page 1
+
+
+    // Ensures search submissions reset back to Page 1
     document.getElementById('searchForm').addEventListener('submit', function(e) {     
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = new URLSearchParams(window.location.search); // Get current link details
     });
 
-    // For display 'pop modal' for 'unlist' and 'list'
+
+
+    // Shows a popup asking if you really want to hide or show the product
     function confirmToggleStatus(productId, isListed) {
-        const actionText = isListed ? 'unlist' : 'list';
-        const confirmColor = isListed ? '#d33' : '#16a34a';
+        const actionText = isListed ? 'unlist' : 'list'; // Decide word based on status
+        const confirmColor = isListed ? '#d33' : '#16a34a'; // Decide button color
         Swal.fire({
             title: 'Are you sure?',
             text: `Do you want to ${actionText} this product?`,
@@ -226,7 +232,7 @@
             confirmButtonText: `Yes, ${actionText} it!`
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById(`toggleForm-${productId}`).submit();
+                document.getElementById(`toggleForm-${productId}`).submit(); // Submit form if user says yes
             }
         });
     }

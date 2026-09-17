@@ -40,7 +40,7 @@
             </div>
         <% } %>
 
-        <!-- NEW: Adjusted Diagonal 'Buy 1 Get 1' Banner -->
+        <!-- Adjusted Diagonal 'Buy 1 Get 1' Banner -->
         <% if (bogoDisplay) { %>
             <!-- Positioned specifically to start under the heart (top-14) and stretch across -->
             <div class="absolute top-8 -left-2 right-30  z-10 flex items-start justify-center pointer-events-none">
@@ -72,7 +72,7 @@
                 <span class="text-gray-400 font-normal ml-1 group-hover/rating:text-blue-600 group-hover/rating:underline transition">(<%= product.numReviews || 3 %>)</span>
             </a>
 
-            <!-- Dynamic Pricing Display -->
+           <!-- Dynamic Pricing Display -->
             <div class="mt-2 flex flex-col">
                 <span class="text-base font-black text-gray-900">₹<%= Number(finalPrice).toLocaleString('en-IN') %></span>
                 <% if (finalPrice < basePrice) { %>
@@ -81,9 +81,27 @@
                         <span class="text-red-600"><%= discountDisplay %> Off</span>
                     </div>
                 <% } else if (bogoDisplay) { %>
-                    <div class="flex items-center space-x-2 text-[11px] font-bold mt-0.5">
-                        <span class="text-red-600"><i class="fas fa-gift mr-1"></i> Offer Eligible</span>
-                    </div>
+                  <!-- Explicit Reward Display -->
+                <div class="flex flex-col mt-0.5">
+                    <span class="text-[11px] font-black text-red-600 flex items-center tracking-wide">
+                        <i class="fas fa-gift mr-1.5 text-[10px]"></i> <%= bogoDisplay %> OFFER
+                    </span>
+                    
+                    <% 
+                        //  Check if array exists, has items, AND the populated item isn't null
+                        const freeItems = product.appliedOffer.freeTargetIds;
+                        if (freeItems && freeItems.length > 0 && freeItems[0] !== null) { 
+                    %>
+                    
+                        <span class="text-[14px] text-blue-500 font-extrabold truncate leading-tight mt-0.5" title="Free <%= freeItems[0].productName || freeItems[0].name %>">
+                            + Free <%= freeItems[0].productName || freeItems[0].name %>
+                        </span>
+                    <% } else { %>
+                        <span class="text-[10px] text-gray-500 font-extrabold truncate leading-tight mt-0.5">
+                            + Free Gift Included
+                        </span>
+                    <% } %>
+                </div>
                 <% } else { %>
                     <div class="h-4"></div> 
                 <% } %>

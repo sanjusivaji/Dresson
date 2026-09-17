@@ -31,8 +31,8 @@
         <!-- Product Details Section -->
         <div class="mb-10 space-y-6">
             <% order.items.forEach(item => { %>
+                <!-- Hides items that are not being returned, so the screen only shows relevant return items -->
                 <% 
-                    // Only display items that are actually part of a return process to keep the view clean
                     if (['Return Pending', 'Returned', 'Return Rejected'].includes(item.itemStatus) || (order.returnRequest && order.returnRequest.isRequested)) {
                         const variantParts = item.variantName ? item.variantName.split(' / ') : [];
                         const productName = item.product.productName || item.product.name || 'Dresson Product';
@@ -127,33 +127,18 @@
 <%- include('../partial/shared/warning') %>
 
 <script>
+    // Handles the approval or rejection of a return request
     function handleProcess(event, actionType) {
-        event.preventDefault();
-        
-        const form = document.getElementById('process-return-form');
-        const hiddenInput = document.getElementById('form-action-input');
-        const messageInput = document.getElementById('adminMessage'); 
-        
-        // 1. Check if the textarea is empty
+        event.preventDefault();                                                                        // Stops the form from submitting immediately
+        const form = document.getElementById('process-return-form');                                   // Gets the form element
+        const hiddenInput = document.getElementById('form-action-input');                              // Gets the hidden input to store the action
+        const messageInput = document.getElementById('adminMessage');                                  // Gets the admin's note text box
         if (!messageInput.value.trim()) {
-            showCustomAlert('Please provide a mandatory message before processing the return.', 'Required Field', 'warning');
-            return; 
+            showCustomAlert('Please provide a mandatory message before processing the return.', 'Required Field', 'warning'); // Shows an alert if message is empty
+            return;                                                                                    // Stops the function if no message is provided
         }
-
-        // 2. Customize the warning message based on the button clicked
-        const modalTitle = `${actionType} Return?`;
-        const modalMessage = actionType === 'Approve' 
-            ? 'Are you sure you want to APPROVE this return? The refund process will be initiated.'
-            : 'Are you sure you want to REJECT this return? The customer will be notified.';
-
-        // 3. Show your custom confirm modal
-        showCustomConfirm(
-            modalMessage, 
-            function() {
-                hiddenInput.value = actionType; 
-                form.submit(); 
-            }, 
-            modalTitle
-        );
+        const modalTitle = `${actionType} Return?`;                                                    // Creates the title for the popup
+        const modalMessage = actionType === 'Approve' ? 'Are you sure you want to APPROVE this return? The refund process will be initiated.' : 'Are you sure you want to REJECT this return? The customer will be notified.'; // Sets popup message based on action
+        showCustomConfirm(modalMessage, function() { hiddenInput.value = actionType; form.submit(); }, modalTitle); // Shows confirmation popup and submits form if user agrees
     }
 </script>

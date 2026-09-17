@@ -8,14 +8,14 @@ export const getActiveWishlist = async (userId) => {
 
 // For 'toggling' wishlist
 export const toggleProductInWishlist = async (userId, productId) => {
-    const wishlist = await wishlistRepository.findWishlistByUserId(userId);      // Retrieve 'first matching' document based on 'userId' from 'wishlist' collection
+    const wishlist = await wishlistRepository.findWishlistByUserId(userId);                                                    // Retrieve 'first matching' document based on 'userId' from 'wishlist' collection
     if (!wishlist) {
-        await wishlistRepository.addProductToWishlist(userId, productId);        // For find 'first matching' document and 'update'(ie 'adding' 'unique' product) 
+        await wishlistRepository.addProductToWishlist(userId, productId);                                                       // For find 'first matching' document and 'update'(ie 'adding' 'unique' product) 
         return { action: 'added' };
     }
     const productExists = wishlist.products.includes(productId);
     if (productExists) {
-        await wishlistRepository.removeProductFromWishlist(userId, productId);   // For find 'first matching' document in 'wishlist' and 'update'(ie 'removing' the product)
+        await wishlistRepository.removeProductFromWishlist(userId, productId);                                                // For find 'first matching' document in 'wishlist' and 'update'(ie 'removing' the product)
         return { action: 'removed' };
     } else {
         await wishlistRepository.addProductToWishlist(userId, productId);

@@ -228,13 +228,17 @@
 <script src="/js/shared/imageCropper.js"></script>
 
 <script>
+    // Safely load category data from the hidden input field
     let databaseCategories = [];
     try {
-        const rawTextData = document.getElementById('rawServerCategories').value;
-        databaseCategories = JSON.parse(rawTextData || "[]");
+        const rawTextData = document.getElementById('rawServerCategories').value; // Read hidden text
+        databaseCategories = JSON.parse(rawTextData || "[]"); // Convert to objects
     } catch (error) { console.error("Critical failure parsing category datasets:", error); }
-    
-    const defaultPresets = {                                                                       
+
+
+
+    // Default options for things like size and color
+    const defaultPresets = {                                                                                               
         'Size': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
         'Color': ['Black', 'White', 'Navy Blue', 'Red', 'Olive Green', 'Grey', 'Maroon', 'Multi'],
         'Fit Type': ['Slim Fit', 'Regular Fit', 'Oversized', 'Relaxed Fit', 'Tailored'],
@@ -243,77 +247,84 @@
         'Neckline / Collar': ['Crew Neck', 'V-Neck', 'Polo Collar', 'Mandarin Collar', 'Hooded'],
         'Pattern / Print': ['Solid', 'Striped', 'Checked', 'Floral Print', 'Graphic Print']
     };
-    
+
+
+
+    // Runs when the page finishes loading
     document.addEventListener("DOMContentLoaded", () => {
-        if (document.getElementById('parentCategory').value) handleParentCategoryChange();
-        addNewOptionRow('Size');
+        if (document.getElementById('parentCategory').value) handleParentCategoryChange(); // Setup subcategories if parent is picked
+        addNewOptionRow('Size'); // Always add a size row to start
     });
 
-    function handleParentCategoryChange() {
-        const activeGender = document.getElementById('parentCategory').value;
-        const subSelect = document.getElementById('subCategory');    
-        subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
 
+
+    // Updates the subcategory dropdown when you choose Men, Women, or Kids
+    function handleParentCategoryChange() {
+        const activeGender = document.getElementById('parentCategory').value; // Find selected gender
+        const subSelect = document.getElementById('subCategory'); // Find the dropdown
+        subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>'; // Reset it
         const filteredMatches = databaseCategories.filter(cat => {
             return cat.gender === activeGender && (cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined);
-        });
-        
+        }); // Filter categories by gender
         if (filteredMatches.length > 0) {
-            subSelect.disabled = false;
+            subSelect.disabled = false; // Turn on dropdown
             subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.add('bg-white', 'cursor-pointer');
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option'); opt.value = cat._id;                 
-                if (cat.breadcrumb) opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`;
+                if (cat.breadcrumb) opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`; // Add breadcrumb name
                 else if (cat.lineage && Array.isArray(cat.lineage)) opt.innerText = cat.lineage.join(" → ") + ` (Level ${cat.depth || 2})`;
                 else {
                     let parentName = "Subcategory";
                     if (cat.parentCategory && typeof cat.parentCategory === 'object' && cat.parentCategory.categoryName) parentName = cat.parentCategory.categoryName;
                     else if (typeof cat.parentCategory === 'string') {
-                        const foundParent = databaseCategories.find(p => p._id.toString() === cat.parentCategory.toString());
+                        const foundParent = databaseCategories.find(p => p._id.toString() === cat.parentCategory.toString()); // Find parent category name
                         if (foundParent) parentName = foundParent.categoryName;
                     }
                     opt.innerText = `${parentName} → ${cat.categoryName}`;
                 }
-                subSelect.appendChild(opt);
+                subSelect.appendChild(opt); // Add option to list
             });
         } else {
-            subSelect.disabled = true;
+            subSelect.disabled = true; // Keep disabled if empty
             subSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.remove('bg-white', 'cursor-pointer');
             subSelect.innerHTML = `<option value="" disabled selected>No sub-categories exist for ${activeGender}</option>`;
         }
-        document.getElementById('ancestorsContainer').innerHTML = '';
+        document.getElementById('ancestorsContainer').innerHTML = ''; // Clean hidden storage
     }
 
-    function handleSubCategoryChange() {
-        const selectedId = document.getElementById('subCategory').value;
-        const container = document.getElementById('ancestorsContainer'); container.innerHTML = ''; 
-        if (!selectedId) return;
 
+
+    // Saves full category history into hidden fields
+    function handleSubCategoryChange() {
+        const selectedId = document.getElementById('subCategory').value; // Get the chosen id
+        const container = document.getElementById('ancestorsContainer'); container.innerHTML = ''; 
+        if (!selectedId) return; // Stop if nothing selected
         let currentCat = databaseCategories.find(c => c._id.toString() === selectedId.toString());
         const ancestors = [];
         while (currentCat) {
-            ancestors.push(currentCat._id);
+            ancestors.push(currentCat._id); // Save ID
             if (currentCat.parentCategory && currentCat.parentCategory !== 'none') {
                 const parentId = typeof currentCat.parentCategory === 'object' ? currentCat.parentCategory._id : currentCat.parentCategory;
-                currentCat = databaseCategories.find(c => c._id.toString() === parentId.toString());
-            } else currentCat = null;
+                currentCat = databaseCategories.find(c => c._id.toString() === parentId.toString()); // Find parent again
+            } else currentCat = null; // Stop when no parent
         }
         ancestors.forEach(id => {
-            const input = document.createElement('input'); input.type = 'hidden'; input.name = 'categoryAncestors[]'; input.value = id;
-            container.appendChild(input);
+            const input = document.createElement('input'); input.type = 'hidden'; input.name = 'categoryAncestors[]'; input.value = id; // Create input
+            container.appendChild(input); // Put it on page
         });
     }
 
+
+
+    // Creates a new section for setting product features like size or color
     function addNewOptionRow(presetType = 'Size') {
-        const container = document.getElementById('optionsContainer');
-        const row = document.createElement('div');
+        const container = document.getElementById('optionsContainer'); // Get main box
+        const row = document.createElement('div'); // Create new row
         row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
-        const standardAttributes = Object.keys(defaultPresets); standardAttributes.push("Occasion", "Custom Attribute");
-
-        let optionsHtml = standardAttributes.map(attr => `<option value="${attr}" ${attr === presetType ? 'selected' : ''}>${attr}</option>`).join('');
-
+        const standardAttributes = Object.keys(defaultPresets); standardAttributes.push("Occasion", "Custom Attribute"); // Add names
+        let optionsHtml = standardAttributes.map(attr => `<option value="${attr}" ${attr === presetType ? 'selected' : ''}>${attr}</option>`).join(''); // Create dropdown text
         row.innerHTML = `
             <div class="col-span-3">
                 <select onchange="updateRowPlaceholders(this)" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs font-bold text-gray-800 bg-gray-50 focus:outline-none focus:border-gray-500 option-type cursor-pointer">
@@ -327,42 +338,58 @@
             <div class="col-span-1 text-right mt-1">
                 <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 transition cursor-pointer"><i class="fas fa-trash-alt text-xs"></i></button>
             </div>
-        `;
-        container.appendChild(row); updateRowPlaceholders(row.querySelector('.option-type'));
+        `; // Put HTML inside
+        container.appendChild(row); updateRowPlaceholders(row.querySelector('.option-type')); // Add to page and set hints
     }
-    
+
+
+
+    // Adds a clicked suggestion (like 'XL' or 'Red') into the text box
     function appendPresetToInput(btn, value) {
-        const inputField = btn.closest('.col-span-8').querySelector('.option-values');
-        let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean);
+        const inputField = btn.closest('.col-span-8').querySelector('.option-values'); // Find input box
+        let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean); // Clean list of items
         if (!currentValues.includes(value)) {
-            currentValues.push(value); inputField.value = currentValues.join(', ') + ', '; 
-            generateCombinationsMatrix();
+            currentValues.push(value); inputField.value = currentValues.join(', ') + ', '; // Add to box
+            generateCombinationsMatrix(); // Refresh product table
         }
-        inputField.focus();
+        inputField.focus(); // Select box
     }
 
+
+
+    // Changes the placeholder text and quick-add buttons depending on feature chosen
     function updateRowPlaceholders(select) {
-        const parentCol = select.closest('.option-row').querySelector('.col-span-8');
-        const input = parentCol.querySelector('.option-values'); const presetContainer = parentCol.querySelector('.preset-container');
-        const type = select.value;
+        const parentCol = select.closest('.option-row').querySelector('.col-span-8'); // Find column
+        const input = parentCol.querySelector('.option-values'); const presetContainer = parentCol.querySelector('.preset-container'); // Get parts
+        const type = select.value; // Read what user selected
         if (defaultPresets[type]) {
-            const chipsHtml = defaultPresets[type].map(val => `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-white border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-bold transition-colors cursor-pointer shadow-xs">${val}</button>`).join('');
-            presetContainer.innerHTML = chipsHtml;
-        } else presetContainer.innerHTML = '';
+            const chipsHtml = defaultPresets[type].map(val => `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-white border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-bold transition-colors cursor-pointer shadow-xs">${val}</button>`).join(''); // Create suggestion buttons
+            presetContainer.innerHTML = chipsHtml; // Put on screen
+        } else presetContainer.innerHTML = ''; // Blank if no presets
         const placeholderMap = { 'Size': "Type sizes or click presets...", 'Color': "Type colors or click presets...", 'Fit Type': "Type fits or click presets..." };        
-        input.placeholder = placeholderMap[type] || `Enter discrete variables for ${type} (separate with commas)`;
-        generateCombinationsMatrix();
+        input.placeholder = placeholderMap[type] || `Enter discrete variables for ${type} (separate with commas)`; // Update hint message
+        generateCombinationsMatrix(); // Refresh product table
     }
 
+
+
+    // Shows the popup to make a custom feature
     function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
+
+
+
+    // Hides the popup to make a custom feature
     function closeCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', false); }
-    
+
+
+
+    // Takes the custom feature name and turns it into a real row
     function submitCustomVariantRow() {
-        const inputName = document.getElementById('customVariantInputName').value.trim();
-        if(!inputName) return alert("Please clarify a variant identifier parameter tag.");
-        const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
+        const inputName = document.getElementById('customVariantInputName').value.trim(); // Get name
+        if(!inputName) return alert("Please clarify a variant identifier parameter tag."); // Stop if blank
+        const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1); // Make first letter big
         const container = document.getElementById('optionsContainer'); const row = document.createElement('div');        
-        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
+        row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in"; // Set style
         row.innerHTML = `
             <div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2 mt-2">
                 <span>${cleanKeyLabel}</span><input type="hidden" class="option-type" value="${cleanKeyLabel}">
@@ -372,34 +399,40 @@
             </div>
             <div class="col-span-1 text-right mt-1">
                 <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition cursor-pointer"><i class="fas fa-trash-alt text-xs"></i></button>
-            </div>`;
-        container.appendChild(row); closeCustomVariantModal(); document.getElementById('customVariantInputName').value = '';
+            </div>`; // Create inner code
+        container.appendChild(row); closeCustomVariantModal(); document.getElementById('customVariantInputName').value = ''; // Clean up
     }
 
+
+
+    // Deletes an entire feature row when trash is clicked
     function removeOptionRow(btn) { btn.closest('.option-row').remove(); generateCombinationsMatrix(); }
 
+
+
+    // Mixes all selected sizes, colors, etc., into a big table of final products
     function generateCombinationsMatrix() {
-        const rows = document.getElementsByClassName('option-row');
-        const baseName = document.getElementById('baseName').value.trim() || "PROD";
+        const rows = document.getElementsByClassName('option-row'); // Get all feature rows
+        const baseName = document.getElementById('baseName').value.trim() || "PROD"; // Fallback name
         const brandName = document.getElementById('brandName').value.trim() || "DRSN";        
         let optionKeys = []; let arraysToCombine = [];        
         for (let row of rows) {
-            const type = row.querySelector('.option-type').value; const rawValue = row.querySelector('.option-values').value;
+            const type = row.querySelector('.option-type').value; const rawValue = row.querySelector('.option-values').value; // Read row
             const cleanValues = [...new Set(rawValue.split(',').map(v => v.trim()).filter(v => v !== ''))];            
-            if(cleanValues.length > 0) { optionKeys.push(type); arraysToCombine.push(cleanValues); }
+            if(cleanValues.length > 0) { optionKeys.push(type); arraysToCombine.push(cleanValues); } // Save valid parts
         }
-        const matrixCard = document.getElementById('combinationsCard'); const tableBody = document.getElementById('matrixTableBody');
-        tableBody.innerHTML = '';
-        if(arraysToCombine.length === 0 || rows.length !== arraysToCombine.length) return matrixCard.classList.add('hidden');
-        let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
-        if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]);
-        matrixCard.classList.remove('hidden');
+        const matrixCard = document.getElementById('combinationsCard'); const tableBody = document.getElementById('matrixTableBody'); // Find table
+        tableBody.innerHTML = ''; // Empty table
+        if(arraysToCombine.length === 0 || rows.length !== arraysToCombine.length) return matrixCard.classList.add('hidden'); // Hide if incomplete
+        let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat()))); // Mix parts
+        if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]); // Fix if single item
+        matrixCard.classList.remove('hidden'); // Show table
         combinations.forEach((combo, index) => {
-            const comboString = combo.join(' / '); const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase();
-            const generatedSkuSafe = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`;
+            const comboString = combo.join(' / '); const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase(); // Create ID code
+            const generatedSkuSafe = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`; // Assemble sku string
             let sizeValue = 'Standard'; let colorValue = 'Standard';            
-            combo.forEach((val, i) => { if (optionKeys[i] === 'Size') sizeValue = val; if (optionKeys[i] === 'Color') colorValue = val; });
-            const tr = document.createElement('tr'); tr.className = "hover:bg-gray-50/50 transition";
+            combo.forEach((val, i) => { if (optionKeys[i] === 'Size') sizeValue = val; if (optionKeys[i] === 'Color') colorValue = val; }); // Label size and color
+            const tr = document.createElement('tr'); tr.className = "hover:bg-gray-50/50 transition"; // Create row
             tr.innerHTML = `
                 <td class="py-4 px-8 font-bold text-gray-900">
                     <span class="text-xs">${comboString}</span>
@@ -420,42 +453,60 @@
                     <input type="number" name="variants[${index}][stock]" min="0" placeholder="0" value="0" class="matrix-variant-stock w-full border border-gray-200 rounded-md px-3 py-2 text-center font-bold bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
                 </td>
             `;        
-            tableBody.appendChild(tr);
+            tableBody.appendChild(tr); // Add to table
         });
     }
 
+
+
+    // Easily show or hide a popup box by ID
     function toggleModalVisibility(modalId, contentId, shouldShow) {
-        const modal = document.getElementById(modalId); const content = document.getElementById(contentId);
+        const modal = document.getElementById(modalId); const content = document.getElementById(contentId); // Find parts
         if(shouldShow) {
-            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10); // Animate show
         } else {
-            modal.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 200);
+            modal.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 200); // Animate hide
         }
     }
 
+
+
+    // Trigger table updates whenever name or brand changes
     document.getElementById('baseName').addEventListener('input', generateCombinationsMatrix);
     document.getElementById('brandName').addEventListener('input', generateCombinationsMatrix);
 
+
+
+    // Tracks all product images you select
     const processedFilesArray = []; const dataTransfer = new DataTransfer(); 
 
+
+
+    // Processes image files when you choose them from your computer
     function handleFileSelect(event) {
-        const files = Array.from(event.target.files);
-        if (!files.length) return;
-        files.forEach(file => { if (file.type.startsWith('image/')) processedFilesArray.push(file); });
-        updateFormFileInput(); renderPreviews(); event.target.value = ''; 
+        const files = Array.from(event.target.files); // Convert list of files
+        if (!files.length) return; // Quit if empty
+        files.forEach(file => { if (file.type.startsWith('image/')) processedFilesArray.push(file); }); // Ensure it's a picture
+        updateFormFileInput(); renderPreviews(); event.target.value = ''; // Finish up
     }
 
+
+
+    // Prepares chosen photos to be sent with the main form
     function updateFormFileInput() {
-        dataTransfer.items.clear(); processedFilesArray.forEach(file => dataTransfer.items.add(file));
-        document.getElementById('finalFormFileInput').files = dataTransfer.files;
-        if (processedFilesArray.length >= 3) document.getElementById('imageCountError').classList.add('hidden');
+        dataTransfer.items.clear(); processedFilesArray.forEach(file => dataTransfer.items.add(file)); // Add all valid files
+        document.getElementById('finalFormFileInput').files = dataTransfer.files; // Apply files to hidden input
+        if (processedFilesArray.length >= 3) document.getElementById('imageCountError').classList.add('hidden'); // Hide error if enough pics
     }
 
+
+
+    // Draws the small pictures on the screen so you can review them
     function renderPreviews() {
-        const grid = document.getElementById('imagePreviewGrid'); grid.innerHTML = '';
+        const grid = document.getElementById('imagePreviewGrid'); grid.innerHTML = ''; // Find block and clear it
         processedFilesArray.forEach((file, index) => {
-            const url = URL.createObjectURL(file); const card = document.createElement('div');
-            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs";
+            const url = URL.createObjectURL(file); const card = document.createElement('div'); // Make temp link
+            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs"; // Card style
             card.innerHTML = `
                 <img src="${url}" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 backdrop-blur-xs">
@@ -463,80 +514,89 @@
                     <button type="button" onclick="removeImage(${index})" class="w-9 h-9 flex items-center justify-center bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer transition-transform hover:scale-105"><i class="fas fa-trash"></i></button>
                 </div>
                 <span class="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">#${index + 1}</span>
-            `;
-            grid.appendChild(card);
+            `; // Put card details together
+            grid.appendChild(card); // Put on screen
         });
     }
 
+
+
+    // Deletes an image card that you didn't want
     function removeImage(index) { processedFilesArray.splice(index, 1); updateFormFileInput(); renderPreviews(); }
 
+
+
+    // Opens an editor popup so you can cut the photo down to size
     function openCropper(index) {
         const originalFile = processedFilesArray[index];    
         window.ImageCropper.openCropper({
             file: originalFile, aspectRatio: NaN,
             onCrop: (blob, newUrl) => {
-                processedFilesArray[index] = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: Date.now() });
-                updateFormFileInput(); renderPreviews();
+                processedFilesArray[index] = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: Date.now() }); // Replace file with cropped version
+                updateFormFileInput(); renderPreviews(); // Refresh views
             }
         });
     }
 
+
+
+    // Checks all boxes to make sure nothing is missing before you submit
     document.getElementById('productForm').addEventListener('submit', function(event) {
-        let isValid = true;
-        document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500', 'bg-red-50'));
+        let isValid = true; // Track if form is good
+        document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden')); // Clear old errors
+        document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500', 'bg-red-50')); // Remove red outlines
         
         function fireError(elementId, errorText) {
-            const inputField = document.getElementById(elementId); const errorElement = document.getElementById(elementId + 'Error');
+            const inputField = document.getElementById(elementId); const errorElement = document.getElementById(elementId + 'Error'); // Find inputs
             if (inputField && errorElement) {
-                inputField.classList.add('border-red-500'); errorElement.innerText = errorText;
-                errorElement.classList.remove('hidden'); isValid = false;
+                inputField.classList.add('border-red-500'); errorElement.innerText = errorText; // Set red style and error words
+                errorElement.classList.remove('hidden'); isValid = false; // Flag form bad
             }
         }
 
-        if (!document.getElementById('baseName').value.trim()) fireError('baseName', 'Product name is mandatory.');
-        if (!document.getElementById('brandName').value.trim()) fireError('brandName', 'Brand name is mandatory.');
-        if (!document.getElementById('parentCategory').value) fireError('parentCategory', 'Please select a Target Gender.');
-        if (!document.getElementById('subCategory').value) fireError('subCategory', 'Please assign a Sub-Category.');
-        if (!document.getElementById('description').value.trim()) fireError('description', 'Rich description is mandatory.');
+        if (!document.getElementById('baseName').value.trim()) fireError('baseName', 'Product name is mandatory.'); // Check name
+        if (!document.getElementById('brandName').value.trim()) fireError('brandName', 'Brand name is mandatory.'); // Check brand
+        if (!document.getElementById('parentCategory').value) fireError('parentCategory', 'Please select a Target Gender.'); // Check gender
+        if (!document.getElementById('subCategory').value) fireError('subCategory', 'Please assign a Sub-Category.'); // Check subcategory
+        if (!document.getElementById('description').value.trim()) fireError('description', 'Rich description is mandatory.'); // Check description
         
         if (typeof processedFilesArray !== 'undefined' && processedFilesArray.length < 3) {
-            const errorBox = document.getElementById('imageCountError');
-            if (errorBox) errorBox.classList.remove('hidden');
-            isValid = false;
+            const errorBox = document.getElementById('imageCountError'); // Need at least 3 photos
+            if (errorBox) errorBox.classList.remove('hidden'); // Show error
+            isValid = false; // Block form
         }
 
-        const matrixBody = document.getElementById('matrixTableBody');
-        const rows = matrixBody ? matrixBody.querySelectorAll('tr') : [];
+        const matrixBody = document.getElementById('matrixTableBody'); // Check variants table
+        const rows = matrixBody ? matrixBody.querySelectorAll('tr') : []; // Get table parts
         const matrixGlobalErr = document.getElementById('matrixGlobalError');        
         
         if (rows.length === 0) {
             if (matrixGlobalErr) {
-                matrixGlobalErr.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-lg"></i> Validation Error: At least one variant must be created.';
-                matrixGlobalErr.classList.remove('hidden');
+                matrixGlobalErr.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-lg"></i> Validation Error: At least one variant must be created.'; // Check if variants exist
+                matrixGlobalErr.classList.remove('hidden'); // Display message
             }
-            isValid = false;
+            isValid = false; // Block form
         } else {
             rows.forEach(tr => {
-                const priceInput = tr.querySelector('.matrix-variant-price');
-                const stockInput = tr.querySelector('.matrix-variant-stock');
-                const skuInput = tr.querySelector('.matrix-variant-sku');
+                const priceInput = tr.querySelector('.matrix-variant-price'); // Get price input
+                const stockInput = tr.querySelector('.matrix-variant-stock'); // Get stock input
+                const skuInput = tr.querySelector('.matrix-variant-sku'); // Get sku input
 
-                if (!skuInput || !skuInput.value.trim()) { if (skuInput) skuInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
-                if (!priceInput || priceInput.value === '' || parseFloat(priceInput.value) < 0) { if (priceInput) priceInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
-                if (!stockInput || stockInput.value === '' || parseInt(stockInput.value) < 0) { if (stockInput) stockInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
+                if (!skuInput || !skuInput.value.trim()) { if (skuInput) skuInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate sku
+                if (!priceInput || priceInput.value === '' || parseFloat(priceInput.value) < 0) { if (priceInput) priceInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate price
+                if (!stockInput || stockInput.value === '' || parseInt(stockInput.value) < 0) { if (stockInput) stockInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate stock
             });
 
             if (!isValid && matrixGlobalErr) {
-                matrixGlobalErr.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-lg"></i> Validation Error: Please fill in valid SKUs, prices, and stock.';
-                matrixGlobalErr.classList.remove('hidden');
+                matrixGlobalErr.innerHTML = '<i class="fas fa-exclamation-circle mr-2 text-lg"></i> Validation Error: Please fill in valid SKUs, prices, and stock.'; // Write detail error
+                matrixGlobalErr.classList.remove('hidden'); // Reveal error
             }
         }
 
         if (!isValid) {
-            event.preventDefault(); 
-            const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)');
-            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            event.preventDefault(); // Stop webpage from sending form
+            const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)'); // Find problem area
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Move screen to the problem
         }
     });
 </script>

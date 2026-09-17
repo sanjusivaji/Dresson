@@ -10,12 +10,12 @@ const offerSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: Object.values(OFFER_TYPES)                     // We get 'OFFER_TYPES' from 'src/constans/offerConstants.js' file and its values are 'Percentage', 'Flat Discount' , 'Buyx Get y' etc 
+        enum: Object.values(OFFER_TYPES)                                                                       // We get 'OFFER_TYPES' from 'src/constans/offerConstants.js' file and its values are 'Percentage', 'Flat Discount' , 'Buyx Get y' etc 
     },
     targetType: {
         type: String,
         required: true,
-        enum: ['Specific Product', , 'Entire Category','Entire Order', 'Category']
+        enum: ['Specific Product','Entire Category','Entire Order', 'Category']
     },
     targetIds: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -23,7 +23,7 @@ const offerSchema = new mongoose.Schema({
     discountValue: {
         type: Number,
         required: function() {
-            return this.type === OFFER_TYPES.PERCENTAGE ||   // Here 'function' become 'required' only when it return 'true' other wise 'not' required so we can provide another options(ie 'discountValue' field is 'not' required for 'BuyX GetY' like fields).
+            return this.type === OFFER_TYPES.PERCENTAGE ||                                                         // Here 'function' become 'required' only when it return 'true' other wise 'not' required so we can provide another options(ie 'discountValue' field is 'not' required for 'BuyX GetY' like fields).
                    this.type === OFFER_TYPES.FLAT_DISCOUNT ||
                    this.type === 'Fixed Bundle Price';
         }
@@ -31,11 +31,11 @@ const offerSchema = new mongoose.Schema({
     bundleQuantity: {
         type: Number,
         required: function() {
-            return this.type === 'Fixed Bundle Price' && this.targetType === 'Entire Category'; // Here 'function' return 'true' when both(ie 'type' and 'targetType')condition will be satisfy.
+            return this.type === 'Fixed Bundle Price' && this.targetType === 'Entire Category';                   // Here 'function' return 'true' when both(ie 'type' and 'targetType')condition will be satisfy.
         },
-        min: [2, 'Bundle must contain at least 2 items']    // Here 'min' is 'built-in' 'mongoose' property used for 'validate' it contains 'minimum' quantity or not and its 'syntax' is 'min:[value, 'Custom Error Message']'(ie if it has 'no' minimum value it return 'error message').
+        min: [2, 'Bundle must contain at least 2 items']                                                         // Here 'min' is 'built-in' 'mongoose' property used for 'validate' it contains 'minimum' quantity or not and its 'syntax' is 'min:[value, 'Custom Error Message']'(ie if it has 'no' minimum value it return 'error message').
     },
-    buyQuantity: {                                          // Here both 'buyQuantity' and 'getQuantity' are belongs to 'Buy X, Get Y' offer
+    buyQuantity: {                                                                                               // Here both 'buyQuantity' and 'getQuantity' are belongs to 'Buy X, Get Y' offer
         type: Number,
         required: function() {
             return this.type === 'Buy X, Get Y'; 

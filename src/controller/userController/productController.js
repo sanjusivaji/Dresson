@@ -2,10 +2,10 @@ import * as userProductService from '../../services/user/userProductServices.js'
 import { PRODUCT_CONSTANTS } from '../../constants/userProductConstants.js';
 
 
-// For 'display' 'home' page
+// For display 'home' page
 export const getShopPage = async (req, res) => {
     try {
-        const catalogData = await userProductService.compileShopCatalog(req.query);        //  'compileShopCatalog()' done all 'searching' , filtering etc
+        const catalogData = await userProductService.compileShopCatalog(req.query);
         res.render('user/home', {
             ...catalogData,
             query: req.query,
@@ -18,11 +18,11 @@ export const getShopPage = async (req, res) => {
     }
 };
 
-// For 'display' 'productDetails' page
+
 export const getProductDetails = async (req, res) => {
     try {
         const productId = req.params.id;
-        const product = await userProductService.fetchProductDetails(productId);                                    // For 'retrieve' each product details based on 'productId'   
+        const product = await userProductService.fetchProductDetails(productId);
         if (!product) {
             return res.status(404).render('user/404', {
                 layout: 'layout/user',
@@ -30,7 +30,7 @@ export const getProductDetails = async (req, res) => {
                 message: PRODUCT_CONSTANTS.MESSAGES.PRODUCT_UNAVAILABLE
             });
         }                
-        const relatedProducts = await userProductService.getRelatedProducts(product.subCategory._id, product._id);  // For retrieve 'Product' data based on 'subCategoryId', 'excludeProductId', 'isListed: true' etc       
+        const relatedProducts = await userProductService.getRelatedProducts(product.subCategory._id, product._id);
         res.render('user/productDetails', {
             product, 
             layout: 'layout/user',
@@ -44,12 +44,13 @@ export const getProductDetails = async (req, res) => {
     }
 };
 
-// For 'display' 'rate product'
+
+// For 'display' 'rate product' page
 export const getRateProductPage = async (req, res) => {
     try {
         const productId = req.params.id;
         const isSuccess = req.query.success === 'true';         
-        const item = await userProductService.prepareProductForRating(productId);                                    // For return 'data' about product for 'rating' 
+        const item = await userProductService.prepareProductForRating(productId);
         res.render('user/rateProduct', {
             layout: 'layout/user',
             pageTitle: PRODUCT_CONSTANTS.TITLES.RATE_PRODUCT,
@@ -62,7 +63,8 @@ export const getRateProductPage = async (req, res) => {
     }
 };
 
-// For 'process' the 'review'
+
+// For 'process' of 'rate product'
 export const submitProductRating = async (req, res) => {
     try {
         const productId = req.params.id;
@@ -72,12 +74,10 @@ export const submitProductRating = async (req, res) => {
             message: req.body.message,
             imageUrl: req.file ? req.file.url : null
         };
-        await userProductService.processAndSaveReview(productId, userId, ratingData);                                // For process the data for save 'review' data
-        res.redirect(`/product/rate/${productId}?success=true`);                                                     // After 'save' review, we redirect into 'product/rate' page with 'productId' and 'succes: true' as 'query'
+        await userProductService.processAndSaveReview(productId, userId, ratingData);
+        res.redirect(`/product/rate/${productId}?success=true`);
     } catch (error) {
         console.error("Error submitting product rating:", error.message);
         res.redirect(PRODUCT_CONSTANTS.ROUTES.ORDERS);
     }
 };
-
-

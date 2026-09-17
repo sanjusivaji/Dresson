@@ -1,24 +1,22 @@
 import * as productRepository from '../../repository/admin/adminProductRepository.js';
-import * as categoryRepository from '../../repository/admin/adminCategoryRepository.js'
-import { PRODUCT_PAGINATION } from '../../constants/adminProductConstants.js';
+import * as categoryRepository from '../../repository/admin/adminCategoryRepository.js';
 import Product from '../../model/productModel.js';
 import mongoose from 'mongoose';
-import Category from '../../model/categoryModel.js';
 import logger from '../../utilities/logger.js'; 
 import { v2 as cloudinary } from 'cloudinary';
 
 
-// For return 'current products', 'categories', total pages etc
+// Gathers products, categories, and page numbers to show on the dashboard
 export const buildProductsListDashboard = async (query = {}) => {
-   const page = Math.max(1, parseInt(query.page) || 1);                     // In 'url' all value passes as 'string' so we should convert it into 'number' by using 'parseInt' and 'Math.max()' avoid the possibility crash when pass -ve value.
+    const page = Math.max(1, parseInt(query.page) || 1);
     const limit = parseInt(query.limit) || 4;
-    const skip = (page - 1) * limit;                                       // If 'page = 1' then '(page - 1) * limit' ie '1-1 * 4' = 0' ie in 'page 1' 'no' skip.
+    const skip = (page - 1) * limit;
     const obj = {};    
     const andConditions = []; 
-    if (query.search && query.search.trim() !== '') {                      //  Here 'search' is '<input name="search">' value and 'query.search.trim()' checks after 'trimming' string has any value or not.
-        const regex = new RegExp(query.search.trim(), 'i');                //  Here 'search' value is 'shirt' then it match 'SHirt', 't-shirt' etc because of 'i'.
+    if (query.search && query.search.trim() !== '') {
+        const regex = new RegExp(query.search.trim(), 'i');
         andConditions.push({
-            $or: [                                                         // '$or' 'mongodb' function can write in 'js' and should use in mongodb structure and it put inside '{ }' and its value put inside '[ ]' and it can be match any value inside it.
+            $or: [
                 { name: regex }, 
                 { productName: regex }, 
                 { brand: regex }
@@ -28,23 +26,23 @@ export const buildProductsListDashboard = async (query = {}) => {
     if (query.category && query.category.trim() !== '') {
         let categoryId;
         try {
-            categoryId = new mongoose.Types.ObjectId(query.category.trim());  // Here 'query.category' get from 'url' and it passes as 'string' so we 'convert' this 'string' into a special 'ObjectId' data type, for 'compare' with another 'ObjectId' in mongodb.
+            categoryId = new mongoose.Types.ObjectId(query.category.trim());
         } catch (error) {
             categoryId = query.category.trim(); 
         }
-        const relatedCategories = await categoryRepository.getRelatedCategoryIds(categoryId);  // For retrieve 'only' 'id' of 'array of object'(ie 'find()')based 'parent category'
+        const relatedCategories = await categoryRepository.getRelatedCategoryIds(categoryId);
         const categoryIdsToSearch = relatedCategories.map(item => item._id);        
         andConditions.push({ 
-            subCategory: { $in: categoryIdsToSearch }                        // Here 'andConditions' is the array and later we add it into data base and '{$in: categoryIdsToSearch}'  is the filter ie 'subCategory' field contains this specific list of 'categoryId' 
+            subCategory: { $in: categoryIdsToSearch }
         });
     }  
     if (andConditions.length > 0) {
-        obj.$and = andConditions;                                           // Here '$and' is a built-in 'mongoDB' operator and 'andConditions' is the conditions for 'searching' and 'obj' is 'empty object' and here we assign conditions into 'object'(ie it creates 'array' in object) because it allows 'dynamic searching' in 'mongodb'.
+        obj.$and = andConditions;
     }
-    const totalProducts = await productRepository.countFilteredProducts(obj); // For retrieve 'total products count' based on the 'filter'(ie 'search or category')
+    const totalProducts = await productRepository.countFilteredProducts(obj);
     const totalPages = Math.ceil(totalProducts / limit) || 1;    
-    const products = await productRepository.getFilteredProducts(obj, skip, limit);// For retrieve the actual products with pagination, sorting, and population        
-    const categories = await categoryRepository.getActiveCategories();        //  Fetch all 'isListed:true'(ie 'active') categories 
+    const products = await productRepository.getFilteredProducts(obj, skip, limit);
+    const categories = await categoryRepository.getActiveCategories();
     return {
         products,
         totalProducts,
@@ -55,8 +53,7 @@ export const buildProductsListDashboard = async (query = {}) => {
 };
 
 
-
-// For process of create 'product'
+// Processes and saves a new product to the database
 export const executeProductCreate = async (bodyData, files) => {
     const { 
         productName, 
@@ -70,13 +67,13 @@ export const executeProductCreate = async (bodyData, files) => {
         taxRate
     } = bodyData;
     const cleanProductName = (productName || '').trim();
-    const existingProduct = await productRepository.findProductByName(cleanProductName);        // It return 'first' matching 'document' from 'Product' category based on 'productName' without 'case sensitive' and '`^${productName}$` ensures 'start'(ie '^') 'exact' name and it put in 'template literals'.
+    const existingProduct = await productRepository.findProductByName(cleanProductName);
     if (existingProduct) {
         throw new Error(`Validation Error: A product named "${cleanProductName}" already exists in your catalog.`);
     }
-    const parsedDiscount = parseInt(discount, 10);                                              // 'string' convert into 'number'
+    const parsedDiscount = parseInt(discount, 10);
     const finalDiscount = isNaN(parsedDiscount) ? 0 : Math.min(Math.max(parsedDiscount, 0), 99);
-    if (!files || files.length < 3) {                                                           // 'files' is 'built-in' object created by 'multer' contains 'images'.
+    if (!files || files.length < 3) {
         throw new Error("Validation Error: A minimum of 3 cropped images is mandatory.");
     }
     const imageDetails = files.map(item => {
@@ -92,16 +89,16 @@ export const executeProductCreate = async (bodyData, files) => {
         };
     });
     const parsedVariants = variants ? Object.values(variants) : [];
-    const totalCalculatedStock = parsedVariants.reduce((acc,item) => acc + (parseInt(item.stock) || 0), 0); // It calculates the 'totalStock'
+    const totalCalculatedStock = parsedVariants.reduce((acc,item) => acc + (parseInt(item.stock) || 0), 0);
     const parsedTaxRate = parseInt(taxRate, 10);
     const finalTaxRate = isNaN(parsedTaxRate) ? 0 : parsedTaxRate;
     let normalizedAncestors = [];    
-    if (categoryAncestors) {                                                    // Here 'categoryAncestors' get from '<input>'(ie passes through 'bodydata' ie 'req.body' from 'controller')and  if an admin selects two categories ie the current category is 'level' '2 or more' ancestor still can be select one, but data base expect array, ie create an 'array'  is the 'first' step of creating 'ancestor tree', and it done 'another' function. 
+    if (categoryAncestors) {
         normalizedAncestors = Array.isArray(categoryAncestors) ? categoryAncestors : [categoryAncestors];
     } else if (subCategory) {
-        normalizedAncestors = [subCategory];                                    // It prevents crash the app because of 'undefined'
+        normalizedAncestors = [subCategory];
     }
-    normalizedAncestors = [...new Set(normalizedAncestors.filter(Boolean))];    // '...new Set()' remove 'duplicates' from 'normalizedAncestors' and 'spread' operator return an 'array' and 'filter(Boolean)' is same like 'array.filter(item => Boolean(item))' used for 'destroys any "falsy" values (like 'null', 'undefined', "" etc) ie 'filter()' only return 'true' value and 'Boolean' value is 'null' it will be 'false' like that.    
+    normalizedAncestors = [...new Set(normalizedAncestors.filter(Boolean))];
     const newProductPayload = {
         name: (productName || '').trim(),         
         brand: (brand || 'Dresson Original').trim(),
@@ -116,35 +113,36 @@ export const executeProductCreate = async (bodyData, files) => {
         totalStock: totalCalculatedStock,
         isListed: true
     };
-    return await productRepository.createProduct(newProductPayload);             // Finally 'saves' the data.
+    return await productRepository.createProduct(newProductPayload);
 };
 
 
-// For 'join' those have 'parentCategories', with 'categories'.
+// Gets categories and links sub-categories to their parent categories
 export const fetchProductFormOptions = async () => {
-    const categories = await productRepository.findActiveCategoriesWithParents(); // For retrieve all 'categories' details and place data/document of 'parent category' if 'category' have 'parentCategory' 'id'.
+    const categories = await productRepository.findActiveCategoriesWithParents();
     return { categories };
 };
 
 
-// For 'retrieve' 'product' and 'categories' 
+// Gets data for a single product and all categories to show on the edit page
 export const fetchEditProductData = async (productId) => {
-    const product = await productRepository.findProductById(productId);          // It returns only 'one' 'document' from the 'Product' model that matches the given '_id'.
+    const product = await productRepository.findProductById(productId);
     if (!product) throw new Error("Target catalog item not found.");    
-    const categories = await productRepository.findActiveCategoriesWithParents(); // It retrieve all 'categories' details and place 'document' of 'parent category' if 'category' have 'parentCategory' 'id'.
+    const categories = await productRepository.findActiveCategoriesWithParents();
     return { product, categories };
 };
 
-// For 'edit' process(ie make perfect values like 'discount', 'productName' etc and extract 'variants' name and ensure is it there and find 'totalStock', 'price' etc and delete the 'existing' images from 'cloudinary' and add image 'routes' to 'database')
+
+// Formats data, removes old images, and updates an existing product
 export const executeProductUpdate = async (productId, bodyData, files) => {
     const { productName, brand, discount,taxRate, parentCategory, subCategory, description, variants } = bodyData;
     const cleanProductName = (productName || '').trim();
-    const existingProduct = await productRepository.productNameCheck(productId,cleanProductName);            // For check and return same 'name' of product 'exist'
+    const existingProduct = await productRepository.productNameCheck(productId,cleanProductName);
     if (existingProduct) {
         throw new Error(`Validation Error: Another product is already using the name "${cleanProductName}".`);
     }
     const parsedDiscount = parseInt(discount, 10);
-    const finalDiscount = isNaN(parsedDiscount) ? 0 : Math.min(Math.max(parsedDiscount, 0), 99);            // 'isNaN(parsedDiscount)' preventing 'not numbers' and 'Math.max()' 'prevents' '-ve values'(ie 'minimum' value of 'pareseDiscount' is '0') and 'Math.min()' keeps minimum value as '99'.
+    const finalDiscount = isNaN(parsedDiscount) ? 0 : Math.min(Math.max(parsedDiscount, 0), 99);
     const parsedTaxRate = parseInt(taxRate, 10);
     const finalTaxRate = isNaN(parsedTaxRate) ? 0 : parsedTaxRate;
     const updatePayload = {
@@ -155,12 +153,11 @@ export const executeProductUpdate = async (productId, bodyData, files) => {
         parentCategory: parentCategory,
         subCategory: subCategory,
         description: (description || '').trim(),
-        //isListed: isListed === 'on' || isListed === true || isListed === 'true'                        // In 'html' '<form>' 'checkbox' is 'checked', the browser sends '{isListed: 'on'}'(or 'true')in the 'req.body' but if the 'checkbox' is 'unchecked', the browser does sends 'nothing', but in 'js' 'nothing' consider as 'false' so when value is 'nothing' it becomes 'false' by default.
     };
     if (variants) {
         const parsedVariants = Object.values(variants);    
-        parsedVariants.forEach(item => {                                                                // For capture 'name', 'size' etc
-            if (item.name) {                                                                            // Here 'value' of 'name' is like ''S / Blue / 100%Cotton' 
+        parsedVariants.forEach(item => {
+            if (item.name) {                                                                      
                 const parts = item.name.split('/').map(part => part.trim());
                 if (!item.size) {
                     item.size = parts[0] || 'Standard'; 
@@ -170,7 +167,7 @@ export const executeProductUpdate = async (productId, bodyData, files) => {
                 }
             }
         });
-        const hasInvalidVariants = parsedVariants.some(item => !item.size || item.size.trim() === ''); // For 'ensure' 'size' variant is created.
+        const hasInvalidVariants = parsedVariants.some(item => !item.size || item.size.trim() === '');
         if (hasInvalidVariants) {
             throw new Error("Validation Error: Every product variant must have a valid size.");
         }
@@ -185,7 +182,7 @@ export const executeProductUpdate = async (productId, bodyData, files) => {
             throw new Error("Validation Error: A minimum of 3 cropped images is mandatory when replacing the gallery.");
         }        
         const existingProduct = await productRepository.findProductById(productId);                          
-        if (existingProduct && existingProduct.images && existingProduct.images.length > 0) {        //  Here 'existing product' images in 'cloudinary' during 'edit' process,ie  we should checks the images are still in 'cloudinary' of 'same' product, is it, then we should 'delete' it for 'save' the 'space' in 'cloudinary', because we add new images of 'same' product.
+        if (existingProduct && existingProduct.images && existingProduct.images.length > 0) {
             for (const item of existingProduct.images) {
                 const publicId = item.public_id; 
                 if (publicId) {
@@ -210,19 +207,18 @@ export const executeProductUpdate = async (productId, bodyData, files) => {
         });
         updatePayload.images = imageDetails; 
     }        
-    return await productRepository.updateProductById(productId, updatePayload);                    // Here we just upload image path in database but actual images are stores in 'cloudinary' by using 'middle ware' through 'routes'.
+    return await productRepository.updateProductById(productId, updatePayload);
 };
 
 
-// For 'toggling' and 'save' toggle status
+// Switches a product's visibility status between on and off
 export const toggleProductStatus = async (productId) => {
     const product = await Product.findById(productId);
     if (!product) {
         throw new Error("Product not found in database.");
     }
-    product.isListed = !product.isListed;                                                           // This is for 'toggling'
+    product.isListed = !product.isListed;
     await product.save();
     return product;
 };
-
 

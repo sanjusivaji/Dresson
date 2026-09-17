@@ -1,18 +1,18 @@
 import logger from '../../utilities/logger.js';
 import * as userAddressService from '../../services/user/userAddressService.js';
-import  User from '../../model/userModel.js'
+import User from '../../model/userModel.js';
+
 
 // For 'display' address page
 export const loadAddressPage = async (req, res) => {
     try {
-        if (!req.session.user) return res.redirect('/login');   // Checks 'user' loggedIn or not
-        const dashboardData = await userAddressService.buildAddressDashboard(req.session.user, req.query.page); // For 'pagination' purpose of each user's addresses
-        //console.log(dashboardData)
-        res.render('user/address', {                            // When 'rendering' time we 'donot' need '/user' because it know 'user/address' is inside 'view' but when 'redirecting' time we should write the 'path'(Eg, '/profile/address'). 
-            ...dashboardData,                                   // In 'dashboardData' contains 'addresses' array 'totalPage', 'currentPage' etc  and without 'spread' operator,  without spread, we should write all data inside 'dashboardData' explicitly(ie 'address', 'currentPage' etc) and we should iterate like 'dashboardData.addresses.forEach(item =>{})' instead 'addresses.forEach(item => {})' in 'address.ejs'.
-            layout: 'layout/user',                              // For 'layout' 
-            pageTitle: "My Address - Dresson",                  // For 'tab title'
-            activeSidebar: 'address'                            // For appear 'purple' color on top of side bar 'name'
+        if (!req.session.user) return res.redirect('/login');
+        const dashboardData = await userAddressService.buildAddressDashboard(req.session.user, req.query.page);
+        res.render('user/address', {
+            ...dashboardData,
+            layout: 'layout/user',
+            pageTitle: "My Address - Dresson",
+            activeSidebar: 'address'
         });
     } catch (error) {
         logger.error("Error loading address dashboard:", error);
@@ -20,12 +20,13 @@ export const loadAddressPage = async (req, res) => {
     }
 };
 
+
 // For make the 'address' 'default'
 export const setDefaultAddress = async (req, res) => {
     try {
-        if (!req.session.user) return res.redirect('/login');     // Ensure is it 'user' or 'not'
-        const userId = req.session.user._id || req.session.user;  // '_id' contains in 'req.session.user' but this wrote for some 'safest' thing.)
-        await userAddressService.makeAddressDefault(userId, req.params.id);  // 'makeAddressDefault()' call with 'userId' and 'addressId' and it used for 'make' address 'default' 
+        if (!req.session.user) return res.redirect('/login');
+        const userId = req.session.user._id || req.session.user;
+        await userAddressService.makeAddressDefault(userId, req.params.id);
         res.redirect('/profile/address');
     } catch (error) {
         logger.error("Error setting default address:", error);
@@ -33,18 +34,21 @@ export const setDefaultAddress = async (req, res) => {
     }
 };
 
+
 // For 'display' user 'add address' page
 export const loadAddAddressPage = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
         const errorMessage = req.query.error;
+        const returnTo = req.query.returnTo;
         res.render('user/addAddress', {
             layout: 'layout/user',
-            error: errorMessage,                               // It display when 'error' available through 'query parameter'.
+            error: errorMessage,
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
             error: null,
-            formData: null
+            formData: null,
+            returnTo: returnTo
         });
     } catch (error) {
         logger.error("Error loading add address page:", error);
@@ -52,15 +56,18 @@ export const loadAddAddressPage = async (req, res) => {
     }
 };
 
-// For 'add' new address
+
 export const processAddAddress = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
-       const address = await userAddressService.addNewAddress(req.session.user, req.body); // Way of 'Request' data(ie 'req.body')is 'view -> server.js -> middleware -> route -> controller'     
-        res.redirect('/profile/address'); 
+        const address = await userAddressService.addNewAddress(req.session.user, req.body);
+        if (req.body.returnTo === 'checkout') {
+            return res.redirect('/checkout?mode=direct');
+        }
+        res.redirect('/profile/address');
     } catch (error) {
         logger.error("Error saving new address:", error);
-        res.render('user/addAddress', {                                                    // This part for 'processing' 'add Product' page and we 'rendering' the 'profile/address' page in 'catch' block because 'catch' the 'errors' occurs in 'addNewAddress()', and we use 'res.render()' to 'prevent' the user from having to type things 'twice' ie we put 'req.body' inside the object of 'res.render()'(but if we use 'res.redirect()' it goes to that page, but 'not' dispaly the previous data ) and it has all previous data that user input in the form 
+        res.render('user/addAddress', {
             layout: 'layout/user',
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
@@ -70,42 +77,47 @@ export const processAddAddress = async (req, res) => {
     }
 };
 
-// For 'display' user's 'edit address' page
+
 export const loadEditAddressPage = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
-        const address = await userAddressService.prepareEditAddressData(req.session.user, req.params.id); // 'prepareEditAddressData()' return 'address' array 
+        const address = await userAddressService.prepareEditAddressData(req.session.user, req.params.id);
+        const returnTo = req.query.returnTo;
         res.render('user/editAddress', {
             address,
             layout: 'layout/user',
             pageTitle: "Edit Address - Dresson",
             activeSidebar: 'address',
-            error: null
+            error: null,
+            returnTo: returnTo
         });
     } catch (error) {
         logger.error("Error loading edit address page:", error);
-        res.redirect('/profile/address'); 
+        res.redirect('/profile/address');
     }
 };
 
-// For process the 'edit'
+
 export const processEditAddress = async (req, res) => {
     try {
         if (!req.session.user) return res.redirect('/login');
         const userId = req.session.user._id || req.session.user;
         const addressId = req.params.id;
-            const updateData = {
-                fullName: req.body.fullName,
-                phone: req.body.phone,
-                addressLine: req.body.streetAddress,
-                city: req.body.city,
-                state: req.body.state,
-                pincode: req.body.pinCode,         
-                country: req.body.country,
-                type: req.body.type,
-                isDefault: req.body.isDefault === 'on' || req.body.isDefault === true  // When user 'tick' the 'checkbox' then 'browser' sends the exact text string 'on' to the server and another case during 'fetch()' etc it send 'isDefault: true', so both case value of 'isDefaul' becomes 'true'.
-            };
-        await userAddressService.updateAddress(userId, addressId, updateData);         // Call the 'updateAddress()' for 'updating' edit data.
+        const updateData = {
+            fullName: req.body.fullName,
+            phone: req.body.phone,
+            addressLine: req.body.streetAddress,
+            city: req.body.city,
+            state: req.body.state,
+            pincode: req.body.pinCode,
+            country: req.body.country,
+            type: req.body.type,
+            isDefault: req.body.isDefault === 'on' || req.body.isDefault === true
+        };
+        await userAddressService.updateAddress(userId, addressId, updateData);
+        if (req.body.returnTo === 'checkout') {
+            return res.redirect('/checkout');
+        }
         res.redirect('/profile/address');
     } catch (error) {
         console.error("Error updating address:", error);
@@ -113,55 +125,54 @@ export const processEditAddress = async (req, res) => {
     }
 };
 
+
 // For 'delete' the 'address'
 export const deleteAddress = async (req, res) => {
     try {
-        await userAddressService.removeAddress(req.session.user, req.params.id);  // Here 'call' the 'removeAddress' function with 'user' and 'addressId'(ie 'req.params.id')in 'service' folder.
+        await userAddressService.removeAddress(req.session.user, req.params.id);
         res.redirect('/profile/address');
     } catch (error) {
         logger.error("Error deleting address:", error);
-        res.redirect('/profile/address?error=failed');                           // Here we put the 'query parameter' '?error=failed',after '/profile/address' route
+        res.redirect('/profile/address?error=failed');
     }
 };
 
 
-
-// Checking the 'name' and 'email' is already existed
+// For checking the 'name' and 'email' is already existed
 export const checkNameEmail = async (req, res) => {
     try {
         const { name, email } = req.body;
-        
         if (!name || !email) {
             return res.status(400).json({
                 status: false,
                 message: "Please input name and email"
             });
-        }        
+        }
         const clearName = name.trim().toLowerCase();
         const clearEmail = email.trim().toLowerCase();
         const nameParts = clearName.split(' ');
         const firstName = nameParts[0];
-        const lastName = nameParts.slice(1).join(' ') || 'Not Provided';        
-        const user = await User.findOne({ email: clearEmail });        
+        const lastName = nameParts.slice(1).join(' ') || 'Not Provided';
+        const user = await User.findOne({ email: clearEmail });
         if (user) {
             return res.status(409).json({
-                success: false, 
+                success: false,
                 message: "User already exist"
             });
-        }        
+        }
         const newUser = new User({
-            firstName: firstName, 
-            lastName: lastName,   
+            firstName: firstName,
+            lastName: lastName,
             email: clearEmail
-        });        
-        await newUser.save();        
+        });
+        await newUser.save();
         return res.status(201).json({
             status: true,
             message: "Created a new user",
             user: newUser
         });
     } catch (error) {
-        console.error("API Crash in checkNameEmail:", error);        
+        console.error("API Crash in checkNameEmail:", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",

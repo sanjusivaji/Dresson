@@ -1,6 +1,7 @@
 import * as offerService from '../../services/admin/offerService.js';
 import { OFFER_TYPES, TARGET_TYPES } from '../../constants/offerConstants.js';
 
+
 export const renderOfferManagement = async (req, res) => {
     try {
         const page = req.query.page || 1;
@@ -19,6 +20,7 @@ export const renderOfferManagement = async (req, res) => {
     }
 };
 
+
 export const renderAddOffer = async (req, res) => {
     try {
         const { products, categories } = await offerService.getFormData();
@@ -28,7 +30,7 @@ export const renderAddOffer = async (req, res) => {
             targetTypes: Object.values(TARGET_TYPES),
             products,
             categories,
-            layout: 'layout/auth'  
+            layout: 'layout/admin', 
         });
     } catch (error) {
         console.error("Error loading add offer page:", error);
@@ -36,6 +38,8 @@ export const renderAddOffer = async (req, res) => {
     }
 };
 
+
+//  For 'process' of 'add offer'
 export const processAddOffer = async (req, res) => {
     try {
         await offerService.createNewOffer({ ...req.body });
@@ -49,16 +53,15 @@ export const processAddOffer = async (req, res) => {
     }
 };
 
+
 export const renderEditOffer = async (req, res) => {
     try {
         const offerId = req.params.id;
         const data = await offerService.getOfferDetailsForEdit(offerId);
-
         if (!data) return res.redirect('/admin/offers');
-
         res.render('admin/editOffer', { 
             title: 'Edit Offer',
-            layout: 'layout/auth',
+            layout: 'layout/admin',
             offer: data.offer,
             offerTypes: Object.values(OFFER_TYPES),
             targetTypes: Object.values(TARGET_TYPES),
@@ -72,6 +75,8 @@ export const renderEditOffer = async (req, res) => {
     }
 };
 
+
+//  For 'process' of 'edit offer'
 export const processEditOffer = async (req, res) => {
     try {
         await offerService.modifyOffer(req.params.id, { ...req.body });       
@@ -81,6 +86,7 @@ export const processEditOffer = async (req, res) => {
         res.redirect(`/admin/offers/edit/${req.params.id}`);
     }
 };
+
 
 export const deleteOffer = async (req, res) => {
     try {

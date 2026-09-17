@@ -1,10 +1,36 @@
-
 <aside class="w-full md:w-64 flex-shrink-0 bg-white p-5 rounded-xl border border-gray-200 shadow-xs h-fit space-y-6">
     
     <form action="/shop" method="GET" id="filterForm" class="space-y-6">
-        <!-- Preserve pagination and search when changing filters -->
+        <!-- Preserve pagination when changing filters/search -->
         <input type="hidden" name="page" value="1">
 
+        <!-- Search Input Block (Placed just above Sort By) -->
+        <div class="space-y-2">
+            <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-gray-700">Search</label>
+                <% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+                    <a href="/shop" class="text-[10px] font-bold text-red-600 hover:text-red-800 transition">
+                        Cancel Search
+                    </a>
+                <% } %>
+            </div>
+            <div class="relative">
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Search products..." 
+                    value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" 
+                    class="w-full text-xs bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-2 font-medium text-gray-800 focus:outline-none focus:border-gray-600 shadow-2xs"
+                >
+                <button type="submit" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 text-xs">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <hr class="border-gray-100">
+
+        <!-- Sort By Block -->
         <div class="flex items-center justify-between gap-2 pt-1">
             <label class="text-xs font-bold text-gray-700 whitespace-nowrap">Sort By</label>
             <% const activeSort = typeof currentSort !== 'undefined' ? currentSort : 'newest'; %>
@@ -24,6 +50,7 @@
             <h3 class="text-base font-extrabold text-gray-900 tracking-tight mb-4">Filter By</h3>
 
             <div class="space-y-3">
+                <!-- Categories Dropdown -->
                 <div>
                     <select name="category" onchange="this.form.submit()" class="w-full text-xs bg-gray-50/50 border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:border-gray-600 cursor-pointer">
                         <option value="">All categories</option>
@@ -89,7 +116,7 @@
 
         <hr class="border-gray-100">
 
-        <!-- For 'price range'(0 to 10000) -->
+        <!-- Price Range -->
         <div>
             <label class="text-xs font-bold text-gray-700 block mb-1">Price Range</label>
             <input type="range" name="maxPrice" min="500" max="10000" step="250" 

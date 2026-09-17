@@ -2,14 +2,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- The wrapping container matching the white aesthetic of the design -->
 <div class="w-full bg-white min-h-screen p-6 md:p-10 font-sans">
-    
-    <!-- 4 Stats Cards -->
     <div class="grid grid-cols-4 gap-4 mb-8">
         <div class="border border-gray-200 rounded-2xl p-6 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <h3 class="text-[11px] text-gray-400 font-bold mb-2">Total Sales</h3>
-            <p class="text-2xl font-black text-black">₹<%= stats.totalSales.toLocaleString('en-IN') %></p>
+            <p class="text-2xl font-black text-black">₹<%= stats.totalSales.toLocaleString('en-IN') %></p>                                            <!-- Format total sales as Indian Rupees -->
         </div>
         <div class="border border-gray-200 rounded-2xl p-6 text-center shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <h3 class="text-[11px] text-gray-400 font-bold mb-2">Total Orders</h3>
@@ -24,18 +21,14 @@
             <p class="text-2xl font-black text-black"><%= stats.newUsers %></p>
         </div>
     </div>
-
-    <!-- Filter Dropdown (Placed just above Sales Performance) -->
     <div class="flex justify-end mb-3">
-        <select onchange="window.location.href='?filter=' + this.value" class="border border-gray-300 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg focus:outline-none cursor-pointer shadow-sm bg-white">
+        <select onchange="window.location.href='?filter=' + this.value" class="border border-gray-300 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg focus:outline-none cursor-pointer shadow-sm bg-white"> <!-- Reload page with selected filter -->
             <option value="daily" <%= currentFilter === 'daily' ? 'selected' : '' %>>Daily</option>
             <option value="7days" <%= currentFilter === '7days' ? 'selected' : '' %>>Last 7 Days</option>
             <option value="monthly" <%= currentFilter === 'monthly' ? 'selected' : '' %>>Monthly</option>
             <option value="yearly" <%= currentFilter === 'yearly' ? 'selected' : '' %>>Yearly</option>
         </select>
     </div>
-
-    <!-- Sales Performance Line Chart -->
     <div class="border border-gray-200 rounded-2xl p-6 mb-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
         <div class="flex justify-between items-start mb-6">
             <div>
@@ -47,45 +40,41 @@
             <span class="text-sm font-black text-black">₹<%= totalChartRevenue.toLocaleString('en-IN') %></span>
         </div>
         <div class="h-72 relative w-full">
-            <canvas id="salesPerformanceChart"></canvas>
+            <canvas id="salesPerformanceChart"></canvas>                                                                                              <!-- Chart container element -->
         </div>
     </div>
-
-    <!-- Top Selling Brands & Categories (Side-by-Side) -->
     <div class="grid grid-cols-2 gap-6 mb-6">
-        <!-- Brands -->
         <div class="border border-gray-200 rounded-2xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <h2 class="text-sm font-bold text-black mb-6">Top Selling Brands</h2>
             <div class="space-y-4">
-                <% brands.forEach(brand => { %>
+                <% brands.forEach(brand => { %>                                                                                                       <!-- Loop through top brands -->
                     <div class="flex items-center gap-4">
                         <span class="w-1/4 text-xs font-medium text-gray-600 truncate"><%= brand.name %></span>
                         <div class="w-3/4">
-                            <div class="bg-[#8b85ff] h-3.5 rounded-full" style="width: <%= brand.percentage %>%"></div>
+                            <div class="bg-[#8b85ff] h-3.5 rounded-full" style="width: <%= brand.percentage %>%"></div>                               <!-- Dynamic width for brand percentage bar -->
                         </div>
                     </div>
                 <% }) %>
             </div>
         </div>
-
-        <!-- Categories -->
         <div class="border border-gray-200 rounded-2xl p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <h2 class="text-sm font-bold text-black mb-6">Top Selling Categories</h2>
             <div class="space-y-4">
-                <% categories.forEach(cat => { %>
+                <% categories.forEach(cat => { %>                                                                                                     <!-- Loop through top categories -->
                     <div class="flex items-center gap-4">
                         <span class="w-1/4 text-xs font-medium text-gray-600 truncate"><%= cat.name %></span>
                         <div class="w-3/4">
-                            <div class="bg-[#8b85ff] h-3.5 rounded-full" style="width: <%= cat.percentage %>%"></div>
+                            <div class="bg-[#8b85ff] h-3.5 rounded-full" style="width: <%= cat.percentage %>%"></div>                                 <!-- Dynamic width for category percentage bar -->
                         </div>
                     </div>
                 <% }) %>
             </div>
         </div>
     </div>
-
-    <!-- Bottom Product Table -->
     <div class="border border-gray-200 rounded-2xl overflow-hidden mb-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+    <div class="px-6 pt-6">
+        <h2 class="text-sm font-bold text-black mb-6">Top Selling Products</h2>
+    </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead class="border-b border-gray-200">
@@ -102,7 +91,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <% if (products && products.length > 0) { %>
-                        <% products.forEach(prod => { %>
+                        <% products.forEach(prod => { %>                                                                                              <!-- Loop through top products -->
                             <tr class="hover:bg-gray-50/50 transition">
                                 <td class="py-3 px-6">
                                     <img src="<%= prod.image %>" alt="Product" class="w-9 h-12 object-cover rounded shadow-sm border border-gray-200">
@@ -114,7 +103,7 @@
                                 <td class="py-3 px-6 text-[11px] font-medium text-gray-600">₹<%= prod.revenue.toLocaleString('en-IN') %></td>
                                 <td class="py-3 px-6 text-[11px] font-medium text-gray-600"><%= prod.stock %></td>
                                 <td class="py-3 px-6 text-[11px] font-medium text-gray-400 whitespace-nowrap">
-                                    <%= String(new Date(prod.date).getDate()).padStart(2, '0') %>-<%= String(new Date(prod.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(prod.date).getFullYear() %>
+                                    <%= String(new Date(prod.date).getDate()).padStart(2, '0') %>-<%= String(new Date(prod.date).getMonth() + 1).padStart(2, '0') %>-<%= new Date(prod.date).getFullYear() %> <!-- Format date as DD-MM-YYYY -->
                                 </td>
                             </tr>
                         <% }) %>
@@ -125,16 +114,12 @@
             </table>
         </div>
     </div>
-
 </div>
 
 <script>
-    const ctx = document.getElementById('salesPerformanceChart').getContext('2d');
-    
-    // Safely inject dynamic data from the backend
-    const dynamicLabels = <%- JSON.stringify(chartLabels || []) %>;
-    const dynamicData = <%- JSON.stringify(chartData || []) %>;
-    
+    const ctx = document.getElementById('salesPerformanceChart').getContext('2d');                                                                    // Get context for rendering chart
+    const dynamicLabels = <%- JSON.stringify(chartLabels || []) %>;                                                                                   // Safely inject dynamic labels from backend
+    const dynamicData = <%- JSON.stringify(chartData || []) %>;                                                                                       // Safely inject dynamic data from backend
     new Chart(ctx, {
         type: 'line',
         data: {
@@ -142,15 +127,15 @@
             datasets: [{
                 label: 'Revenue Trend',
                 data: dynamicData.length > 0 ? dynamicData : [0],
-                borderColor: '#8b85ff', // Violet line matching your Figma styling
-                backgroundColor: 'rgba(139, 133, 255, 0.15)', // Soft violet fill underneath
+                borderColor: '#8b85ff',                                                                                                               // Violet line matching styling
+                backgroundColor: 'rgba(139, 133, 255, 0.15)',                                                                                         // Soft violet fill underneath
                 borderWidth: 3,
-                tension: 0.4, // Creates the smooth, sweeping curves
-                fill: true, // Enables the shaded area
+                tension: 0.4,                                                                                                                         // Creates smooth, sweeping curves
+                fill: true,                                                                                                                           // Enables the shaded area
                 pointBackgroundColor: '#8b85ff',
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
-                pointRadius: 4, // Makes the dots visible
+                pointRadius: 4,                                                                                                                       // Makes the dots visible
                 pointHoverRadius: 6
             }]
         },
@@ -167,7 +152,7 @@
                     ticks: {
                         color: '#9ca3af',
                         font: { size: 10, family: 'sans-serif' },
-                        callback: function(value) { return '₹' + value.toLocaleString('en-IN'); }
+                        callback: function(value) { return '₹' + value.toLocaleString('en-IN'); }                                                     // Format y-axis values as currency
                     },
                     border: { display: false }
                 },

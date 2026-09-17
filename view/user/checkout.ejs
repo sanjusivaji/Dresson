@@ -4,205 +4,259 @@
 <%- include('../partial/shared/alertSuccess') %>
 <%- include('../partial/shared/alertError') %>
 
-<!-- Razorpay Checkout Script (Crucial for the modal to work!) -->
+<!-- Razorpay Checkout Script -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    <h1 class="text-3xl font-black text-gray-800 mb-8 tracking-tight">Checkout</h1>
+<!-- Custom Toast Notification Container -->
+<div id="toast-container" class="fixed top-20 right-5 z-[100] flex flex-col gap-2"></div>
 
-    <form id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
-        <!-- Left Column -->
-        <div class="lg:col-span-8 space-y-10">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    
+    <!-- Beautiful Wrapper Box -->
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 md:p-10 mb-10">
+        <h1 class="text-3xl font-black text-gray-800 mb-6 tracking-tight border-b border-gray-100 pb-4">Secure Checkout</h1>
+
+        <form id="checkoutForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- Order Items -->
-            <section>
-                <h2 class="text-base font-extrabold text-gray-900 mb-4">Order Items</h2>
-                <div class="space-y-4">
-                    <% if (cart && cart.items && cart.items.length > 0) { %>
-                        <% cart.items.forEach(item => { %>
-                            <div class="flex items-center justify-between border-b border-gray-100 pb-4">
-                                <div class="flex items-center space-x-4">
-                                    <img src="<%= item.image || '/images/default-dress.jpg' %>" alt="<%= item.name %>" class="w-10 h-14 object-cover rounded-md border border-gray-200">
-                                    <div>
-                                        <h3 class="text-sm font-bold text-gray-800"><%= item.name %></h3>
-                                        <p class="text-[10px] text-gray-500 font-medium mt-0.5">
-                                            <%= item.variantName || 'Standard' %> &nbsp;|&nbsp; Qty: <%= item.quantity %>
-                                        </p>
-                                    </div>
-                                </div>
-                                <span class="text-sm font-black text-gray-900">₹ <%= (item.price * item.quantity).toLocaleString('en-IN') %></span>
-                            </div>
-                        <% }) %>
-                    <% } else { %>
-                        <p class="text-sm text-red-500 font-semibold">Your cart is empty.</p>
-                    <% } %>
-                </div>
-            </section>
-
-            <!-- Delivery Address -->
-            <section>
-                <h2 class="text-base font-extrabold text-gray-900 mb-4">Delivery Address</h2>
-                <div class="space-y-3">
-                    <% if (addresses && addresses.length > 0) { %>
-                        <% addresses.forEach((address, index) => { %>
-                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-md cursor-pointer hover:border-gray-300 transition has-[:checked]:border-[#6b66d6] has-[:checked]:bg-[#f8f7ff]">
-                                <div class="flex items-center space-x-3">
-                                    <input type="radio" name="selectedAddress" value="<%= address._id %>" class="w-3.5 h-3.5 text-[#6b66d6] focus:ring-[#6b66d6] border-gray-300 cursor-pointer" <%= address.isDefault || index === 0 ? 'checked' : '' %>>
-                                    <div class="text-xs">
-                                        <span class="font-bold text-gray-800 mr-2 uppercase"><%= address.type || 'HOME' %></span>
-                                        <span class="text-gray-600"><%= address.addressLine %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></span>
-                                    </div>
-                                </div>
-                                <a href="/profile/address/edit/<%= address._id %>" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-[10px] font-bold rounded-sm transition">Edit</a>
-                            </label>
-                        <% }) %>
-                    <% } else { %>
-                        <p class="text-xs text-red-500 font-semibold mb-2">No addresses found. Please add a delivery address to continue.</p>
-                    <% } %>
-
-                    <a href="/profile/address/add" class="inline-block mt-2 px-4 py-2 bg-[#a39a96] hover:bg-[#8b837f] text-white text-[11px] font-bold rounded-md shadow-sm transition cursor-pointer">
-                        Add new Address
-                    </a>
-                </div>
-            </section>
-
-            <!-- Payment Method -->
-            <section>
-                <h2 class="text-base font-extrabold text-gray-900 mb-4">Payment Method</h2>
-                <div class="space-y-3">
-                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
-                        <input type="radio" name="paymentMethod" value="razorpay" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
-                        <span class="ml-3 text-xs font-bold text-gray-700">Razorpay</span>
-                    </label>
-
-                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
-                        <input type="radio" name="paymentMethod" value="card" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer" checked>
-                        <span class="ml-3 text-xs font-bold text-gray-700">Debit / Credit card</span>
-                    </label>
-
-                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
-                        <input type="radio" name="paymentMethod" value="cod" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
-                        <span class="ml-3 text-xs font-bold text-gray-700">Cash On Delivery</span>
-                    </label>
-
-                    <label class="flex items-center p-3.5 border border-gray-200 rounded-md cursor-pointer transition has-[:checked]:border-blue-400 has-[:checked]:bg-blue-50/30">
-                        <input type="radio" name="paymentMethod" value="wallet" class="w-3.5 h-3.5 text-blue-500 focus:ring-blue-400 border-gray-300 cursor-pointer">
-                        <span class="ml-3 text-xs font-bold text-gray-700">Wallet</span>
-                    </label>
-                </div>
-            </section>
-        </div>
-
-        <!-- Right Column (Summary & Coupon) -->
-        <div class="lg:col-span-4">
-            <div class="sticky top-6 flex flex-col items-center w-full max-w-xs mx-auto lg:mx-0">               
+            <!-- Left Column -->
+            <div class="lg:col-span-8 space-y-8">
                 
-                <!-- Coupons Section -->
-                <div class="w-full mb-8 flex flex-col items-center space-y-3 relative">
-                    <button type="button" id="viewCouponBtn" class="w-48 flex items-center justify-between px-3 py-1.5 border border-gray-300 rounded-md bg-white text-xs font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50">
-                        <span>View Coupons</span>
-                        <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" id="couponChevron"></i>
-                    </button>
-
-                    <div id="couponDropdown" class="hidden absolute top-8 z-20 w-64 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden mt-2">
-                        <div class="max-h-56 overflow-y-auto p-2 space-y-2">
-                            <% if (typeof coupons !== 'undefined' && coupons.length > 0) { %>
-                                <% coupons.forEach(coupon => { %>
-                                    
-                                    <div class="p-3 border border-dashed border-[#fc6c6c] rounded-md bg-[#fdf5f5] hover:bg-red-50 transition cursor-pointer" onclick="selectCoupon('<%= coupon.couponCode %>')">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <span class="font-black text-xs text-red-600 uppercase tracking-wider"><%= coupon.couponCode %></span>
-                                            <span class="text-[10px] font-extrabold text-gray-700">
-                                                <%= coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %> OFF
-                                            </span>
+                <!-- Order Items -->
+                <section>
+                    <h2 class="text-base font-extrabold text-gray-900 mb-4">Order Items</h2>
+                    <div class="space-y-4">
+                        <% if (cart && cart.items && cart.items.length > 0) { %>
+                            <% cart.items.forEach(item => { %>
+                                <div class="flex items-center justify-between border-b border-gray-50 pb-4">
+                                    <div class="flex items-center space-x-4">
+                                        <img src="<%= item.image || '/images/default-dress.jpg' %>" alt="<%= item.name %>" class="w-12 h-16 object-cover rounded-md border border-gray-200 shadow-sm">
+                                        <div>
+                                            <h3 class="text-sm font-bold text-gray-800"><%= item.name %></h3>
+                                            <p class="text-[10px] text-gray-500 font-medium mt-0.5 bg-gray-100 px-2 py-0.5 rounded-sm inline-block">
+                                                <%= item.variantName || 'Standard' %> &nbsp;|&nbsp; Qty: <%= item.quantity %>
+                                            </p>
                                         </div>
-                                        <p class="text-[11px] font-bold text-gray-800"><%= coupon.couponName %></p>
-                                        <p class="text-[9px] font-semibold text-gray-500 mt-0.5">
-                                            Min spend: ₹<%= coupon.minCartValue %> 
-                                            <% if (coupon.maxDiscount) { %> | Max discount: ₹<%= coupon.maxDiscount %> <% } %>
-                                        </p>
                                     </div>
-                                <% }) %>
-                            <% } else { %>
-                                <div class="p-4 text-center text-xs font-semibold text-gray-500">
-                                    No active coupons available right now.
+                                    
+                                    <!-- Dynamic Price Display block -->
+                                    <div class="flex flex-col text-right">
+                                        <!-- Show strikethrough original price if a discount is applied -->
+                                        <% if (item.hasDiscount || item.isComboItem) { %>
+                                            <span class="text-xs font-semibold text-gray-400 line-through mb-0.5">
+                                                ₹ <%= ((item.originalPrice || item.livePrice) * item.quantity).toLocaleString('en-IN') %>
+                                            </span>
+                                        <% } %>
+                                        
+                                        <!-- Show the final effective price -->
+                                        <span class="text-sm font-black text-gray-900">
+                                            ₹ <%= ((item.effectivePrice || item.price) * item.quantity).toLocaleString('en-IN') %>
+                                        </span>
+                                        
+                                        <!-- Show individual item price if quantity > 1 -->
+                                        <% if (item.quantity > 1) { %>
+                                            <span class="text-[10px] text-gray-400 mt-1">
+                                                (₹ <%= (item.effectivePrice || item.price).toLocaleString('en-IN') %> each)
+                                            </span>
+                                        <% } %>
+                                    </div>
+
                                 </div>
-                            <% } %>
-                        </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-sm text-red-500 font-semibold bg-red-50 p-3 rounded-md">Your cart is empty.</p>
+                        <% } %>
                     </div>
+                </section>
 
-                    <!-- Check if a coupon is active on page load from the backend -->
-                    <% const isCouponApplied = typeof appliedCoupon !== 'undefined' && appliedCoupon; %>
+                <!-- Delivery Address -->
+                <section>
+                    <h2 class="text-base font-extrabold text-gray-900 mb-4">Delivery Address</h2>
+                    <div class="space-y-3">
+                        
+                        <!-- Dynamic Return Path Logic for Direct Buy vs Cart -->
+                        <% const returnPath = (typeof mode !== 'undefined' && mode === 'direct') ? 'checkout_direct' : 'checkout'; %>
 
-                    <!-- Dynamic Coupon Input -->
-                    <input type="text" id="couponCode" name="couponCode" 
-                        placeholder="Coupon Code" 
-                        value="<%= isCouponApplied ? appliedCoupon : '' %>"
-                        class="w-48 px-3 py-2 border-0 rounded-md text-center text-xs font-bold text-gray-800 uppercase placeholder-gray-400 focus:ring-2 focus:ring-[#fc6c6c] outline-none transition <%= isCouponApplied ? 'bg-green-50 border-green-500 text-green-700' : 'bg-[#fdf5f5]' %>"
-                        <%= isCouponApplied ? 'readonly' : '' %>>
+                        <% if (addresses && addresses.length > 0) { %>
+                            <% addresses.forEach((address, index) => { %>
+                                <label class="flex items-center justify-between p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 hover:shadow-sm transition has-[:checked]:border-[#6b66d6] has-[:checked]:bg-[#f8f7ff]">
+                                    <div class="flex items-center space-x-4">
+                                        <input type="radio" name="selectedAddress" value="<%= address._id %>" class="w-4 h-4 text-[#6b66d6] focus:ring-[#6b66d6] border-gray-300 cursor-pointer" <%= address.isDefault || index === 0 ? 'checked' : '' %>>
+                                        <div class="text-xs">
+                                            <span class="font-bold text-gray-900 mr-2 uppercase bg-gray-200 px-2 py-0.5 rounded-sm"><%= address.type || 'HOME' %></span>
+                                            <span class="text-gray-600 leading-relaxed"><%= address.addressLine %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></span>
+                                        </div>
+                                    </div>
+                                    <a href="/profile/address/edit/<%= address._id %>?returnTo=<%= returnPath %>" class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-[10px] font-bold rounded-md transition shadow-sm">Edit</a>
+                                </label>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-xs text-red-500 font-semibold mb-2 bg-red-50 p-3 rounded-md">No addresses found. Please add a delivery address to continue.</p>
+                        <% } %>
+
+                        <a href="/profile/address/add?returnTo=<%= returnPath %>" class="inline-flex items-center justify-center mt-2 px-5 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-[11px] font-bold rounded-md shadow-sm transition cursor-pointer">
+                            <i class="fas fa-plus mr-2 text-[10px]"></i> Add New Address
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Payment Method -->
+                <section>
+                    <h2 class="text-base font-extrabold text-gray-900 mb-4">Payment Method</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
+                            <input type="radio" name="paymentMethod" value="razorpay" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
+                            <span class="ml-3 text-xs font-bold text-gray-800"><i class="fas fa-credit-card mr-2 text-blue-500"></i> Razorpay</span>
+                        </label>
+
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
+                            <input type="radio" name="paymentMethod" value="card" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer" checked>
+                            <span class="ml-3 text-xs font-bold text-gray-800"><i class="fas fa-university mr-2 text-blue-500"></i> Debit / Credit Card</span>
+                        </label>
+
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
+                            <input type="radio" name="paymentMethod" value="cod" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
+                            <span class="ml-3 text-xs font-bold text-gray-800"><i class="fas fa-money-bill-wave mr-2 text-green-500"></i> Cash On Delivery</span>
+                        </label>
+
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/50 has-[:checked]:shadow-sm">
+                            <input type="radio" name="paymentMethod" value="wallet" class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer">
+                            <span class="ml-3 text-xs font-bold text-gray-800"><i class="fas fa-wallet mr-2 text-purple-500"></i> Wallet</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column (Summary & Coupon) -->
+            <div class="lg:col-span-4">
+                <div class="sticky top-6 flex flex-col items-center w-full max-w-sm mx-auto lg:mx-0 bg-gray-50 p-6 rounded-xl border border-gray-100">               
                     
-                    <!-- Dynamic Apply & Remove Buttons -->
-                    <div class="flex gap-2">
-                        <button type="button" id="applyCouponBtn" class="w-32 py-1.5 bg-[#9c9c9c] hover:bg-gray-500 text-white text-xs font-bold rounded-md shadow-sm transition <%= isCouponApplied ? 'hidden' : '' %>">
-                            Apply
+                    <!-- Coupons Section -->
+                    <div class="w-full mb-6 flex flex-col items-center space-y-3 relative">
+                        <button type="button" id="viewCouponBtn" class="w-full flex items-center justify-between px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-xs font-bold text-gray-700 shadow-sm transition hover:border-gray-400">
+                            <span><i class="fas fa-ticket-alt mr-2 text-[#fc6c6c]"></i> View Available Coupons</span>
+                            <i class="fas fa-chevron-down text-[10px] transition-transform duration-200" id="couponChevron"></i>
                         </button>
-                        <button type="button" id="removeCouponBtn" class="w-32 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-md shadow-sm transition <%= isCouponApplied ? '' : 'hidden' %>">
-                            Remove
-                        </button>
+
+                        <div id="couponDropdown" class="hidden absolute top-12 z-20 w-full bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden mt-2">
+                            <div class="max-h-56 overflow-y-auto p-2 space-y-2">
+                                <% if (typeof coupons !== 'undefined' && coupons.length > 0) { %>
+                                    <% coupons.forEach(coupon => { %>
+                                        <div class="p-3 border border-dashed border-[#fc6c6c] rounded-md bg-[#fdf5f5] hover:bg-red-50 transition cursor-pointer" onclick="selectCoupon('<%= coupon.couponCode %>')">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="font-black text-xs text-red-600 uppercase tracking-wider"><%= coupon.couponCode %></span>
+                                                <span class="text-[10px] font-extrabold text-gray-700">
+                                                    <%= coupon.discountType === 'percentage' ? coupon.discountValue + '%' : '₹' + coupon.discountValue %> OFF
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] font-bold text-gray-800"><%= coupon.couponName %></p>
+                                            <p class="text-[9px] font-semibold text-gray-500 mt-0.5">
+                                                Min spend: ₹<%= coupon.minCartValue %> 
+                                                <% if (coupon.maxDiscount) { %> | Max discount: ₹<%= coupon.maxDiscount %> <% } %>
+                                            </p>
+                                        </div>
+                                    <% }) %>
+                                <% } else { %>
+                                    <div class="p-4 text-center text-xs font-semibold text-gray-500">
+                                        No active coupons available right now.
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <% const isCouponApplied = typeof appliedCoupon !== 'undefined' && appliedCoupon; %>
+
+                        <div class="flex w-full gap-2">
+                            <input type="text" id="couponCode" name="couponCode" 
+                                placeholder="Enter Code" 
+                                value="<%= isCouponApplied ? appliedCoupon : '' %>"
+                                class="flex-1 px-3 py-2 border rounded-lg text-xs font-bold text-gray-800 uppercase placeholder-gray-400 focus:ring-2 focus:ring-[#fc6c6c] outline-none transition <%= isCouponApplied ? 'bg-green-50 border-green-500 text-green-700' : 'bg-white border-gray-300' %>"
+                                <%= isCouponApplied ? 'readonly' : '' %>>
+                            
+                            <button type="button" id="applyCouponBtn" class="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white text-xs font-bold rounded-lg shadow-sm transition <%= isCouponApplied ? 'hidden' : '' %>">
+                                Apply
+                            </button>
+                            <button type="button" id="removeCouponBtn" class="px-5 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg shadow-sm transition <%= isCouponApplied ? '' : 'hidden' %>">
+                                Remove
+                            </button>
+                        </div>
+                        <p id="couponFeedback" class="w-full text-center text-[10px] font-bold mt-1 hidden"></p>
                     </div>
 
-                    <p id="couponFeedback" class="w-full text-center text-[10px] font-bold mt-2 hidden"></p>
-                </div>
+                    <!-- Order Summary Section -->
+                    <div class="w-full">
+                        <h2 class="text-base font-extrabold text-gray-900 mb-4 border-b border-gray-200 pb-2">Order Summary</h2>
+                        
+                        <div class="space-y-3 text-xs font-semibold text-gray-600 mb-6">
+                            <div class="flex justify-between">
+                                <span>Sub Total</span>
+                                <span class="text-gray-900 font-bold">₹ <%= totals.subTotal.toLocaleString('en-IN') %></span>
+                            </div>
+                            <!-- FREE shipping display -->
+                            <div class="flex justify-between">
+                                <span>Shipping</span>
+                                <span id="summary-shipping" class="text-gray-900 font-bold">
+                                    <% if (totals.shipping === 0) { %>
+                                        <span class="text-green-600">FREE</span>
+                                    <% } else { %>
+                                        ₹ <%= totals.shipping.toLocaleString('en-IN') %>
+                                    <% } %>
+                                </span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Estimated Tax</span>
+                                <span id="summary-tax" class="text-gray-900 font-bold">₹ <%= totals.tax ? totals.tax.toLocaleString('en-IN') : '0' %></span>
+                            </div>
+                            
+                            <!-- UPDATED: Dynamic Hidden class on Coupon Row -->
+                            <div id="discount-row" class="flex justify-between text-green-600 <%= totals.discount > 0 ? '' : 'hidden' %>">
+                                <span>Coupon Discount</span>
+                                <span id="summary-discount">- ₹ <%= totals.discount.toLocaleString('en-IN') %></span>
+                            </div>
 
-                <!-- Order Summary Section -->
-                <div class="w-full">
-                    <h2 class="text-base font-extrabold text-gray-900 mb-4 text-center">Order Summary</h2>
-                    
-                    <div class="space-y-2 text-xs font-semibold text-gray-500 mb-6 px-4">
-                        <div class="flex justify-between">
-                            <span>Sub Total</span>
-                            <span class="text-gray-800">₹ <%= totals.subTotal.toLocaleString('en-IN') %></span>
+                            <div class="flex justify-between pt-3 mt-3 border-t border-gray-200 text-base font-black text-gray-900">
+                                <span>Grand Total</span>
+                                <span id="summary-grand-total" class="text-[#fc6c6c]">₹ <%= totals.grandTotal.toLocaleString('en-IN') %></span>
+                            </div>
                         </div>
-                        <div class="flex justify-between">
-                            <span>Shipping</span>
-                            <span id="summary-shipping" class="text-gray-800">₹ <%= totals.shipping.toLocaleString('en-IN') %></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Estimated Tax</span>
-                            <span id="summary-tax" class="text-gray-800">₹ <%= totals.tax ? totals.tax.toLocaleString('en-IN') : '0' %></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Discount</span>
-                            <span id="summary-discount" class="text-gray-800">- ₹ <%= totals.discount.toLocaleString('en-IN') %></span>
-                        </div>
-                        <div class="flex justify-between pt-2 mt-2 border-t border-gray-200 text-sm font-black text-gray-900">
-                            <span>Grand Total</span>
-                            <span id="summary-grand-total">₹ <%= totals.grandTotal.toLocaleString('en-IN') %></span>
-                        </div>
-                    </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex flex-col items-center space-y-3">
-                        <button type="button" id="confirmPaymentBtn" <%= (!addresses || addresses.length === 0) ? 'disabled' : '' %> class="w-48 py-2 bg-[#3da436] hover:bg-green-700 text-white text-xs font-bold rounded-md shadow-sm transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <!-- Action Buttons -->
+                        <button type="button" id="confirmPaymentBtn" <%= (!addresses || addresses.length === 0) ? 'disabled' : '' %> class="w-full py-3.5 bg-[#3da436] hover:bg-green-700 text-white text-sm font-black uppercase tracking-wider rounded-lg shadow-md transition disabled:bg-gray-400 disabled:cursor-not-allowed">
                             Confirm Payment
                         </button>
+                        <p class="text-center text-[9px] font-semibold text-gray-400 mt-3 uppercase tracking-widest"><i class="fas fa-lock mr-1"></i> Secure Encrypted Checkout</p>
                     </div>
                 </div>
-
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </main>
-
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // For 'custom' notification
+    function showCustomAlert(message, type = 'error') {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');        
+        toast.className = `min-w-[280px] p-4 rounded-lg shadow-xl transform transition-all duration-300 translate-x-full flex items-center gap-3 text-sm font-bold text-white border-l-4`;        
+        if (type === 'error') {
+            toast.classList.add('bg-gray-900', 'border-red-500');
+            toast.innerHTML = `<i class="fas fa-exclamation-circle text-red-400 text-lg"></i> <span>${message}</span>`;
+        } else {
+            toast.classList.add('bg-gray-900', 'border-green-500');
+            toast.innerHTML = `<i class="fas fa-check-circle text-green-400 text-lg"></i> <span>${message}</span>`;
+        }
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.classList.remove('translate-x-full'), 10);                                    
+        setTimeout(() => {                                                                                   
+            toast.classList.add('translate-x-full');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
 
-        // For 'drop down' 'coupons'
+
+    document.addEventListener('DOMContentLoaded', () => {
         const viewCouponBtn = document.getElementById('viewCouponBtn');
         const couponDropdown = document.getElementById('couponDropdown');
         const couponChevron = document.getElementById('couponChevron');        
-        viewCouponBtn.addEventListener('click', (e) => {                       
+        viewCouponBtn.addEventListener('click', (e) => {                                                        
             e.stopPropagation(); 
             couponDropdown.classList.toggle('hidden');
             couponChevron.classList.toggle('rotate-180');
@@ -213,14 +267,14 @@
                 couponChevron.classList.remove('rotate-180');
             }
         });
-
-        // For 'apply coupon' and 'remove coupon'
         const applyCouponBtn = document.getElementById('applyCouponBtn');
         const removeCouponBtn = document.getElementById('removeCouponBtn');
         const couponInput = document.getElementById('couponCode');
         const couponFeedback = document.getElementById('couponFeedback');
+        const discountRow = document.getElementById('discount-row'); // Added Discount Row Reference
 
 
+        // For 'apply coupon' and 'remove coupon'
         function showFeedback(message, isError = true) {
             couponFeedback.innerText = message;
             couponFeedback.classList.remove('hidden', 'text-green-600', 'text-red-500');
@@ -234,28 +288,32 @@
         // Apply Coupon Event
         applyCouponBtn.addEventListener('click', async () => {
             const code = couponInput.value.trim();
-            couponFeedback.classList.add('hidden');       
-            
+            couponFeedback.classList.add('hidden');                 
             if (!code) {
                 showFeedback("Please enter a coupon code.");
                 return;
             }
             try {
-                applyCouponBtn.innerText = 'Applying...';
-                applyCouponBtn.disabled = true;
-                
+                applyCouponBtn.innerText = '...';
+                applyCouponBtn.disabled = true;                
                 const response = await fetch('/checkout/apply-coupon', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ couponCode: code })
                 });
-                const data = await response.json();
-                
+                const data = await response.json();                
                 if (data.success) {
                     showFeedback(data.message, false);                                          
+                    discountRow.classList.remove('hidden');
                     document.getElementById('summary-discount').innerText = `- ₹ ${data.newTotals.discount.toLocaleString('en-IN')}`;
                     document.getElementById('summary-tax').innerText = `₹ ${data.newTotals.tax.toLocaleString('en-IN')}`;
-                    document.getElementById('summary-shipping').innerText = `₹ ${data.newTotals.shipping.toLocaleString('en-IN')}`;
+                    
+                    if (data.newTotals.shipping === 0) {
+                        document.getElementById('summary-shipping').innerHTML = `<span class="text-green-600">FREE</span>`;
+                    } else {
+                        document.getElementById('summary-shipping').innerText = `₹ ${data.newTotals.shipping.toLocaleString('en-IN')}`;
+                    }
+                    
                     document.getElementById('summary-grand-total').innerText = `₹ ${data.newTotals.grandTotal.toLocaleString('en-IN')}`;                    
                     couponInput.classList.add('border-green-500', 'bg-green-50', 'text-green-700');
                     couponInput.setAttribute('readonly', true);
@@ -270,10 +328,11 @@
             }
         });
 
+
         // For 'remove' coupon
         removeCouponBtn.addEventListener('click', async () => {
             try {
-                removeCouponBtn.innerText = 'Removing...';
+                removeCouponBtn.innerText = '...';
                 removeCouponBtn.disabled = true;
                 const response = await fetch('/checkout/remove-coupon', {
                     method: 'POST',
@@ -282,9 +341,17 @@
                 const data = await response.json();
                 if (data.success) {
                     showFeedback("Coupon removed.", false);
+
+                    discountRow.classList.add('hidden');
                     document.getElementById('summary-discount').innerText = `- ₹ 0`;
                     document.getElementById('summary-tax').innerText = `₹ ${data.newTotals.tax.toLocaleString('en-IN')}`;
-                    document.getElementById('summary-shipping').innerText = `₹ ${data.newTotals.shipping.toLocaleString('en-IN')}`;
+                    
+                    if (data.newTotals.shipping === 0) {
+                        document.getElementById('summary-shipping').innerHTML = `<span class="text-green-600">FREE</span>`;
+                    } else {
+                        document.getElementById('summary-shipping').innerText = `₹ ${data.newTotals.shipping.toLocaleString('en-IN')}`;
+                    }
+
                     document.getElementById('summary-grand-total').innerText = `₹ ${data.newTotals.grandTotal.toLocaleString('en-IN')}`;
                     couponInput.value = '';
                     couponInput.classList.remove('border-green-500', 'bg-green-50', 'text-green-700');
@@ -302,6 +369,7 @@
             }
         });
         
+
         // Razorpay logic
         const confirmBtn = document.getElementById('confirmPaymentBtn');
         const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
@@ -314,18 +382,18 @@
                 }
             });
         });
+        
+       // Razorpay logic
         confirmBtn.addEventListener('click', async function(e) {
             e.preventDefault();        
             const selectedAddressEl = document.querySelector('input[name="selectedAddress"]:checked');
             if (!selectedAddressEl) {
-                alert("Please select a delivery address.");
+                showCustomAlert("Please select a delivery address.", "error"); 
                 return;
             }
             const selectedAddress = selectedAddressEl.value;
             const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-
-            // Prevent Double Clicks
-            this.disabled = true;
+            this.disabled = true;                                                             
             const originalText = this.innerText;
             this.innerText = 'Processing...';
             try {
@@ -335,12 +403,13 @@
                     body: JSON.stringify({ selectedAddress, paymentMethod })
                 });                
                 const data = await response.json();
+                
                 if (!data.success) {
-                    alert(data.message || "Failed to process order.");
+                    showCustomAlert(data.message || "Failed to process order.", "error"); 
                     this.disabled = false;
                     this.innerText = originalText;
                     return;
-                }
+                }                
                 if (data.paymentMethod === 'razorpay') {
                     const options = {
                         "key": data.key, 
@@ -368,22 +437,20 @@
                                 if (verifyData.success) {
                                     window.location.href = `/order-success?id=${data.orderId}`;
                                 } else {
-                                    alert("Payment verification failed: " + verifyData.message);
+                                    showCustomAlert("Payment verification failed: " + verifyData.message, "error"); 
                                     confirmBtn.disabled = false;
                                     confirmBtn.innerText = originalText;
                                 }
                             } catch (err) {
                                 console.error("Frontend Verification Error:", err);
-                                alert("Error verifying payment! Please check the console for details.");
+                                showCustomAlert("Error verifying payment!", "error"); 
                                 confirmBtn.disabled = false;
                                 confirmBtn.innerText = originalText;
                             }
                         },
-                        
                         "modal": {
                             "ondismiss": function(){
-                                confirmBtn.disabled = false;
-                                confirmBtn.innerText = originalText;
+                                window.location.href = `/order-failed?id=${data.orderId}`;
                             }
                         },
                         "theme": {
@@ -392,9 +459,7 @@
                     };                    
                     const rzp1 = new Razorpay(options);
                     rzp1.on('payment.failed', function (response){
-                        alert("Payment Failed: " + response.error.description);
-                        confirmBtn.disabled = false;
-                        confirmBtn.innerText = originalText;
+                        window.location.href = `/order-failed?id=${data.orderId}`;
                     });
                     rzp1.open();
                 } 
@@ -403,15 +468,16 @@
                 }
             } catch (error) {
                 console.error("Error processing checkout:", error);
-                alert("Something went wrong processing your checkout.");
+                showCustomAlert("Something went wrong processing your checkout.", "error");
                 this.disabled = false;
                 this.innerText = originalText;
             }
         });
     });
 
-    // 'Helper function' for 'select' the coupon
-    function selectCoupon(code) {
+    
+    // Helper function for 'select' the coupon
+    window.selectCoupon = function(code) {
         const isCouponActive = !document.getElementById('removeCouponBtn').classList.contains('hidden');
         const feedbackEl = document.getElementById('couponFeedback');      
         if (isCouponActive) {

@@ -26,7 +26,7 @@ export const findAddressesByUserId = async (id) => {
 
 // For 'find' and 'upadate' user collection.
 export const findUserAndUpdate = async (id, updateData) => {
-    return await User.findByIdAndUpdate(id, updateData);           // Here 'id' is the 'filter' and 'updateData' is the 'data' for 'updation'
+    return await User.findByIdAndUpdate(id, updateData);                                                                    // Here 'id' is the 'filter' and 'updateData' is the 'data' for 'updation'
 };
 
 // Retrieve data from 'walletTransaction' collection based on 'userId' and also 'sort' as 'newly created'

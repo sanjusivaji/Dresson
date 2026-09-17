@@ -85,12 +85,12 @@
     genderSelect.addEventListener('change', function() {
         const selectedGender = this.value;
         parentCategorySelect.value = "none";
-        parentOptions.forEach(option => {
-            if (option.value === "none") return;        
-            if (option.getAttribute('data-gender') === selectedGender) {
-                option.classList.remove('hidden');
+        parentOptions.forEach(item => {
+            if (item.value === "none") return;        
+            if (item.getAttribute('data-gender') === selectedGender) {
+                item.classList.remove('hidden');                                                                                    // Shows parent options that match the newly selected gender
             } else {
-                option.classList.add('hidden');
+                item.classList.add('hidden');                                                                                       // Hides parent options that don't match
             }
         });
     });
@@ -101,15 +101,15 @@
         const desc = document.getElementById('categoryDescription').value.trim();
         if (!gender) {
             e.preventDefault();
-            return showCustomAlert("Please select a target gender scope before saving.", "Validation Error", "error");
+            return showCustomAlert("Please select a target gender scope before saving.", "Validation Error", "error");                // Stops the save and warns if user forgot to pick a gender
         }
         if (name.length < 2) {
             e.preventDefault();
-            return showCustomAlert("Category Name must be at least 2 characters long.", "Invalid Input", "error");
+            return showCustomAlert("Category Name must be at least 2 characters long.", "Invalid Input", "error");                    // Stops the save if the category name is too short
         }
         if (desc.length < 10) {
             e.preventDefault();
-            return showCustomAlert("Please provide a description of at least 10 characters.", "Invalid Input", "error");
+            return showCustomAlert("Please provide a description of at least 10 characters.", "Invalid Input", "error");              // Stops the save if the description is too short
         }
     });
 </script>

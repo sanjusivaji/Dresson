@@ -15,9 +15,6 @@ import * as walletController from '../controller/userController/walletController
 
 
 
-
-
-
 const router = express.Router();
 
 
@@ -125,6 +122,9 @@ router.get('/order-success',requireActiveUser, checkoutController.getOrderSucces
 // Route for 'verify payment'
 router.post('/checkout/verify-payment', requireActiveUser, checkoutController.verifyPayment);
 
+router.get('/order-failed', checkoutController.getOrderFailedPage);
+router.post('/checkout/retry-payment', checkoutController.retryPayment);
+
 // Route for 'display' orders
 router.get('/profile/orders', requireActiveUser, orderController.getUserOrdersPage);
 
@@ -168,7 +168,7 @@ router.get('/checkout', requireActiveUser, checkoutController.getCheckoutPage);
 router.post('/checkout/apply-coupon', requireActiveUser, checkoutController.applyCoupon);
 router.post('/checkout/remove-coupon', requireActiveUser, checkoutController.removeCoupon); 
 
-// This will handle the final "Place Order" button on the checkout page
+// Route for  "Place Order" button on the checkout page
 router.post('/checkout/place-order', requireActiveUser, checkoutController.placeOrder);
 
 

@@ -346,6 +346,7 @@
 <script src="/js/shared/imageCropper.js"></script>
 <script>
     // Javascript remains unchanged from previous step
+    // Default choices for product specs
     const defaultPresets = {
         'Size': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'],
         'Color': ['Black', 'White', 'Navy Blue', 'Red', 'Olive Green', 'Grey', 'Maroon', 'Multi'],
@@ -355,69 +356,79 @@
         'Neckline / Collar': ['Crew Neck', 'V-Neck', 'Polo Collar', 'Mandarin Collar', 'Hooded'],
         'Pattern / Print': ['Solid', 'Striped', 'Checked', 'Floral Print', 'Graphic Print']
     };
+    // Attempt to load previously saved categories safely
     let databaseCategories = [];
     try {
-        const rawTextData = document.getElementById('rawServerCategories').value;
-        databaseCategories = JSON.parse(rawTextData || "[]");
+        const rawTextData = document.getElementById('rawServerCategories').value; // Read hidden string
+        databaseCategories = JSON.parse(rawTextData || "[]"); // Make string an object
     } catch (error) {
         console.error("Critical failure parsing category datasets:", error);
     }
 
+
+
+    // Run this block when HTML loading completes
     document.addEventListener("DOMContentLoaded", () => {
-        const initialSubId = document.getElementById('historicalSelectedSubId').value;
+        const initialSubId = document.getElementById('historicalSelectedSubId').value; // Check past selected subcategory
         if (document.getElementById('parentCategory').value) {
-            handleParentCategoryChange(initialSubId);
+            handleParentCategoryChange(initialSubId); // If a gender is selected, show its subcategories
         }
         document.querySelectorAll('.option-row select.option-type').forEach(select => {
-            updateRowPlaceholders(select);
+            updateRowPlaceholders(select); // Set hint text on each box
         });
     });
 
+
+
+    // Change subcategory list based on gender selected
     function handleParentCategoryChange(historicalSubId = null) {
-        const activeGender = document.getElementById('parentCategory').value;
-        const subSelect = document.getElementById('subCategory');
-        subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>';
+        const activeGender = document.getElementById('parentCategory').value; // See what user chose
+        const subSelect = document.getElementById('subCategory'); // Find the dropdown box
+        subSelect.innerHTML = '<option value="" disabled selected>Choose Subcategory option</option>'; // Blank out current choices
         const filteredMatches = databaseCategories.filter(cat => {
-            const isMatchingGender = cat.gender === activeGender;
-            const isNotRoot = cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined;
-            return isMatchingGender && isNotRoot;
+            const isMatchingGender = cat.gender === activeGender; // Does it match the selected gender
+            const isNotRoot = cat.parentCategory !== null && cat.parentCategory !== 'none' && cat.parentCategory !== undefined; // Ensure it's not a root category
+            return isMatchingGender && isNotRoot; // Check both rules
         });
         if (filteredMatches.length > 0) {
-            subSelect.disabled = false;
+            subSelect.disabled = false; // Turn on box
             subSelect.classList.remove('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.add('bg-white', 'cursor-pointer');
             filteredMatches.forEach(cat => {
                 const opt = document.createElement('option');
                 opt.value = cat._id;
                 if (cat.breadcrumb) {
-                    opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`;
+                    opt.innerText = cat.breadcrumb + ` (Level ${cat.depth || 2})`; // Use standard path name
                 } else if (cat.lineage && Array.isArray(cat.lineage)) {
-                    opt.innerText = cat.lineage.join(" → ") + ` (Level ${cat.depth || 2})`;
+                    opt.innerText = cat.lineage.join(" → ") + ` (Level ${cat.depth || 2})`; // Connect steps with an arrow
                 } else {
                     const parentName = cat.parentCategory && cat.parentCategory.categoryName ? cat.parentCategory.categoryName : "Main";
-                    opt.innerText = `${parentName} → ${cat.categoryName}`;
+                    opt.innerText = `${parentName} → ${cat.categoryName}`; // Use basic parent-child link
                 }
                 if (historicalSubId && cat._id.toString() === historicalSubId.toString()) {
-                    opt.selected = true;
+                    opt.selected = true; // Mark as selected if this was picked before
                 }
-                subSelect.appendChild(opt);
+                subSelect.appendChild(opt); // Add new option to list
             });
         } else {
-            subSelect.disabled = true;
+            subSelect.disabled = true; // Turn off box
             subSelect.classList.add('bg-gray-100', 'cursor-not-allowed');
             subSelect.classList.remove('bg-white', 'cursor-pointer');
             subSelect.innerHTML = '<option value="" disabled selected>No sub-categories configured</option>';
         }
     }
 
+
+
+    // Put a new feature setup row on screen
     function addNewOptionRow(presetType = 'Size') {
-        const container = document.getElementById('optionsContainer');
-        const row = document.createElement('div');
+        const container = document.getElementById('optionsContainer'); // Get main box
+        const row = document.createElement('div'); // Make empty chunk
         row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
-        const standardAttributes = Object.keys(defaultPresets);
-        standardAttributes.push("Occasion", "Custom Attribute");
+        const standardAttributes = Object.keys(defaultPresets); // Read existing choices
+        standardAttributes.push("Occasion", "Custom Attribute"); // Add manual entries
         let optionsHtml = standardAttributes.map(attr => {
-            const isSelected = attr === presetType ? 'selected' : '';
+            const isSelected = attr === presetType ? 'selected' : ''; // Check if default
             return `<option value="${attr}" ${isSelected}>${attr}</option>`;
         }).join('');
         row.innerHTML = `
@@ -435,49 +446,65 @@
                     <i class="fas fa-trash-alt text-xs"></i>
                 </button>
             </div>
-        `;
-        container.appendChild(row);
-        updateRowPlaceholders(row.querySelector('.option-type'));
+        `; // Put input and trash bin on screen
+        container.appendChild(row); // Save it
+        updateRowPlaceholders(row.querySelector('.option-type')); // Apply hints
     }
 
+
+
+    // Places a clicked suggestion into the input space
     function appendPresetToInput(btn, value) {
-        const inputField = btn.closest('.col-span-8').querySelector('.option-values');
-        let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean);
+        const inputField = btn.closest('.col-span-8').querySelector('.option-values'); // Search for right typing box
+        let currentValues = inputField.value.split(',').map(s => s.trim()).filter(Boolean); // Clean current text list
         if (!currentValues.includes(value)) {
-            currentValues.push(value);
-            inputField.value = currentValues.join(', ') + ', '; 
-            generateCombinationsMatrix();
+            currentValues.push(value); // Stick new word in list
+            inputField.value = currentValues.join(', ') + ', '; // Remake sentence
+            generateCombinationsMatrix(); // Remake product mix table
         }
-        inputField.focus();
+        inputField.focus(); // Cursor back inside
     }
 
+
+
+    // Modifies helper text when changing feature choice
     function updateRowPlaceholders(select) {
-        const parentCol = select.closest('.option-row').querySelector('.col-span-8');
-        const input = parentCol.querySelector('.option-values');
-        const presetContainer = parentCol.querySelector('.preset-container');
-        const type = select.value;
+        const parentCol = select.closest('.option-row').querySelector('.col-span-8'); // Read nearby element
+        const input = parentCol.querySelector('.option-values'); // Find typing line
+        const presetContainer = parentCol.querySelector('.preset-container'); // Find suggestion area
+        const type = select.value; // Get choice
         if (defaultPresets[type]) {
             const chipsHtml = defaultPresets[type].map(val => 
                 `<button type="button" onclick="appendPresetToInput(this, '${val}')" class="px-2.5 py-1 bg-white border border-gray-200 text-[10px] rounded hover:bg-[#6b66d6] hover:text-white hover:border-[#6b66d6] text-gray-600 font-bold transition-colors cursor-pointer shadow-xs">${val}</button>`
-            ).join('');
-            presetContainer.innerHTML = chipsHtml;
+            ).join(''); // Create suggestion chips
+            presetContainer.innerHTML = chipsHtml; // Put chips in box
         } else {
-            presetContainer.innerHTML = ''; 
+            presetContainer.innerHTML = ''; // Keep empty if no suggestions
         }
         const placeholderMap = { 'Size': "Type sizes or click presets...", 'Color': "Type colors or click presets...", 'Fit Type': "Type fits or click presets..." };
-        input.placeholder = placeholderMap[type] || `Enter variables for ${type}`;
-        generateCombinationsMatrix();
+        input.placeholder = placeholderMap[type] || `Enter variables for ${type}`; // Add hint language
+        generateCombinationsMatrix(); // Apply changes
     }
 
+
+
+    // Trigger display for custom input box
     function openCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', true); }
+
+
+
+    // Close out custom input box display
     function closeCustomVariantModal() { toggleModalVisibility('customVariantModal', 'cvModalContent', false); }
 
+
+
+    // Inject custom product spec directly as a new row
     function submitCustomVariantRow() {
-        const inputName = document.getElementById('customVariantInputName').value.trim();
-        if (!inputName) return alert("Please declare a custom parameter label.");
-        const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1);
-        const container = document.getElementById('optionsContainer');
-        const row = document.createElement('div');
+        const inputName = document.getElementById('customVariantInputName').value.trim(); // Grab written name
+        if (!inputName) return alert("Please declare a custom parameter label."); // Complain if empty
+        const cleanKeyLabel = inputName.charAt(0).toUpperCase() + inputName.slice(1); // Set proper lettering
+        const container = document.getElementById('optionsContainer'); // Get target location
+        const row = document.createElement('div'); // Create segment
         row.className = "grid grid-cols-12 gap-4 items-start bg-white p-5 rounded-lg border border-gray-200 shadow-xs option-row animate-fade-in";
         row.innerHTML = `
             <div class="col-span-3 font-bold text-xs text-gray-800 tracking-wide uppercase px-2 mt-2">
@@ -489,31 +516,37 @@
             <div class="col-span-1 text-right mt-1">
                 <button type="button" onclick="removeOptionRow(this)" class="w-8 h-8 inline-flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-100 transition cursor-pointer" title="Delete Option Row"><i class="fas fa-trash-alt text-xs"></i></button>
             </div>
-        `;
-        container.appendChild(row);
-        closeCustomVariantModal();
-        document.getElementById('customVariantInputName').value = '';
+        `; // Insert internal code
+        container.appendChild(row); // Attach to page
+        closeCustomVariantModal(); // Close window
+        document.getElementById('customVariantInputName').value = ''; // Clean input
     }
 
+
+
+    // Hit trash can to erase entire feature setup
     function removeOptionRow(btn) { btn.closest('.option-row').remove(); generateCombinationsMatrix(); }
 
+
+
+    // Main engine to create mix of variants for the table
     const persistentVariantMemory = {};
     function generateCombinationsMatrix() {
-        const rows = document.getElementsByClassName('option-row');
-        const baseName = document.getElementById('baseName').value.trim() || "PROD";
-        const brandName = document.getElementById('brandName').value.trim() || "DRSN";      
+        const rows = document.getElementsByClassName('option-row');                          // Look up active rows
+        const baseName = document.getElementById('baseName').value.trim() || "PROD";         // Read product name
+        const brandName = document.getElementById('brandName').value.trim() || "DRSN";       // Read product brand       
         let optionKeys = []; let arraysToCombine = [];
         for (let row of rows) {
-            const type = row.querySelector('.option-type').value;
-            const rawValue = row.querySelector('.option-values').value;            
-            const cleanValues = [...new Set(rawValue.split(',').map(v => v.trim()).filter(v => v !== ''))];            
-            if (cleanValues.length > 0) { optionKeys.push(type); arraysToCombine.push(cleanValues); }
+            const type = row.querySelector('.option-type').value;                            // Read category
+            const rawValue = row.querySelector('.option-values').value;                      // Read typed info            
+            const cleanValues = [...new Set(rawValue.split(',').map(v => v.trim()).filter(v => v !== ''))]; // Remove junk space and duplicates           
+            if (cleanValues.length > 0) { optionKeys.push(type); arraysToCombine.push(cleanValues); } // Push safe words
         }
-        const matrixCard = document.getElementById('combinationsCard');
-        const tableBody = document.getElementById('matrixTableBody');
-        const existingRows = tableBody.querySelectorAll('tr');
+        const matrixCard = document.getElementById('combinationsCard');                       // Find card
+        const tableBody = document.getElementById('matrixTableBody');                         // Find table body
+        const existingRows = tableBody.querySelectorAll('tr');                                // Review existing list
         existingRows.forEach(tr => {
-            const nameInput = tr.querySelector('.matrix-variant-name');
+            const nameInput = tr.querySelector('.matrix-variant-name');                       // Keep previous info safe in background
             const idInput = tr.querySelector('.matrix-variant-id');
             const skuInput = tr.querySelector('.matrix-variant-sku');
             const priceInput = tr.querySelector('.matrix-variant-price');
@@ -522,36 +555,36 @@
                 persistentVariantMemory[nameInput.value.trim()] = {
                     id: idInput ? idInput.value : '', sku: skuInput ? skuInput.value : '',
                     price: priceInput ? priceInput.value : '', stock: stockInput ? stockInput.value : '0'
-                };
+                }; // Store previously typed prices
             }
         });
-        if (arraysToCombine.length === 0) { matrixCard.classList.add('hidden'); tableBody.innerHTML = ''; return; }
-        if (rows.length !== arraysToCombine.length) return;
-        let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
-        if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]);
-        tableBody.innerHTML = ''; matrixCard.classList.remove('hidden');
+        if (arraysToCombine.length === 0) { matrixCard.classList.add('hidden'); tableBody.innerHTML = ''; return; } // Hide and exit if no settings
+        if (rows.length !== arraysToCombine.length) return;                                                        // Exit if user left a box fully empty
+        let combinations = arraysToCombine.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat()))); // Combine math all elements together
+        if (!Array.isArray(combinations[0])) combinations = combinations.map(item => [item]); // Safety check for small lists
+        tableBody.innerHTML = ''; matrixCard.classList.remove('hidden');                                // Prep display
         combinations.forEach((combo, index) => {
-            const comboString = combo.join(' / ');
-            const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase();
-            const generatedSku = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`;
-            let historical = persistentVariantMemory[comboString];
+            const comboString = combo.join(' / '); // Create label
+            const uniqueHash = Math.random().toString(36).substring(2, 6).toUpperCase(); // Create code
+            const generatedSku = `${brandName.substring(0, 3).toUpperCase()}-${baseName.substring(0, 3).toUpperCase()}-${combo.join('-').replace(/\s+/g, '').toUpperCase()}-${uniqueHash}`; // Make long sku text
+            let historical = persistentVariantMemory[comboString]; // Check if label matches an old one
             if (!historical) {
-                const memoryKeys = Object.keys(persistentVariantMemory);
+                const memoryKeys = Object.keys(persistentVariantMemory); // Look manually to match names
                 let bestKey = null; let maxOverlap = 0;
                 for (let key of memoryKeys) {
-                    const oldParts = key.split(' / ');
-                    const overlap = oldParts.filter(part => combo.includes(part)).length;                    
-                    if (overlap === oldParts.length && overlap > maxOverlap) { maxOverlap = overlap; bestKey = key; }
+                    const oldParts = key.split(' / '); // Separate old label parts
+                    const overlap = oldParts.filter(part => combo.includes(part)).length; // Count matching parts                  
+                    if (overlap === oldParts.length && overlap > maxOverlap) { maxOverlap = overlap; bestKey = key; } // Pick the most matching old setup
                 }                
-                if (bestKey) { historical = { ...persistentVariantMemory[bestKey] }; historical.id = ''; } 
-                else historical = {};
+                if (bestKey) { historical = { ...persistentVariantMemory[bestKey] }; historical.id = ''; } // Clone details but remove exact id
+                else historical = {}; // Ensure clean slate if completely new
             }
-            const finalId = historical.id || ''; const finalSku = historical.sku || generatedSku;
-            const finalPrice = historical.price || ''; const finalStock = historical.stock || '0';
+            const finalId = historical.id || ''; const finalSku = historical.sku || generatedSku; // Output text settings
+            const finalPrice = historical.price || ''; const finalStock = historical.stock || '0'; // Output number settings
             let sizeValue = 'Standard'; let colorValue = 'Standard';            
-            combo.forEach((val, i) => { if (optionKeys[i] === 'Size') sizeValue = val; if (optionKeys[i] === 'Color') colorValue = val; });
-            const idHtml = finalId ? `<input type="hidden" name="variants[${index}][_id]" class="matrix-variant-id" value="${finalId}">` : '';
-            const tr = document.createElement('tr');
+            combo.forEach((val, i) => { if (optionKeys[i] === 'Size') sizeValue = val; if (optionKeys[i] === 'Color') colorValue = val; }); // Figure out correct column assignment
+            const idHtml = finalId ? `<input type="hidden" name="variants[${index}][_id]" class="matrix-variant-id" value="${finalId}">` : ''; // Code for exact id
+            const tr = document.createElement('tr'); // Create HTML list item
             tr.className = "hover:bg-gray-50/50 transition historical-matrix-row";
             tr.innerHTML = `
                 <td class="py-4 px-8 font-bold text-gray-900">
@@ -574,58 +607,80 @@
                     <input type="number" name="variants[${index}][stock]" value="${finalStock}" min="0" class="matrix-variant-stock w-full border border-gray-200 rounded-md px-3 py-2 text-center font-bold bg-gray-50 focus:outline-none focus:border-gray-500 transition-colors">
                 </td>
             `;
-            tableBody.appendChild(tr);
+            tableBody.appendChild(tr); // Place into final page design
         });
     }
 
-    const processedFilesArray = []; const dataTransfer = new DataTransfer(); let isHistoricalConverted = false;
+
+
+    // Keep active records for files uploaded to browser page
+    const processedFilesArray = []; const dataTransfer = new DataTransfer(); let isHistoricalConverted = false; // Background controls
     const historicalImagesData = [
         <% savedImages.forEach((img, idx) => { %> { url: "<%= img.url || img %>", name: "historical-dress-<%= idx + 1 %>.jpg" }, <% }) %>
     ];
 
+
+
+    // Attempt connection pull to get old photo records and allow edits
     async function importHistoricalWorkspace() {
-        if (isHistoricalConverted) return;
-        const badge = document.getElementById('galleryStatusBadge');
-        if (badge) badge.innerHTML = `<span><i class="fas fa-spinner fa-spin text-gray-500 mr-2"></i>Loading workspace...</span>`;
+        if (isHistoricalConverted) return; // Disregard if already completed task
+        const badge = document.getElementById('galleryStatusBadge'); // Target old photo notification
+        if (badge) badge.innerHTML = `<span><i class="fas fa-spinner fa-spin text-gray-500 mr-2"></i>Loading workspace...</span>`; // Add loading text
         for (let i = 0; i < historicalImagesData.length; i++) {
-            const item = historicalImagesData[i];
+            const item = historicalImagesData[i]; // Find correct location target
             try {
-                const res = await fetch(item.url); const blob = await res.blob();
-                const file = new File([blob], item.name, { type: blob.type || 'image/jpeg', lastModified: Date.now() });
-                processedFilesArray.push(file);
+                const res = await fetch(item.url); const blob = await res.blob(); // Convert old image to new data block
+                const file = new File([blob], item.name, { type: blob.type || 'image/jpeg', lastModified: Date.now() }); // Stamp file code property
+                processedFilesArray.push(file); // Move to real active file array
             } catch (error) { console.error("Failed to load historical photo:", error); }
         }
-        isHistoricalConverted = true;
+        isHistoricalConverted = true; // Signal safe to ignore again
     }
 
+
+
+    // Prepare list to capture new incoming uploads through the browse button
     async function handleFileSelect(event) {
-        const files = Array.from(event.target.files);
-        if (!files.length) return;
-        await importHistoricalWorkspace();
-        files.forEach(file => { if (file.type.startsWith('image/')) processedFilesArray.push(file); });
-        updateFormFileInput(); renderPreviews(); event.target.value = '';
+        const files = Array.from(event.target.files); // Scan selected user files
+        if (!files.length) return; // Exit logic entirely if 0 files selected
+        await importHistoricalWorkspace(); // Import all background old files safely before modifying
+        files.forEach(file => { if (file.type.startsWith('image/')) processedFilesArray.push(file); }); // Allow specific picture limits
+        updateFormFileInput(); renderPreviews(); event.target.value = ''; // Update elements fully to complete
     }
 
+
+
+    // Launch cut-box overlay specific to historical item target
     async function handleHistoricalCrop(index) { await importHistoricalWorkspace(); updateFormFileInput(); renderPreviews(); openCropper(index); }
+
+
+
+    // Toss old item completely based on target index location
     async function handleHistoricalDelete(index) { await importHistoricalWorkspace(); removeImage(index); }
 
+
+
+    // Inject final saved collection into the submit data fields
     function updateFormFileInput() {
-        dataTransfer.items.clear();
-        processedFilesArray.forEach(file => dataTransfer.items.add(file));
-        document.getElementById('finalFormFileInput').files = dataTransfer.files;
-        const badge = document.getElementById('galleryStatusBadge');
+        dataTransfer.items.clear(); // Ensure collection remains blank initially
+        processedFilesArray.forEach(file => dataTransfer.items.add(file)); // Insert elements repeatedly
+        document.getElementById('finalFormFileInput').files = dataTransfer.files; // Replace DOM target completely
+        const badge = document.getElementById('galleryStatusBadge'); // Target status view bar
         if (processedFilesArray.length > 0) {
             badge.className = "mt-6 flex items-center justify-between px-4 py-2.5 bg-amber-50 rounded-lg border border-amber-200 text-xs font-bold text-amber-800 shadow-xs";
-            badge.innerHTML = `<span><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Gallery Workspace Active (${processedFilesArray.length} Photos Prepared)</span><button type="button" onclick="restoreHistoricalGallery()" class="text-[10px] underline hover:text-amber-950 font-bold cursor-pointer uppercase tracking-wider">Reset to Historical</button>`;
+            badge.innerHTML = `<span><i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>Gallery Workspace Active (${processedFilesArray.length} Photos Prepared)</span><button type="button" onclick="restoreHistoricalGallery()" class="text-[10px] underline hover:text-amber-950 font-bold cursor-pointer uppercase tracking-wider">Reset to Historical</button>`; // Flag visually the system is working on unconfirmed changes
         }
-        if (processedFilesArray.length === 0 || processedFilesArray.length >= 3) { document.getElementById('imageCountError').classList.add('hidden'); }
+        if (processedFilesArray.length === 0 || processedFilesArray.length >= 3) { document.getElementById('imageCountError').classList.add('hidden'); } // Verify picture rules passing correctly
     }
 
+
+
+    // Print pictures straight directly onto grid
     function renderPreviews() {
-        const grid = document.getElementById('imagePreviewGrid'); grid.innerHTML = '';
+        const grid = document.getElementById('imagePreviewGrid'); grid.innerHTML = ''; // Start clean container slate
         processedFilesArray.forEach((file, index) => {
-            const url = URL.createObjectURL(file); const card = document.createElement('div');
-            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs";
+            const url = URL.createObjectURL(file); const card = document.createElement('div'); // Initialize source route path
+            card.className = "relative group bg-gray-100 rounded-xl overflow-hidden border border-gray-200 aspect-3/4 flex items-center justify-center shadow-xs"; // Add exact appearance classes
             card.innerHTML = `
                 <img src="${url}" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 backdrop-blur-xs">
@@ -633,86 +688,101 @@
                     <button type="button" onclick="removeImage(${index})" class="w-9 h-9 flex items-center justify-center bg-red-600 text-white rounded-lg shadow hover:bg-red-700 text-xs font-bold cursor-pointer transition-transform hover:scale-105"><i class="fas fa-trash"></i></button>
                 </div>
                 <span class="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded shadow">#${index + 1}</span>
-            `;
-            grid.appendChild(card);
+            `; // Paste final exact component block
+            grid.appendChild(card); // Secure into element tree visually
         });
     }
 
+
+
+    // Forcefully delete chosen specific photo by targeted id
     function removeImage(index) {
-        processedFilesArray.splice(index, 1); updateFormFileInput();
-        if (processedFilesArray.length === 0) restoreHistoricalGallery();
+        processedFilesArray.splice(index, 1); updateFormFileInput(); // Split object and rebuild form
+        if (processedFilesArray.length === 0) restoreHistoricalGallery(); // Trigger backup system entirely
         else {
-            renderPreviews();
+            renderPreviews(); // Launch photo rendering engine normally
             if (processedFilesArray.length < 3) {
-                const errorBox = document.getElementById('imageCountError'); errorBox.classList.remove('hidden');
-                errorBox.querySelector('span').innerText = `You have ${processedFilesArray.length} photo(s). Please upload more to meet the minimum 3 required.`;
+                const errorBox = document.getElementById('imageCountError'); errorBox.classList.remove('hidden'); // Surface rule alert banner safely
+                errorBox.querySelector('span').innerText = `You have ${processedFilesArray.length} photo(s). Please upload more to meet the minimum 3 required.`; // Update inner error text cleanly
             }
         }
     }
 
+
+
+    // Reset view safely back to unmodified state
     function restoreHistoricalGallery() { window.location.reload(); }
 
+
+
+    // Pull tool extension completely for exact image edit session
     function openCropper(index) {
-        const originalFile = processedFilesArray[index];
+        const originalFile = processedFilesArray[index];             // Fetch raw exact file base
         window.ImageCropper.openCropper({
-            file: originalFile, aspectRatio: NaN,
+            file: originalFile, aspectRatio: NaN,                    // Trigger main extension box tool safely
             onCrop: (blob, newUrl) => {
-                processedFilesArray[index] = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: Date.now() });
-                updateFormFileInput(); renderPreviews();
+                processedFilesArray[index] = new File([blob], originalFile.name, { type: 'image/jpeg', lastModified: Date.now() }); // Lock object back inside main list variable safely
+                updateFormFileInput(); renderPreviews();             // Reload all visible elements accurately
             }
         });
     }
 
+
+
+    // Guard rule systems preventing submitting page improperly
     document.getElementById('productForm').addEventListener('submit', function (event) {
-        let isValid = true;
-        document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500', 'bg-red-50'));
+        let isValid = true; // Declare primary tracker bool
+        document.querySelectorAll('.inline-error').forEach(el => el.classList.add('hidden')); // Delete warnings
+        document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500', 'bg-red-50')); // Remove visual red indicators securely
 
         function fireError(elementId, errorText) {
-            const inputField = document.getElementById(elementId);
-            const errorElement = document.getElementById(elementId + 'Error');
+            const inputField = document.getElementById(elementId);             // Get broken rule element directly
+            const errorElement = document.getElementById(elementId + 'Error'); // Fetch related text field warning
             if (inputField && errorElement) {
-                inputField.classList.add('border-red-500'); errorElement.innerText = errorText;
-                errorElement.classList.remove('hidden'); isValid = false;
+                inputField.classList.add('border-red-500'); errorElement.innerText = errorText; // Inject warning words securely
+                errorElement.classList.remove('hidden'); isValid = false;                       // Block overall process completion mechanism safely
             }
         }
         
-        if (!document.getElementById('baseName').value.trim()) fireError('baseName', 'Product name is mandatory.');
-        if (!document.getElementById('brandName').value.trim()) fireError('brandName', 'Brand name is mandatory.');
-        if (!document.getElementById('parentCategory').value) fireError('parentCategory', 'Please select a Target Gender.');
-        if (!document.getElementById('subCategory').value) fireError('subCategory', 'Please assign a Sub-Category.');
-        if (!document.getElementById('description').value.trim()) fireError('description', 'Rich description is mandatory.');
+        if (!document.getElementById('baseName').value.trim()) fireError('baseName', 'Product name is mandatory.'); // Check rule name
+        if (!document.getElementById('brandName').value.trim()) fireError('brandName', 'Brand name is mandatory.'); // Check rule brand
+        if (!document.getElementById('parentCategory').value) fireError('parentCategory', 'Please select a Target Gender.'); // Check rule category parent
+        if (!document.getElementById('subCategory').value) fireError('subCategory', 'Please assign a Sub-Category.'); // Check rule category sub
+        if (!document.getElementById('description').value.trim()) fireError('description', 'Rich description is mandatory.'); // Check rule text notes
 
         if (processedFilesArray.length > 0 && processedFilesArray.length < 3) {
-            document.getElementById('imageCountError').classList.remove('hidden'); isValid = false;
+            document.getElementById('imageCountError').classList.remove('hidden'); isValid = false; // Fail rule if partial upload detected directly
         }
 
-        const rows = document.getElementById('matrixTableBody').querySelectorAll('tr');
-        const matrixGlobalErr = document.getElementById('matrixGlobalError');
-        if (rows.length === 0) { matrixGlobalErr.classList.remove('hidden'); isValid = false; } 
+        const rows = document.getElementById('matrixTableBody').querySelectorAll('tr'); // Access generated mix list directly
+        const matrixGlobalErr = document.getElementById('matrixGlobalError'); // Get overall matrix rule banner
+        if (rows.length === 0) { matrixGlobalErr.classList.remove('hidden'); isValid = false; } // Reveal rule block cleanly if missing table
         else {
             rows.forEach(tr => {
-                const pInput = tr.querySelector('.matrix-variant-price');
-                const sInput = tr.querySelector('.matrix-variant-stock');
-                const skuInput = tr.querySelector('.matrix-variant-sku');
-                if (!skuInput.value.trim()) { skuInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
-                if (!pInput.value || parseFloat(pInput.value) < 0) { pInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
-                if (!sInput.value || parseInt(sInput.value) < 0) { sInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; }
+                const pInput = tr.querySelector('.matrix-variant-price'); // Locate row price element specifically
+                const sInput = tr.querySelector('.matrix-variant-stock'); // Locate row stock element specifically
+                const skuInput = tr.querySelector('.matrix-variant-sku'); // Locate row sku element specifically
+                if (!skuInput.value.trim()) { skuInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate sku block
+                if (!pInput.value || parseFloat(pInput.value) < 0) { pInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate price block
+                if (!sInput.value || parseInt(sInput.value) < 0) { sInput.classList.add('border-red-500', 'bg-red-50'); isValid = false; } // Validate stock block
             });
         }
         if (!isValid) {
-            event.preventDefault(); 
-            const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)');
-            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            event.preventDefault(); // Pause form submission safely
+            const firstError = document.querySelector('.border-red-500, .inline-error:not(.hidden)'); // Search for topmost issue visually
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Move screen gently exactly there completely
         }
     });
 
+
+
+    // Smooth visual box opening closing utility block directly
     function toggleModalVisibility(modalId, contentId, shouldShow) {
-        const modal = document.getElementById(modalId); const content = document.getElementById(contentId);
+        const modal = document.getElementById(modalId); const content = document.getElementById(contentId); // Find correct window parts visually
         if (shouldShow) {
-            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+            modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10); // Display correctly using animation timings safely
         } else {
-            modal.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 200);
+            modal.classList.add('opacity-0'); content.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 200); // Disappear correctly using animation timings safely
         }
     }
 </script>

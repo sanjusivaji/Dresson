@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
     orderCount: { type: Number, default: 0 },
     phone: { type: String, default: 'Not provided' },
     address: { type: String, default: 'Address not updated yet' },
-    walletBalance: { type: Number, default: 0 },                       // Wallet Balance is already here (Great!)
+    walletBalance: { type: Number, default: 0 },                      
     walletHistory: [{
         amount: { type: Number, required: true },
         type: { type: String, enum: ['credit', 'debit'], required: true },

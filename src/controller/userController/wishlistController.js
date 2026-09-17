@@ -8,7 +8,7 @@ export const getWishlistPage = async (req, res) => {
         if (!userId) {
             return res.redirect('/login');
         }
-        const wishlist = await wishlistService.getActiveWishlist(userId);                // Retrieve 'first matching' document based on 'userId' from 'wishlist' collection and adding 'products' data include 'only' 'active' products with only 'name brand price images variants discount' fields
+        const wishlist = await wishlistService.getActiveWishlist(userId);                                                        // Retrieve 'first matching' document based on 'userId' from 'wishlist' collection and adding 'products' data include 'only' 'active' products with only 'name brand price images variants discount' fields
         res.render('user/wishlist', {
             layout: 'layout/user',
             pageTitle: 'My Wishlist - Dresson',
@@ -33,7 +33,7 @@ export const toggleWishlistItem = async (req, res) => {
                 message: WISHLIST_MESSAGES.UNAUTHORIZED 
             });
         }        
-        const result = await wishlistService.toggleProductInWishlist(userId, productId);    //  It 'adds' and 'remove' products into 'wishlist' collection when user click the 'heart/love' symbol
+        const result = await wishlistService.toggleProductInWishlist(userId, productId);                                          //  It 'adds' and 'remove' products into 'wishlist' collection when user click the 'heart/love' symbol
         res.status(200).json({ 
             success: true, 
             action: result.action , 

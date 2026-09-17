@@ -19,7 +19,6 @@
 
     <!-- Custom Filters (Date Range & Status) -->
     <form method="GET" action="/admin/analytics" class="flex flex-wrap items-end gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-        <!-- Hidden input to maintain the quick filter if active -->
         <input type="hidden" name="filter" value="<%= locals.currentFilter || '' %>">
         
         <div class="flex flex-col">
@@ -100,18 +99,17 @@
             
             <div class="relative w-48 h-48 mb-6">
                 <canvas id="paymentMethodChart"></canvas>
-                <!-- Centered Text Overlay inside Doughnut -->
                 <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span class="text-[10px] text-gray-400 font-bold">Total</span>
                     <span class="text-sm font-black text-gray-800">₹<%= (locals.stats?.totalSales || 0).toLocaleString('en-IN') %></span>
                 </div>
             </div>
 
-            <!-- Custom Legend Matching Figma -->
+            <!-- Updated Legend: Razorpay instead of UPI -->
             <div class="grid grid-cols-2 gap-x-6 gap-y-3 w-full px-4">
                 <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#36A2EB]"></span>
-                    <span class="text-[10px] font-bold text-gray-600">UPI <span class="text-gray-400 ml-1"><%= locals.paymentStats?.upiPercent || 0 %>%</span></span>
+                    <span class="text-[10px] font-bold text-gray-600">Razorpay <span class="text-gray-400 ml-1"><%= locals.paymentStats?.razorpayPercent || locals.paymentStats?.upiPercent || 0 %>%</span></span>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#FFCE56]"></span>
@@ -149,16 +147,13 @@
                     <% if (locals.orders && orders.length > 0) { %>
                         <% orders.forEach(order => { %>
                             
-                            <!-- Status Extraction Logic -->
                             <% 
                                 let displayStatuses = new Set();
-                                
                                 if (order.returnRequest?.isRequested) {
                                     if (order.returnRequest.status === 'Pending') displayStatuses.add('Return Pending');
                                     else if (order.returnRequest.status === 'Rejected') displayStatuses.add('Return Rejected');
                                     else if (order.returnRequest.status === 'Refunded') displayStatuses.add('Return Refunded');
                                 }
-
                                 if (order.items && order.items.length > 0) {
                                     let hasActiveItems = false;
                                     order.items.forEach(item => {
@@ -168,7 +163,6 @@
                                         else if (item.itemStatus === 'Returned') displayStatuses.add('Return Refunded');
                                         else hasActiveItems = true; 
                                     });
-
                                     if (hasActiveItems || displayStatuses.size === 0) {
                                         if (order.deliveryStatus === 'Returned') displayStatuses.add('Return Refunded');
                                         else displayStatuses.add(order.deliveryStatus);
@@ -236,11 +230,10 @@
 </div>
 
 <script>
-    // 1. Line Chart: Sales Overview
+    // Set up the line chart that shows the sales revenue going up and down
     const ctxLine = document.getElementById('salesOverviewChart').getContext('2d');
     const labels = <%- JSON.stringify(locals.chartLabels || []) %>;
     const data = <%- JSON.stringify(locals.chartData || []) %>;
-    
     new Chart(ctxLine, {
         type: 'line',
         data: {
@@ -248,7 +241,7 @@
             datasets: [{
                 label: 'Revenue',
                 data: data.length > 0 ? data : [0],
-                borderColor: '#6b66f5', // The blue/violet from Figma
+                borderColor: '#6b66f5',
                 borderWidth: 2,
                 tension: 0.4,
                 fill: false,
@@ -279,23 +272,20 @@
         }
     });
 
-    // 2. Doughnut Chart: Payment Methods
+
+    // Set up the round doughnut chart showing how people paid (Razorpay, COD, Wallet, etc.)
     const ctxDoughnut = document.getElementById('paymentMethodChart').getContext('2d');
-    
-    const upi = <%= locals.paymentStats?.upi || 0 %>;
-    const cod = <%= locals.paymentStats?.cod || 0 %>;
-    const wallet = <%= locals.paymentStats?.wallet || 0 %>;
-    const card = <%= locals.paymentStats?.card || 0 %>;
-
-    // Prevents empty chart crash by injecting a grey placeholder if all values are 0
-    const hasData = upi > 0 || cod > 0 || wallet > 0 || card > 0;
-    const doughnutData = hasData ? [upi, cod, wallet, card] : [1];
+    const razorpay = <%= locals.paymentStats?.razorpay || locals.paymentStats?.Razorpay || locals.paymentStats?.upi || 0 %>;
+    const cod = <%= locals.paymentStats?.cod || locals.paymentStats?.COD || 0 %>;
+    const wallet = <%= locals.paymentStats?.wallet || locals.paymentStats?.Wallet || 0 %>;
+    const card = <%= locals.paymentStats?.card || locals.paymentStats?.creditCard || 0 %>;
+    const hasData = razorpay > 0 || cod > 0 || wallet > 0 || card > 0;
+    const doughnutData = hasData ? [razorpay, cod, wallet, card] : [1];
     const doughnutColors = hasData ? ['#36A2EB', '#FFCE56', '#FF6384', '#4BC0C0'] : ['#e5e7eb'];
-
     new Chart(ctxDoughnut, {
         type: 'doughnut',
         data: {
-            labels: hasData ? ['UPI', 'COD', 'Wallet', 'Credit Card'] : ['No Data'],
+            labels: hasData ? ['Razorpay', 'COD', 'Wallet', 'Credit Card'] : ['No Data'],
             datasets: [{
                 data: doughnutData,
                 backgroundColor: doughnutColors,
@@ -306,21 +296,21 @@
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '75%', // Makes it thin like the Figma design to fit text
+            cutout: '75%',
             plugins: {
                 legend: { display: false }, 
                 tooltip: { enabled: hasData }
             }
         }
     });
+
+
+    // Makes sure the user cannot choose an end date that happens before the start date
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
-    if (startDateInput && endDateInput) {                              // For 'date' validation
+    if (startDateInput && endDateInput) {
         startDateInput.addEventListener('change', function() {
-            // Set the minimum allowed date for the 'To' input
-            endDateInput.min = this.value; 
-            
-            // If the current 'To' date is now invalid, clear it
+            endDateInput.min = this.value;                                                                           // Locks the end date box so it can only pick dates after the start date
             if (endDateInput.value && endDateInput.value < this.value) {
                 endDateInput.value = '';
             }

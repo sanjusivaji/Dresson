@@ -42,31 +42,39 @@ router.get('/users/:id/transactions', isAdmin, userController.getUserTransaction
 router.get('/users/:id/orders', userController.getUserOrdersList);
 router.post('/users/:id/toggle-block', isAdmin, userController.toggleBlockStatus);
 
+
 // Route for 'display' admin 'product' page
 router.get('/products', isAdmin, productController.getProductsList);
+
 
 // Router chaining for 'display' admin 'product add' page and its 'process'
 router.route('/products/add')
       .get(isAdmin, productController.getAddProduct)
       .post(isAdmin, uploadProduct.array('productImages', 4), productController.postAddProduct);      // Here 'uploadProduct' is the 'multer' middleware and it handle upload images, video etc into 'cloudinary'.
 
+
 // Router chaining for 'display' admin 'product edit' page and its 'process'
 router.route('/products/edit/:id')
       .get(isAdmin, productController.getEditProduct)
       .post(isAdmin, uploadProduct.array('productImages', 4), productController.postEditProduct);
 
+
 router.post('/products/toggle-list/:id', isAdmin, productController.toggleProductList);
+
 
 // Routes for 'display' category list
 router.get('/categories', isAdmin, categoryController.getCategoriesList);
 
+
 // Routes for 'toggle' category list
 router.post('/category/toggle/:id', categoryController.toggleCategoryStatus);
+
 
 // Route for 'admin category' 'add'
 router.route('/category/add')
       .get(isAdmin, categoryController.getAddCategory)
       .post(isAdmin, categoryController.postAddCategory);
+
 
 // Route for 'admin category' 'edit'.
 router.route('/category/edit/:id')
@@ -77,16 +85,20 @@ router.route('/category/edit/:id')
 // router.post('/category/toggle-list/:id', isAdmin, categoryController.toggleCategoryList);
 router.post('/category/delete/:id', isAdmin, categoryController.deleteCategory);
 
+
 // Route for 'logout' admin
 router.get('/logout', adminController.logout);
 
+
 // Route for admin 'coupon' page display
 router.get('/coupons', isAdmin, couponController.loadCouponsPage);
+
 
 // Router chaining for 'display' admin 'add coupon' page and its 'process'
 router.route('/coupons/add')
     .get(isAdmin, couponController.loadAddCouponPage)
     .post(isAdmin, couponController.createCoupon);
+
 
 // Router chaining for 'display' admin 'edit coupon' page and its 'process'
 router.route('/coupons/edit/:id')
@@ -98,6 +110,7 @@ router.route('/coupons/edit/:id')
 router.get('/orders', isAdmin, adminOrderController.getAdminOrdersPage);
 router.get('/orders/:id', isAdmin, adminOrderController.getAdminOrderDetailsPage);
 router.post('/orders/:id/status', isAdmin, adminOrderController.updateOrderStatus);
+
 
 // Route for 'order return' page in admin
 router.get('/returns', isAdmin, adminOrderController.getAdminReturnsPage);

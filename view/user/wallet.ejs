@@ -36,13 +36,14 @@
             <h2 class="text-lg font-extrabold text-gray-900">Transaction History</h2>
             
             <div class="flex space-x-2 bg-gray-100 p-1 rounded-full">
-                <a href="?type=All" class="px-5 py-1.5 <%= currentType === 'All' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                <!-- FIXED: Updated hrefs to match strict case sensitivity for MongoDB and robust active state checks -->
+                <a href="?type=All" class="px-5 py-1.5 <%= (!currentType || currentType.toLowerCase() === 'all') ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
                     All
                 </a>
-                <a href="?type=credit" class="px-5 py-1.5 <%= currentType === 'credit' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                <a href="?type=Credit" class="px-5 py-1.5 <%= (currentType && currentType.toLowerCase() === 'credit') ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
                     Credit
                 </a>
-                <a href="?type=debit" class="px-5 py-1.5 <%= currentType === 'debit' ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
+                <a href="?type=Debit" class="px-5 py-1.5 <%= (currentType && currentType.toLowerCase() === 'debit') ? 'bg-[#d1c8c4] text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800' %> text-xs font-bold rounded-full transition text-center inline-block">
                     Debit
                 </a>
             </div>
@@ -62,32 +63,60 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
-                        <% if (transactions && transactions.length > 0) { %>
-                            <% transactions.forEach(txn => { %>
+                        <% 
+                           
+                            let displayTxns = [];
+                            if (transactions && transactions.length > 0) {
+                                displayTxns = transactions.filter(txn => {
+                                    const desc = (txn.description || txn.reason || '').toLowerCase();
+                                    const gateway = (txn.gateway || '').toLowerCase();
+                                    
+                                    // Hide COD completely
+                                    if (gateway === 'cod' || desc.includes('cod')) return false;
+                                    
+                                    // Target and hide that exact Razorpay checkout string
+                                    if (desc.includes('online payment (razorpay)')) return false;
+                                    
+                                    // Keep everything else (Wallet recharges, Refunds)
+                                    return true;
+                                });
+                            }
+                        %>
+                        <% if (displayTxns.length > 0) { %>
+                            <% displayTxns.forEach(txn => { %>
                                 <tr class="hover:bg-white transition-colors duration-150">
                                     
-                                    <!-- Date Column mapping (txn.date from DB, fallback to createdAt) -->
+                                    <!-- Date Column mapping -->
                                     <td class="py-4 px-6 text-[11px] font-semibold text-gray-500">
                                         <%= new Date(txn.date || txn.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') %>
                                     </td>
                                     
-                                    <!--  Transaction ID Column mapping (txn._id from DB) -->
+                                    <!-- Transaction ID Column mapping -->
                                     <td class="py-4 px-6 text-[11px] font-bold text-gray-800 font-mono tracking-wider">
                                         <%= txn.transactionId || txn._id %>
                                     </td>
                                     
-                                    <!-- Description Column mapping (txn.description from DB) -->
+                                    <!-- Description Column mapping -->
                                     <td class="py-4 px-6 text-[12px] font-medium text-gray-700">
                                         <%= txn.description || txn.reason %>
                                     </td>
                                     
-                                    <!--  Amount Column logic mapping (credit in lowercase) -->
+                                    <!-- Amount Column logic mapping -->
                                     <% const isCredit = (txn.type && txn.type.toLowerCase() === 'credit') || txn.type === 'Refund'; %>
-                                    <td class="py-4 px-6 text-[13px] font-black <%= isCredit ? 'text-green-600' : 'text-gray-900' %>">
-                                        <%= isCredit ? '+' : '-' %>₹<%= (txn.amount || 0).toLocaleString('en-IN') %>
+                                    <td class="py-4 px-6">
+                                        <div class="flex flex-col">
+                                            <!-- The Amount -->
+                                            <span class="text-[13px] font-black <%= isCredit ? 'text-green-600' : 'text-red-600' %>">
+                                                <%= isCredit ? '+' : '-' %>₹<%= (txn.amount || 0).toLocaleString('en-IN') %>
+                                            </span>
+                                            <!-- The Credit/Debit Label -->
+                                            <span class="text-[10px] font-extrabold uppercase tracking-widest <%= isCredit ? 'text-green-500/80' : 'text-red-500/80' %> mt-0.5">
+                                                <%= isCredit ? 'Credit' : 'Debit' %>
+                                            </span>
+                                        </div>
                                     </td>
                                     
-                                    <!-- Status Column fallback for DB generated histories -->
+                                    <!-- Status Column fallback -->
                                     <td class="py-4 px-6">
                                         <% const txStatus = txn.status || 'Success'; %>
                                         <% if (txStatus === 'Success') { %>
@@ -124,7 +153,6 @@
     </main>
 </div>
 
-
 <!-- Add Money Modal (Hidden by default) -->
 <div id="addMoneyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
     <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
@@ -155,7 +183,6 @@
 
 <!-- Essential Razorpay SDK -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
 
 <script>
     // For 'display' the 'modal'
@@ -190,7 +217,7 @@
             });
             const orderData = await orderRes.json();
             if (!orderData.success) throw new Error(orderData.message);
-           const options = {                                                 // For open 'razorpay' interface
+           const options = {                                                 
                 "key": "<%= razorpayKeyId %>",
                 "amount": orderData.order.amount,
                 "currency": "INR",
@@ -221,7 +248,7 @@
                         }
                     } else {
                         if (typeof showCustomAlert === 'function') {
-                            showCustomAlert("Payment verification failed.", "Error", "error");  // Custom Error Alert
+                            showCustomAlert("Payment verification failed.", "Error", "error");  
                         }
                     }
                 },

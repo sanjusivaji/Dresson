@@ -1,10 +1,11 @@
-
 import * as adminAuthService from '../../services/admin/adminAuthService.js';
 import logger from '../../utilities/logger.js';
 
+
+
 // For 'display' 'login' page
 export const loadLogin = (req, res) => {
-    if (req.session.admin) {
+    if (req.session.admin) {                                                                                                          // Check if admin is already logged in
         return res.redirect('/admin/dashboard');
     }
     res.render('admin/login', {
@@ -13,12 +14,14 @@ export const loadLogin = (req, res) => {
     });
 };
 
+
+
 // For 'login process'
 export const processLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         const adminUser = await adminAuthService.verifyAdminCredentials(email, password);
-                req.session.admin = adminUser._id;
+        req.session.admin = adminUser._id;                                                                                            // Save admin ID to keep session active
         res.redirect('/admin/dashboard');
     } catch (error) {
         logger.error("Admin authentication system exception:", error.message);
@@ -26,17 +29,18 @@ export const processLogin = async (req, res) => {
     }
 };
 
+
+
 // For 'display' 'dashboard'
 export const loadDashboard = async (req, res) => {
     try {
-        const filter = req.query.filter || 'yearly';    
+        const filter = req.query.filter || 'yearly';                                                                                  // Read filter from URL or default to yearly
         const dashboardData = await adminAuthService.getDashboardData(filter);
         res.render('admin/dashboard', {
             currentFilter: filter,
             ...dashboardData,
             pageTitle: "Dashboard - Dresson",
-            activePage: 'dashboard'                                                        // For 'display' violet color in 'sidebar'
-//         });                                              
+            activePage: 'dashboard'                                                                                                   // For 'display' violet color in 'sidebar'
         });
     } catch (error) {
         console.error(error);
@@ -45,13 +49,14 @@ export const loadDashboard = async (req, res) => {
 };
 
 
+
 // For 'logout'
 export const logout = (req, res) => {
     if (req.session.admin) {
-        delete req.session.admin; 
+        delete req.session.admin;                                                                                                     // Remove admin session securely
     }
-    if (req.session.user) {                                                         // This is 'logout' session for 'admin' but 'session' is common for 'admin' and 'user' and 'save' is 'session built-in' method('not' mongoose method here)and used for save it 'temporarly'.
-        return req.session.save((err) => {                                          //  Here passing 'error' ass parameter because it is a 'error handling' code and here we apply 'error first callback' rule.
+    if (req.session.user) {                                                                                                           // This is 'logout' session for 'admin' but 'session' is common for 'admin' and 'user' and 'save' is 'session built-in' method('not' mongoose method here)and used for save it 'temporarly'.
+        return req.session.save((err) => {                                                                                            // Here passing 'error' ass parameter because it is a 'error handling' code and here we apply 'error first callback' rule.
             if (err) {
                 console.error("Session Save Error during Admin Logout:", err);
                 return res.status(500).send("Failed to log out cleanly.");
@@ -64,7 +69,7 @@ export const logout = (req, res) => {
             console.error("Session Destruction Error:", err);
             return res.status(500).send("Failed to log out cleanly.");
         }
-        res.clearCookie('connect.sid');                                             // Here 'clearCookie()' is th built-in 'cookie' method and it used for 'delete' cookies of 'browser' ie express sends a special HTTP header back to the user's browser and it said / feed that, set 'expiration date' of 'cookie' as '01 Jan 1970 00:00:00 ' ie cookies are already expired.
+        res.clearCookie('connect.sid');                                                                                               // Here 'clearCookie()' is th built-in 'cookie' method and it used for 'delete' cookies of 'browser' ie express sends a special HTTP header back to the user's browser and it said / feed that, set 'expiration date' of 'cookie' as '01 Jan 1970 00:00:00 ' ie cookies are already expired.
         res.redirect('/admin/login');
     });
 };

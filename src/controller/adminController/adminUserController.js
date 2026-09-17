@@ -9,11 +9,11 @@ export const getUsersList = async (req, res) => {
     try {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const [totalDocuments, newUsersCount] = await Promise.all([                          // Here 'running' '2' seperate queries(ie 'countDocuments()' is the built-in 'mongoose' method and each mongoose method return 'Promise' objects) at 'same' time(ie 'both' runs 'asynchronously') for better performance
+        const [totalDocuments, newUsersCount] = await Promise.all([                                                            // Here 'running' '2' seperate queries(ie 'countDocuments()' is the built-in 'mongoose' method and each mongoose method return 'Promise' objects) at 'same' time(ie 'both' runs 'asynchronously') for better performance
             User.countDocuments(),
-            User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } })                      // Here we retrieve 'all' 'user'(ie 'User.countDocuments()')data and also 'user' data of that created in 'last 30' days 
+            User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } })                                                        // Here we retrieve 'all' 'user'(ie 'User.countDocuments()')data and also 'user' data of that created in 'last 30' days 
         ]);
-        const dashboardData = await adminUserService.buildUsersListDashboard(req.query);     // For calculate 'user' details, 'loginDate','joiningDate', 'search', 'total pages', 'current page' etc
+        const dashboardData = await adminUserService.buildUsersListDashboard(req.query);                                       // For calculate 'user' details, 'loginDate','joiningDate', 'search', 'total pages', 'current page' etc
         res.render('admin/users', {
             ...dashboardData,
             totalDocuments,
@@ -30,7 +30,7 @@ export const getUsersList = async (req, res) => {
 // For 'block' or 'Unblock' user
 export const toggleBlockStatus = async (req, res) => {
     try {
-        await adminUserService.processToggleBlock(req.params.id);                         // For 'process' of 'toggling' of 'user blocking'
+        await adminUserService.processToggleBlock(req.params.id);                                                             // For 'process' of 'toggling' of 'user blocking'
         res.redirect('/admin/users');
     } catch (error) {
         logger.error("Error updating status:", error);
@@ -39,10 +39,10 @@ export const toggleBlockStatus = async (req, res) => {
 };
 
 
-// For 'display' user details
+
 export const getUserDetails = async (req, res) => {
     try {
-        const data = await adminUserService.fetchUserDetails(req.params.id);   // For retrieve 'user' details like 'address', 'phone number' etc based on 'id'                   
+        const data = await adminUserService.fetchUserDetails(req.params.id);                                                   // For retrieve 'user' details like 'address', 'phone number' etc based on 'id'                   
         res.render('admin/userDetails', { 
             user: data.user, 
             displayAddress: data.displayAddress, 
@@ -58,25 +58,26 @@ export const getUserDetails = async (req, res) => {
 // For 'display' 'edit balance' of user in 'admin' side
 export const loadEditBalance = async (req, res) => {
     try {
-        const user = await adminUserService.fetchUserDetails(req.params.id);            // For retrieve 'user' details based on 'id'
-        res.render('admin/editBalance', { user , layout: 'layout/auth',});
+        const { user, displayAddress } = await adminUserService.fetchUserDetails(req.params.id);                              // Destructured properly so the real 'user' object is passed to EJS, fixing the undefined ID error during form submission
+        res.render('admin/editBalance', { user, displayAddress, layout: 'layout/auth' });
     } catch (error) {
         logger.error("Error loading balance management workspace:", error);
         res.status(500).send("Internal Server Error loading workspace.");
     }
 };
 
-// For 'update' balance of user in 'admin' side
+
+
+// For 'process' of 'edit balance'
 export const updateBalance = async (req, res) => {
     try {
-        await adminUserService.executeBalanceAdjustment(req.params.id, req.body);      // For 'handle' 'wallet balance' of 'user' in 'admin' side
+        await adminUserService.executeBalanceAdjustment(req.params.id, req.body);                                      // For 'handle' 'wallet balance' of 'user' in 'admin' side
         res.redirect(`/admin/users/${req.params.id}`);
     } catch (error) {
         logger.error("Critical error updating wallet records:", error);
         res.status(500).send("Internal Server Error updating financial assets.");
     }
 };
-
 
 // For 'display' user transactions in admin side
  export const getUserTransactions = async (req, res) => {
@@ -94,10 +95,10 @@ export const updateBalance = async (req, res) => {
 };
 
 
-// For 'display' 'user orders' page
+
 export const getUserOrdersList = async (req, res) => {
     try {
-        const ordersPayload = await adminUserService.fetchUserOrderLogs(req.params.id, req.query);       //  For calculate all data of 'user orders' like 'orders', 'total pages','current status', 'search query' etc
+        const ordersPayload = await adminUserService.fetchUserOrderLogs(req.params.id, req.query);                            //  For calculate all data of 'user orders' like 'orders', 'total pages','current status', 'search query' etc
         res.render('admin/userOrders', {
             ...ordersPayload,
             baseUrl: `/admin/users/${req.params.id}/orders`,

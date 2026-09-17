@@ -10,13 +10,13 @@ export const injectHeaderData = async (req, res, next) => {
         if (req.session && req.session.user) {
             const userId = req.session.user;
             res.locals.isLoggedIn = true;
-            const cart = await cartRepository.getCartDocument(userId);                                       // It retrieve 'first matching' 'cart' document based on 'userId'
+            const cart = await cartRepository.getCartDocument(userId);                                                         // It retrieve 'first matching' 'cart' document based on 'userId'
             if (cart && cart.items) {
-                res.locals.cartCount = cart.items.reduce((total, item) => total + (item.quantity || 1), 0);  // Here we 'accumulate' total 'item' 
+                res.locals.cartCount = cart.items.reduce((total, item) => total + (item.quantity || 1), 0);                    // Here we 'accumulate' total 'item' 
                 // res.locals.cartCount = cart.items.length;
             }
 
-            const wishlist = await wishlistRepository.getWishlistByUserId(userId);                           // It retrieve the user's wishlist document based 'userId'
+            const wishlist = await wishlistRepository.getWishlistByUserId(userId);                                             // It retrieve the user's wishlist document based 'userId'
             if (wishlist && wishlist.products) {
                 res.locals.wishlistCount = wishlist.products.length;
             }

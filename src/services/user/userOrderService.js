@@ -9,23 +9,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-
-// For 'search', 'filter' and 'pagination' based 'query'
+// Finds a user's orders and groups them into pages based on their search and status filters
 export const getUserOrdersPaginated = async (userId, page, filters) => {
     const limit = USER_ORDER_CONSTANTS.PAGINATION_LIMIT;
     const skip = (page - 1) * limit;
     let query = { user: userId };
     if (filters.status) query.deliveryStatus = filters.status;
     if (filters.search) {
-        const matchingProducts = await userOrderRepository.findMatchingProducts(filters.search);  // It retrieve all(ie because of 'find()' and return an 'array' like structure) 'product' '_id' based on 'searchQuery'(ie 'product name')
+        const matchingProducts = await userOrderRepository.findMatchingProducts(filters.search);
         const productIds = matchingProducts.map(item => item._id);
-        query.$or = [                                                                             // Here initial value of 'query' is an 'object'(ie '{user:userId}')and here we 'dynamically' add a 'new property' into it(ie '$or')and then we can check 'filters.search' includes in 'orderId' or any 'productId' 'contains' in 'items.product' array(ie '$in')
+        query.$or = [
             { orderId: { $regex: filters.search, $options: 'i' } },
             { 'items.product': { $in: productIds } }
         ];
     }
-    const orders = await userOrderRepository.findUserOrders(query, skip, limit);                 // It retrieve 'name' of the 'product' in 'Order' and display as 'descending'(ie 'newest' order first)order
-    const totalOrders = await userOrderRepository.countUserOrders(query);                        // It retrieve 'number' of 'orders' based only on 'query'
+    const orders = await userOrderRepository.findUserOrders(query, skip, limit);
+    const totalOrders = await userOrderRepository.countUserOrders(query);
     return { 
         orders, 
         totalPages: Math.ceil(totalOrders / limit) || 1 
@@ -33,9 +32,9 @@ export const getUserOrdersPaginated = async (userId, page, filters) => {
 };
 
 
-// For 'order' details for 'display' it
+// Gets order details and calculates the current active totals by working backward from the database
 export const getOrderDetails = async (orderId, userId) => {
-    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'name images' });
+    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'name images variants' });
     if (!order) return null;
     const formattedDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });    
     let subTotal = 0;
@@ -46,9 +45,9 @@ export const getOrderDetails = async (orderId, userId) => {
         subTotal += itemTotal;
         totalTax += (itemTotal * (item.taxRate || 0)) / 100;
     });    
-    const shipping = activeItems.length > 0 ? USER_ORDER_CONSTANTS.SHIPPING_COST : 0;
-    const calculatedTotal = subTotal + totalTax + shipping;
-    const discount = calculatedTotal > order.totalAmount ? calculatedTotal - order.totalAmount : 0;    
+    const discount = order.discountAmount || 0;
+    let shipping = order.totalAmount - subTotal - totalTax + discount;
+    shipping = Math.max(0, Math.round(shipping * 100) / 100);
     return { 
         order, 
         formattedDate, 
@@ -57,31 +56,40 @@ export const getOrderDetails = async (orderId, userId) => {
 };
 
 
-// For 'cancel' the order
+// Cancels an entire order, puts items back in stock, and refunds the user's wallet
 export const cancelOrder = async (orderId, userId) => {
-    const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId);                             // For retrieve 'order' details based on 'orderId' and 'userId'                         
+    const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId);
     if (!order) throw new Error("Order not found.");    
     if (order.deliveryStatus === ORDER_STATUS.DELIVERED || order.deliveryStatus === ORDER_STATUS.CANCELLED) {
         return false; 
     }    
     for (let item of order.items) {
-        await userOrderRepository.restoreProductStock(item.product, item.variantSku, item.quantity);           // Inside the 'for loop' we 'restore' all products into 'Product' collection, when 'user' 'cancelled' the 'order' ie in 'repository' 'update' the 'quantity' of product based on 'productId','sku' and 'quantity'.     
+        await userOrderRepository.restoreProductStock(item.product, item.variantSku, item.quantity);
     }    
-    order.deliveryStatus = ORDER_STATUS.CANCELLED;                                                             // This single code line change the 'deliveryStatus' of the 'order' into 'CANCELLED' ie it cancelled 'entire' order and it prevents 'ajio loop' hole.   
+    let refundAmount = order.totalAmount;
+    let refundReason = `Refund for Cancelled Order #${order.orderId}`;
+    const standardShippingFee = USER_ORDER_CONSTANTS.SHIPPING_COST;
+    if (['Shipped', 'Out for Delivery'].includes(order.deliveryStatus)) {
+        if (order.totalAmount > standardShippingFee) {
+            refundAmount = order.totalAmount - standardShippingFee;
+            refundReason = `Late Cancellation Refund #${order.orderId} (Minus ₹${standardShippingFee} Logistics Fee)`;
+        }
+    }
+    order.deliveryStatus = ORDER_STATUS.CANCELLED;
     if (order.paymentStatus === PAYMENT_STATUS.PAID) {                                                         
-        order.paymentStatus = PAYMENT_STATUS.REFUNDED;                                                        // Here 'cancelled' the order just before 'delivered' so we can immediately 'refunded' but after 'delivered' it shoudl 'returned' only after approval of 'admin'.
-        const user = await userOrderRepository.findUserById(userId);                                          // For retrieve 'user' data based on 'userId'
-        user.walletBalance += order.totalAmount;                                                              // When 'order cancel' time the 'item' will rerturn and then we also 'refund' the amount to 'wallet'
-        await user.save();
+        order.paymentStatus = PAYMENT_STATUS.REFUNDED;
+        const user = await userOrderRepository.findUserById(userId);
+        user.walletBalance += refundAmount;
+        await user.save();      
         const uniqueTxId = 'TX-' + Date.now().toString().slice(-6) + Math.floor(100 + Math.random() * 900);
-        await userOrderRepository.createRefundTransaction({                                                   // For create a new 'document' in 'Transaction' collection
+        await userOrderRepository.createRefundTransaction({
             user: userId,
             transactionId: uniqueTxId,
             orderId: order._id,
-            amount: order.totalAmount,
-            type: 'Credit',                                                                                   // Money 'credited' to user's account
+            amount: refundAmount,
+            type: 'Credit',
             adjustmentType: 'Refund',
-            reason: `Refund for Cancelled Order #${order.orderId}`,
+            reason: refundReason,
             gateway: 'Wallet',                                                 
             status: 'Success',
             balanceAfter: user.walletBalance
@@ -92,6 +100,7 @@ export const cancelOrder = async (orderId, userId) => {
 };
 
 
+// Cancels or returns a single item from an order instead of the whole thing
 export const handleItemAction = async (orderId, itemId, userId, actionType, reason) => {
     const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId);
     if (!order) throw new Error("Order not found.");   
@@ -102,137 +111,109 @@ export const handleItemAction = async (orderId, itemId, userId, actionType, reas
     if (!item || item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
         throw new Error("Item cannot be modified.");
     }
-
     if (actionType === 'Cancel') {
-        item.itemStatus = 'Cancelled';
-        item.cancellationReason = reason;
-        await userOrderRepository.restoreProductStock(item.product, item.variantSku, item.quantity);
+        let itemsToCancel = [item];
         if (item.comboId) {
             const partnerItems = order.items.filter(i => 
                 i.comboId === item.comboId && 
                 i._id.toString() !== item._id.toString() &&
                 i.itemStatus !== 'Cancelled'
-            );            
-            for (let partner of partnerItems) {
-                partner.itemStatus = 'Cancelled';
-                partner.cancellationReason = 'Auto-cancelled: Partner item in combo was cancelled.';
-                await userOrderRepository.restoreProductStock(partner.product, partner.variantSku, partner.quantity);
-            }
+            );
+            itemsToCancel = itemsToCancel.concat(partnerItems);
         }
-        
+        let totalRefundForTheseItems = 0;
+        for (let cancelItem of itemsToCancel) {
+            cancelItem.itemStatus = 'Cancelled';
+            cancelItem.cancellationReason = cancelItem._id.toString() === item._id.toString() 
+                ? reason 
+                : 'Auto-cancelled: Partner item in combo was cancelled.';
+            await userOrderRepository.restoreProductStock(cancelItem.product, cancelItem.variantSku, cancelItem.quantity);
+            const itemBaseTotal = cancelItem.price * cancelItem.quantity;
+            const itemTax = (itemBaseTotal * (cancelItem.taxRate || 0)) / 100;
+            totalRefundForTheseItems += (itemBaseTotal + itemTax);
+        }
+        if (order.paymentStatus === PAYMENT_STATUS.PAID && totalRefundForTheseItems > 0) {
+            if (['Shipped', 'Out for Delivery'].includes(order.deliveryStatus)) {
+                const safeShippingCost = (typeof USER_ORDER_CONSTANTS !== 'undefined' && USER_ORDER_CONSTANTS.SHIPPING_COST) ? USER_ORDER_CONSTANTS.SHIPPING_COST : 150;
+                if (totalRefundForTheseItems > safeShippingCost) {
+                    totalRefundForTheseItems -= safeShippingCost;
+                }
+            }
+            const user = await userOrderRepository.findUserById(userId);
+            user.walletBalance += totalRefundForTheseItems;
+            await user.save();
+            const uniqueTxId = 'TX-' + Date.now().toString().slice(-6) + Math.floor(100 + Math.random() * 900);
+            await userOrderRepository.createRefundTransaction({
+                user: userId,
+                transactionId: uniqueTxId,
+                orderId: order._id,
+                amount: totalRefundForTheseItems,
+                type: 'Credit',
+                adjustmentType: 'Refund',
+                reason: `Refund for Cancelled Item(s).`,
+                gateway: order.paymentMethod || 'Wallet',
+                status: 'Success',
+                balanceAfter: user.walletBalance
+            });
+        }
+        order.totalAmount = Math.max(0, order.totalAmount - totalRefundForTheseItems);        
     } else if (actionType === 'Return') {
         item.itemStatus = 'Return Pending';
-        item.returnReason = reason;
+        item.returnReason = reason;      
         order.markModified('items');
         await order.save();
         return true; 
     }
-    if (actionType === 'Cancel') {
-        const activeItems = order.items.filter(i => i.itemStatus !== 'Cancelled' && i.itemStatus !== 'Returned');                
-        let newSubTotal = 0;
-        let newTaxTotal = 0;        
-        activeItems.forEach(activeItem => {
-            const itemTotal = activeItem.price * activeItem.quantity;
-            newSubTotal += itemTotal;
-            newTaxTotal += (itemTotal * (activeItem.taxRate || 0)) / 100;
-        });
-        let newDiscount = 0;
-        if (order.appliedCoupon && activeItems.length > 0) {
-            await order.populate('appliedCoupon');
-            const coupon = order.appliedCoupon;
-            const minCartValue = coupon.minCartValue || 0;             
-            if (newSubTotal >= minCartValue) {
-                newDiscount = coupon.discountType === 'percentage' 
-                    ? Math.min((newSubTotal * coupon.discountValue) / 100, coupon.maxDiscount || Infinity)
-                    : (coupon.discountValue || 0);
-            } else {
-                newDiscount = 0; 
-            }
-        }
-        
-        const safeShippingCost = (typeof USER_ORDER_CONSTANTS !== 'undefined' && USER_ORDER_CONSTANTS.SHIPPING_COST) ? USER_ORDER_CONSTANTS.SHIPPING_COST : 150;
-        const newShipping = activeItems.length === 0 ? 0 : safeShippingCost;
-        
-        let newExpectedTotal = newSubTotal + newTaxTotal + newShipping - newDiscount;
-        if (newExpectedTotal < 0) newExpectedTotal = 0;
-        
-        // Process wallet refund if they already paid online
-        if (order.paymentStatus === PAYMENT_STATUS.PAID) {
-            let refundAmount = order.totalAmount - newExpectedTotal;
-            if (refundAmount < 0) refundAmount = 0; 
-
-            if (refundAmount > 0) {
-                const user = await userOrderRepository.findUserById(userId);
-                user.walletBalance += refundAmount;
-                await user.save();
-
-                const uniqueTxId = 'TX-' + Date.now().toString().slice(-6) + Math.floor(100 + Math.random() * 900);
-                await userOrderRepository.createRefundTransaction({
-                    user: userId,
-                    transactionId: uniqueTxId,
-                    orderId: order._id,
-                    amount: refundAmount,
-                    type: 'Credit',
-                    adjustmentType: 'Refund',
-                    reason: `Refund for Cancelled Item(s).`,
-                    gateway: 'Wallet',
-                    status: 'Success',
-                    balanceAfter: user.walletBalance
-                });
-            }
-        }
-        
-        order.totalAmount = newExpectedTotal;
-        if (order.discountAmount !== undefined) order.discountAmount = newDiscount;
-    }
-
     const allCancelled = order.items.every(i => i.itemStatus === 'Cancelled');
     if (allCancelled) {
         order.deliveryStatus = ORDER_STATUS.CANCELLED;
         if (order.paymentStatus === PAYMENT_STATUS.PAID) order.paymentStatus = PAYMENT_STATUS.REFUNDED;
-    }
-    
+    }        
     order.markModified('items'); 
     await order.save();
     return true;
 };
 
 
-// For 'calculate' 'subTotal', 'taxTotal' etc and display it in 'ejs' file and then download as 'pdf'.
+// Builds the visual invoice document and converts it into a downloadable PDF
 export const generateInvoicePdf = async (orderId, userId) => {
-    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'productName name' }); // For retrieve 'name' and 'image' of 'product' based on 'userId' and 'productId'
-    if (!order) throw new Error("Order not found");
-    const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });               // Create 'date' and convert into 'Indian'/'British' format.
-    const orderDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });    
+    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'productName name' });
+    if (!order) throw new Error("Order not found");  
+    const invoiceDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const orderDate = new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });        
     let subTotal = 0;
     let taxTotal = 0;    
-    const itemsWithTax = order.items.map(item => {
+    const activeItems = order.items.filter(item => item.itemStatus !== 'Cancelled' && item.itemStatus !== 'Returned');
+    const itemsWithTax = activeItems.map(item => {
         const taxRate = item.taxRate || USER_ORDER_CONSTANTS.DEFAULT_TAX_RATE;
         const amount = item.price * item.quantity;
         const taxAmount = (amount * taxRate) / 100;    
         subTotal += amount;
         taxTotal += taxAmount;        
-        return { ...item, taxRate, taxAmount, amount };                                       // Create 'taxRate', 'taxAmount', 'amout' etc
+        return { ...item, taxRate, taxAmount, amount };
     });
-    const shipping = USER_ORDER_CONSTANTS.SHIPPING_COST;
-    const discount = (subTotal + taxTotal + shipping) > order.totalAmount ? (subTotal + taxTotal + shipping) - order.totalAmount : 0;
+    let shipping = USER_ORDER_CONSTANTS.SHIPPING_COST || 150;
+    if ((subTotal + taxTotal) >= 1500) {
+        shipping = 0;
+    }
+    const discount = order.discountAmount || 0;    
     const invoiceData = {
         order, items: itemsWithTax, invoiceDate, orderDate, subTotal, taxTotal, shipping, discount, grandTotal: order.totalAmount
-    };
-    const templatePath = path.join(__dirname, '../../../view/user/invoiceTemplate.ejs');     // Here we use '__dirname' is the 'built-in' 'global variable' in 'node.js' and used for find the 'directory name' that current operating 'file' contains and using '../../../' because currently we operate in 'src/services/userOrderService.js' page and 'invoiceTemplate.ejs' file is '3' folder 'up' and 'path.join()' is the 'built-in' method of 'path' module and it used for 'join' the path without consider '\'(ie in 'windows') or '/'(in 'mac')ie this code directs exact file path. 
-    const html = await ejs.renderFile(templatePath, invoiceData);                            // 'renderFile()' is built-in method of 'ejs' and used for 'mixing' both ie action same like 'res.render(filepath, object)'(Eg,'res.render('/user', {user: "Anu"})') ie 'templatePath' represents 'filePath' and 'object'/ 'data' represents 'invoiceData'
-    const browser = await puppeteer.launch({ headless: 'new' });                             // 'puppeteer' is the 'built-in' 'npm' library created by 'Google' used for create/open a new 'browser' tab and '{ headless: 'new' }' is the 'object' used for 'disable' 'GUI' ie normally when we open Google 'Chrome' on computer, it has a 'GUI'(ie 'Graphical User Interface' ie 'buttons', a 'URL bar', and a visible window etc) but when we use '{ headless: 'new' }' 'disables' all these 'GUI'.
-    const page = await browser.newPage();                                                    // It is also 'puppeteer' method and used for 'invisible pop up' ie it creates a 'blank workspace' in the server's memory for to work with, but 'nothing' will 'physically' pop up on your computer screen.
-    await page.setContent(html, { waitUntil: 'networkidle0' });                              // 'page.setContent()' also 'built-in' 'puppeteer' method used for forcefully inject 'html'(ie path with object) into that blank and invisible tab(ie 'page') and '{ waitUntil: 'networkidle0'}' ensures that 'loading' all 'CSS files','fonts','images' etc before loading the 'pdf'(ie almost same like 'DOMContentLoaded()' but it wait only for 'html' 'not' for 'css', 'images' etc).
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });  // 'pdf()' also 'puppeteer' method used for 'formating'.
-    await browser.close();                                                                   // 'close()' is also 'puppeteer' method and it used for shuts down the 'invisible Chrome browser'.
+    };   
+    const templatePath = path.join(__dirname, '../../../view/user/invoiceTemplate.ejs');
+    const html = await ejs.renderFile(templatePath, invoiceData);
+    const browser = await puppeteer.launch({ headless: 'new' });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
+    await browser.close();
     return { pdfBuffer, orderId: order.orderId };
 };
 
 
-// For 'set up' the data for 'pick up'.
+// Sets up the information needed for the return confirmation page
 export const getReturnDetails = async (orderId, userId) => {
-    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'productName name images' });  // For retrieve 'name' and 'image' of 'product' based on 'userId' and 'productId'
+    const order = await userOrderRepository.findOrderById(orderId, userId, { path: 'items.product', select: 'productName name images' });
     if (!order) return null;
     const pickUpDateObj = new Date();
     pickUpDateObj.setDate(pickUpDateObj.getDate() + 3);
@@ -241,21 +222,18 @@ export const getReturnDetails = async (orderId, userId) => {
 };
 
 
-// For 'process return' and 'save' to 'orders' collection
+// Sends a request to the admin to return an entire order
 export const processReturnRequest = async (orderId, userId, reason) => {
     if (!reason) throw new Error("A return reason is mandatory.");
-    const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId); // For retrieve 'order' details based on 'orderId' and 'userId'
+    const order = await userOrderRepository.findOrderIdAndUserId(orderId, userId);
     if (!order || order.deliveryStatus !== ORDER_STATUS.DELIVERED) {
         throw new Error("Invalid return request.");
     }
     order.returnRequest = {
         isRequested: true,
         reason: reason,
-        status: RETURN_STATUS.PENDING,                                            // 'Pending' is the 'default' status when we start a request.
+        status: RETURN_STATUS.PENDING,
         requestedAt: new Date()
     };
     await order.save();
 };
-
-
-
