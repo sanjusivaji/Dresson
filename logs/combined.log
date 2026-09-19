@@ -23551,3 +23551,7 @@
 {"level":"info","message":" Dresson Server is running on http://localhost:3000","timestamp":"2026-09-18T11:07:11.197Z"}
 {"level":"info","message":" Dresson Server is running on http://localhost:3000","timestamp":"2026-09-18T11:07:13.161Z"}
 {"level":"info","message":" Dresson Server is running on http://localhost:3000","timestamp":"2026-09-18T11:12:43.653Z"}
+{"level":"info","message":" Dresson Server is running on http://localhost:3000","timestamp":"2026-09-19T03:21:01.177Z"}
+{"level":"info","message":" Dresson Server is running on http://localhost:3000","timestamp":"2026-09-19T05:54:26.137Z"}
+{"level":"info","message":"Authentication successful for user ID: 6a96d8720b1fa73075021bb1","timestamp":"2026-09-19T05:54:45.013Z"}
+{"level":"error","message":"Change profile info request failure: Incorrect current password validation.","stack":"Error: Incorrect current password validation.\n    at Module.requestProfileEmailUpdate (file:///Users/bster/Desktop/Dresson/src/services/user/userProfileService.js:34:35)\n    at async changeEmailRequest (file:///Users/bster/Desktop/Dresson/src/controller/userController/userProfileController.js:29:24)","timestamp":"2026-09-19T05:57:46.475Z"}
