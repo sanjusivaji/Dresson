@@ -1,6 +1,5 @@
 import logger from '../../utilities/logger.js';
 import * as userProfileService from '../../services/user/userProfileService.js';
-import { v2 as cloudinary } from 'cloudinary';
 import * as userService from '../../services/user/userProfileService.js';
 
 

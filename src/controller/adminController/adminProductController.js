@@ -161,7 +161,7 @@ export const postEditProduct = async (req, res) => {
                 activePage: 'products'
             });
         } catch (fallbackError) {
-            res.status(500).send("Internal Server Error recovering edit view.");
+            res.status(500).send("Internal Server Error recovering edit view.", fallbackError);
         }
     }
 };

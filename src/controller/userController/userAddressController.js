@@ -46,7 +46,6 @@ export const loadAddAddressPage = async (req, res) => {
             error: errorMessage,
             pageTitle: "Add New Address - Dresson",
             activeSidebar: 'address',
-            error: null,
             formData: null,
             returnTo: returnTo
         });

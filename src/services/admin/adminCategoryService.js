@@ -40,6 +40,8 @@ export const buildCategoriesListDashboard = async (query) => {
         };
     }
     const categories = await categoryRepository.findCategoriesWithFilter(filterQuery, skip, limit);                                   // Gets the matching parent categories based on search
+    console.log(categories)
+    
     const totalMatchingCategories = await categoryRepository.countCategories(filterQuery);                                            // Counts total matches to calculate how many pages are needed
     return {
         categories,

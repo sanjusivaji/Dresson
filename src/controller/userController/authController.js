@@ -1,6 +1,6 @@
 import logger from '../../utilities/logger.js';
 import * as authService from '../../services/user/authService.js';
-import { COOKIE_KEYS, SESSION_KEYS } from '../../constants/cookieConstants.js';
+import { SESSION_KEYS } from '../../constants/cookieConstants.js';
 import * as userProductService from '../../services/user/userProductServices.js';
 
 
