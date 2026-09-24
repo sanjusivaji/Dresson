@@ -5,7 +5,16 @@ import path from 'path';
 export const generateSalesPDF = async (reportData) => {
     const templatePath = path.join(process.cwd(), 'view', 'admin', 'reportTemplate.ejs');
     const html = await ejs.renderFile(templatePath, reportData);
-    const browser = await puppeteer.launch({ headless: 'new' });
+
+    const browser = await puppeteer.launch({                                                                                    // For args array to bypass the AWS EC2 Linux sandbox
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage'
+        ]
+    });
+    
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ 

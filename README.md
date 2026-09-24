@@ -35,6 +35,12 @@ It is an e-commerce application for dress materials.
 - AWS S3
 - Cloudinary
 
+### Server & Deployment
+
+- AWS EC2 (Linux)
+- Nginx (Reverse Proxy)
+- SSL via Certbot (Let’s Encrypt)
+
 ## Screenshots
 
 ### Home Page

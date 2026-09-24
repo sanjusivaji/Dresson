@@ -173,3 +173,5 @@
 {"level":"error","message":"Global Error Handler caught:","timestamp":"2026-09-17T06:45:12.852Z"}
 {"level":"error","message":"Admin authentication system exception:","timestamp":"2026-09-18T10:45:01.880Z"}
 {"level":"error","message":"Change profile info request failure: Incorrect current password validation.","stack":"Error: Incorrect current password validation.\n    at Module.requestProfileEmailUpdate (file:///Users/bster/Desktop/Dresson/src/services/user/userProfileService.js:34:35)\n    at async changeEmailRequest (file:///Users/bster/Desktop/Dresson/src/controller/userController/userProfileController.js:29:24)","timestamp":"2026-09-19T05:57:46.475Z"}
+{"level":"error","message":"Toggle Blocked:","timestamp":"2026-09-20T07:58:09.874Z"}
+{"level":"error","message":"Admin authentication system exception:","timestamp":"2026-09-23T18:08:11.968Z"}
