@@ -200,9 +200,17 @@ export const generateInvoicePdf = async (orderId, userId) => {
     const invoiceData = {
         order, items: itemsWithTax, invoiceDate, orderDate, subTotal, taxTotal, shipping, discount, grandTotal: order.totalAmount
     };   
-    const templatePath = path.join(__dirname, '../../../view/user/invoiceTemplate.ejs');
+    const templatePath = path.join(__dirname, '../../../view/user/invoiceTemplate.ejs');                                       // For args array to bypass the AWS EC2 Linux sandbox
     const html = await ejs.renderFile(templatePath, invoiceData);
-    const browser = await puppeteer.launch({ headless: 'new' });
+    const browser = await puppeteer.launch({ 
+        headless: 'new',
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage'
+        ]
+    });
+    
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
