@@ -8,7 +8,6 @@ import { AUTH_REGEX, AUTH_CONFIG, AUTH_ROLES } from '../../constants/userAuthCon
 import normalizeEmail from '../../utilities/emailHelper.js'; 
 import logger from '../../utilities/logger.js'; 
 
-
 const generateNumericOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 
