@@ -8,8 +8,8 @@ dotenv.config();
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL, 
-    proxy: true    
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    proxy: true
 },
 async (accessToken, refreshToken, profile, done) => {                                                            // We should keep 'accessToken', 'refreshToken' because it is 'syntax' and 'profile' contains all data about 'user' ie 'email', 'name', 'displayName'/ 'firstName' and 'familyName' or 'second name' etc) are passed automatically and came from 'Google' and 'done' is the 'callback' function calls only after 'process' finished.
     try {

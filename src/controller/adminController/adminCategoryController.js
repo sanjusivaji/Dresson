@@ -100,9 +100,16 @@ export const postAddCategory = async (req, res) => {
         const { gender, parentCategory, categoryName, description, isListed } = req.body;
         const cleanName = categoryName.trim();
         const cleanDescription = description ? description.trim() : '';
-        const generatedSlug = `${gender.toLowerCase()}-${cleanName.toLowerCase()}`
+        
+        // Generates the base slug from gender and name
+        const baseSlug = `${gender.toLowerCase()}-${cleanName.toLowerCase()}`
             .replace(/[^a-z0-9]+/g, '-')                                                                                              // Replaces any spaces or special characters with a hyphen
             .replace(/(^-|-$)+/g, '');                                                                                                // Removes extra hyphens at the very beginning or end of the text
+            
+        // Appends a 6-character random string to guarantee uniqueness and prevent E11000 duplicate slug errors
+        const uniqueString = Math.random().toString(36).substring(2, 8);
+        const generatedSlug = `${baseSlug}-${uniqueString}`;
+
         const newCategory = new Category({                                                                                            // Prepares the new category data before saving to the database
             gender,
             parentCategory: (!parentCategory || parentCategory === 'none') ? null : parentCategory,
