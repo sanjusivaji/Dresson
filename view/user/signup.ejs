@@ -60,6 +60,10 @@
     <div id="stepOtpView" class="hidden w-full animate-fade-in transition-all duration-300 text-center">
         <h1 class="text-2xl font-bold text-center text-black mb-2">Check Your Email</h1>
         <p class="text-xs text-gray-500 font-medium mb-8">We sent a secure 6-digit code to your email. Please enter it below.</p>                    
+        
+        <!-- NEW CUSTOM OTP ERROR DIV -->
+        <div id="otpGlobalError" class="hidden w-full bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center"></div>
+        
         <form id="otpForm" class="w-full">
             <div class="flex justify-center gap-2 mb-6" id="otpInputsContainer">
                 <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:border-[#208b59] focus:ring-1 focus:ring-[#208b59] text-gray-800">
@@ -178,10 +182,23 @@ otpInputs.forEach((input, index) => {
 
 document.getElementById('otpForm').addEventListener('submit', async function(e) {
     e.preventDefault(); 
+    
+    // Clear any previous error messages before processing
+    const otpErrorDiv = document.getElementById('otpGlobalError');
+    if (otpErrorDiv) {
+        otpErrorDiv.classList.add('hidden');
+        otpErrorDiv.innerText = '';
+    }
+
     let combinedOtp = '';
     otpInputs.forEach(input => combinedOtp += input.value);
+    
     if (combinedOtp.length !== 6) {
-        return alert("Please enter the full 6-digit OTP.");
+        if (otpErrorDiv) {
+            otpErrorDiv.innerText = "Please enter the full 6-digit OTP.";
+            otpErrorDiv.classList.remove('hidden');
+        }
+        return; 
     }
     try {
         const submitBtn = document.getElementById('otpSubmitBtn');
@@ -198,13 +215,19 @@ document.getElementById('otpForm').addEventListener('submit', async function(e) 
         if (data.success) {
             window.location.href = '/login'; 
         } else {
-            alert(data.message || "Invalid OTP. Please try again.");
+            if (otpErrorDiv) {
+                otpErrorDiv.innerText = data.message || "Invalid OTP. Please try again.";
+                otpErrorDiv.classList.remove('hidden');
+            }
             otpInputs.forEach(input => input.value = '');
             otpInputs[0].focus();
         }
     } catch (error) {
         console.error("OTP Verification Error:", error);
-        alert("A network error occurred.");
+        if (otpErrorDiv) {
+            otpErrorDiv.innerText = "A network error occurred. Please try again.";
+            otpErrorDiv.classList.remove('hidden');
+        }
     } finally {
         const submitBtn = document.getElementById('otpSubmitBtn');
         submitBtn.innerText = "Verify & Create Account";
@@ -212,4 +235,3 @@ document.getElementById('otpForm').addEventListener('submit', async function(e) 
     }
 });
 </script>
-

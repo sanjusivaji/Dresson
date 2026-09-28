@@ -83,8 +83,8 @@ export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {
         if (referrer) {
             initialWalletBalance = AUTH_CONFIG.REFERRAL_REWARD_AMOUNT;
             walletTransactions.push({
-                amount: AUTH_CONFIG.REFERRAL_REWARD_AMOUNT,
-                type: 'credit',
+                amount: AUTH_CONFIG.REFERRAL_REWARD_AMOUNT,                                    
+                type: 'credit', 
                 description: 'Sign-up bonus from applying a referral code',
                 date: new Date()
             });
@@ -110,6 +110,7 @@ export const verifyAndRegisterUser = async (sessionData, inputtedOtp) => {
         walletBalance: initialWalletBalance,                
         walletHistory: walletTransactions                   
     });
+    
     const savedUser = await authRepository.findUserByNormalizedEmail(normalizedEmail);
     if (initialWalletBalance > 0 && savedUser) {
         await authRepository.creditNewUserWalletTransaction(

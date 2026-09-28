@@ -88,12 +88,16 @@ export const creditReferrerWallet = async (userId, amount, textInfo) => {
 export const creditNewUserWalletTransaction = async (userId, amount, textInfo) => {
     await WalletTransaction.create({
         user: userId,
-        transactionId: `TXN-${crypto.randomUUID()}`,                           
+        transactionId: `TXN-${crypto.randomUUID()}`,    
+        type: 'Credit',               // FIXED: Added missing required field
+        adjustmentType: 'Add Funds',  // FIXED: Added missing required field
+        reason: textInfo,             
         description: textInfo, 
-        reason: textInfo,
         amount: amount,
-        balanceBefore: 0, 
-        balanceAfter: amount, 
+        balanceAfter: amount,         // (removed 'balanceBefore')
         status: 'Success'
     });
 };
+
+
+

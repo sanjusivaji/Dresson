@@ -3,7 +3,7 @@ export const AUTH_CONFIG = {                                                    
     PROFILE_EMAIL_OTP_EXPIRY_MS: 5 * 60 * 1000,                                          // 5 Minutes
     HOME_PRODUCTS_LIMIT: 3,
     ADMIN_USERS_LIMIT: 5,
-    REFERRAL_REWARD_AMOUNT: 200
+    REFERRAL_REWARD_AMOUNT: 100
 };
 
 export const AUTH_ROLES = {
